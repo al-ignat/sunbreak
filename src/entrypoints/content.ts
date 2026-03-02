@@ -1,3 +1,4 @@
+// Match patterns must stay in sync with host_permissions in wxt.config.ts
 export default defineContentScript({
   matches: [
     '*://chatgpt.com/*',
@@ -7,6 +8,7 @@ export default defineContentScript({
   ],
   runAt: 'document_idle',
   main() {
+    // TODO: Remove before production — reveals extension presence to host page
     console.log('BYOAI loaded');
   },
 });

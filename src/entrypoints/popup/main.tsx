@@ -2,6 +2,7 @@ import { render } from 'preact';
 import App from './App';
 
 const root = document.getElementById('app');
-if (root) {
-  render(<App />, root);
+if (!root) {
+  throw new Error('Root element #app not found');
 }
+render(<App />, root);

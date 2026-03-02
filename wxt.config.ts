@@ -9,6 +9,7 @@ export default defineConfig({
     description:
       'Use AI tools at work — safely. Detects sensitive data before you send it.',
     permissions: ['storage'],
+    // Must stay in sync with matches in src/entrypoints/content.ts
     host_permissions: [
       '*://chatgpt.com/*',
       '*://chat.openai.com/*',

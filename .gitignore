@@ -3,3 +3,6 @@ node_modules/
 .wxt/
 dist/
 *.DS_Store
+.env*
+*.pem
+*.key

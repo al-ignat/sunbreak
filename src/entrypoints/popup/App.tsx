@@ -1,6 +1,7 @@
+import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
 
-export default function App(): preact.JSX.Element {
+export default function App(): JSX.Element {
   const [enabled] = useState(true);
 
   return (
