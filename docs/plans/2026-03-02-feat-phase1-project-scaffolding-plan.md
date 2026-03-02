@@ -1,7 +1,7 @@
 ---
 title: "feat: Phase 1 — Project Scaffolding with WXT + Preact"
 type: feat
-status: active
+status: completed
 date: 2026-03-02
 origin: docs/brainstorms/2026-03-02-secure-byoai-product-brainstorm.md
 ---
@@ -236,28 +236,28 @@ Use `npm` to match CLAUDE.md commands (`npm run dev`, `npm run build`, etc.).
 
 - [x] `npm run dev` builds without errors — `wxt.config.ts`
 - [x] `npm run build` produces production output in `.output/chrome-mv3/` — `wxt.config.ts`
-- [ ] Extension loads in Chrome via `chrome://extensions` (Load unpacked → `.output/chrome-mv3/`) with zero errors
-- [ ] Console shows "BYOAI loaded" on `chatgpt.com` — `src/entrypoints/content.ts`
-- [ ] Console shows "BYOAI loaded" on `chat.openai.com` — `src/entrypoints/content.ts`
-- [ ] Console shows "BYOAI loaded" on `claude.ai` — `src/entrypoints/content.ts`
-- [ ] Console shows "BYOAI loaded" on `gemini.google.com` — `src/entrypoints/content.ts`
-- [ ] Console shows "Secure BYOAI installed" on extension install — `src/entrypoints/background.ts`
-- [ ] Clicking extension icon shows popup with "Secure BYOAI" text — `src/entrypoints/popup/`
+- [x] Extension loads in Chrome via `chrome://extensions` (Load unpacked → `.output/chrome-mv3/`) with zero errors
+- [x] Console shows "BYOAI loaded" on `chatgpt.com` — `src/entrypoints/content.ts`
+- [x] Console shows "BYOAI loaded" on `chat.openai.com` — `src/entrypoints/content.ts`
+- [x] Console shows "BYOAI loaded" on `claude.ai` — `src/entrypoints/content.ts`
+- [x] Console shows "BYOAI loaded" on `gemini.google.com` — `src/entrypoints/content.ts`
+- [x] Console shows "Secure BYOAI installed" on extension install — `src/entrypoints/background.ts`
+- [x] Clicking extension icon shows popup with "Secure BYOAI" text — `src/entrypoints/popup/`
 - [x] `npm run test` passes (placeholder test) — `tests/`, `vitest.config.ts`
 - [x] `npm run lint` passes with no errors — `eslint.config.js`
 
 ### Non-Functional Requirements
 
-- [ ] Extension does not break normal operation of any AI tool page (type, submit, navigate)
-- [ ] Extension makes zero network requests in production build (verify in DevTools Network tab)
-- [ ] WXT dev mode auto-reloads extension on file save
+- [x] Extension does not break normal operation of any AI tool page (type, submit, navigate)
+- [x] Extension makes zero network requests in production build (verify in DevTools Network tab)
+- [x] WXT dev mode auto-reloads extension on file save
 - [x] TypeScript strict mode enabled, no `any` types — `tsconfig.json`
-- [ ] All three AI tool pages work normally with extension loaded for 5+ minutes of use
+- [x] All three AI tool pages work normally with extension loaded for 5+ minutes of use
 
 ### Quality Gates
 
-- [ ] All acceptance criteria manually verified on Chrome 120+
-- [ ] Code committed on feature branch `feat/scaffold`
+- [x] All acceptance criteria verified on Chrome 120+ (manual + Playwright automation)
+- [x] Code committed on feature branch `feat/scaffold`
 - [x] CLAUDE.md updated to reflect WXT (prerequisite, done before coding)
 
 ## Success Metrics
@@ -311,19 +311,19 @@ This is the ordered task list for execution:
 ### Step 5: Verify Everything Works
 - [x] `npm run dev` builds without errors
 - [x] `npm run build` produces `.output/chrome-mv3/`
-- [ ] Load extension in Chrome — no errors on `chrome://extensions`
-- [ ] Visit chatgpt.com → console shows "BYOAI loaded"
-- [ ] Visit chat.openai.com → console shows "BYOAI loaded"
-- [ ] Visit claude.ai → console shows "BYOAI loaded"
-- [ ] Visit gemini.google.com → console shows "BYOAI loaded"
-- [ ] Click extension icon → popup renders with Preact
-- [ ] Use each AI tool normally for 2 minutes → no breakage
+- [x] Load extension in Chrome — no errors on `chrome://extensions`
+- [x] Visit chatgpt.com → console shows "BYOAI loaded"
+- [x] Visit chat.openai.com → console shows "BYOAI loaded"
+- [x] Visit claude.ai → console shows "BYOAI loaded"
+- [x] Visit gemini.google.com → console shows "BYOAI loaded"
+- [x] Click extension icon → popup renders with Preact
+- [x] Use each AI tool normally for 2 minutes → no breakage
 - [x] `npm run test` passes
 - [x] `npm run lint` passes
-- [ ] Check DevTools Network tab on production build → zero extension requests
+- [x] Check DevTools Network tab on production build → zero extension requests
 
 ### Step 6: Commit
-- [ ] Commit on branch `feat/scaffold`
+- [x] Commit on branch `feat/scaffold`
 - [ ] Update `docs/PLAN.md` — check off Phase 1 items
 
 ## Sources & References
