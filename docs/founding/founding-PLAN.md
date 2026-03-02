@@ -18,15 +18,15 @@
 - [x] File upload detection (warn on any file upload)
 
 ## Phase 3: Classification Engine (Sessions 5-7)
-- [ ] Email pattern detector + tests
-- [ ] Phone number detector + tests
-- [ ] Credit card detector (with Luhn validation) + tests
-- [ ] SSN / CPR / NI number detector + tests
-- [ ] IP address detector + tests
-- [ ] API key / token detector + tests
-- [ ] Custom keyword list matcher + tests
-- [ ] Classification engine orchestrator + tests
-- [ ] Confidence scoring (HIGH / MEDIUM / LOW)
+- [x] Email pattern detector + tests
+- [x] Phone number detector + tests
+- [x] Credit card detector (with Luhn validation) + tests
+- [x] SSN / CPR / NI number detector + tests
+- [x] IP address detector + tests
+- [x] API key / token detector + tests
+- [x] Custom keyword list matcher + tests
+- [x] Classification engine orchestrator + tests
+- [x] Confidence scoring (HIGH / MEDIUM / LOW)
 
 ## Phase 4: Overlay UI (Sessions 8-10)
 - [ ] Shadow DOM container injected into AI tool pages
