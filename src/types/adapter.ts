@@ -1,0 +1,31 @@
+/** Supported AI tool site identifiers */
+export type SiteName = 'chatgpt' | 'claude' | 'gemini';
+
+/** Per-site adapter for finding and interacting with AI tool input elements */
+export interface SiteAdapter {
+  readonly name: SiteName;
+
+  /** Check if this adapter handles the given hostname */
+  matches(hostname: string): boolean;
+
+  /** Find the primary chat input element. Returns null if not yet in DOM. */
+  findInput(): HTMLElement | null;
+
+  /** Find the send/submit button. Returns null if not visible. */
+  findSendButton(): HTMLElement | null;
+
+  /** Extract full text content from the editor element */
+  getText(input: HTMLElement): string;
+
+  /** Replace text content in the editor (for redaction in Phase 4) */
+  setText(input: HTMLElement, text: string): void;
+
+  /** Find the file drop zone element, if any */
+  getDropZone(): HTMLElement | null;
+}
+
+/** Callback invoked when a prompt is captured before submission */
+export type PromptCallback = (text: string, adapterName: SiteName) => void;
+
+/** Callback invoked when a file upload is detected */
+export type FileCallback = (filename: string, adapterName: SiteName) => void;
