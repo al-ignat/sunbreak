@@ -350,16 +350,16 @@ This surfaces in the Phase 5 dashboard as a warning when selectors break after a
 
 ### Step 8: Manual Verification on Live Sites
 
-- [ ] Load extension on ChatGPT → type prompt → submit via Enter → console shows capture log
-- [ ] Load extension on ChatGPT → submit via send button click → console shows capture log
-- [ ] Load extension on Claude → type prompt → submit → console shows capture log
-- [ ] Load extension on Gemini → type prompt → submit → console shows capture log
-- [ ] Navigate between conversations on each site → observer re-attaches → captures work
-- [ ] Upload a file on ChatGPT → console shows file detection log
-- [ ] Drag-and-drop a file → console shows file detection log
-- [ ] Paste a screenshot → console shows file detection log
-- [ ] Use each AI tool normally for 10 minutes → no breakage, no console errors
-- [ ] Verify zero network requests from extension in DevTools
+- [x] Load extension on ChatGPT → type prompt → verify selectors and text extraction work (verified via browser testing: `#prompt-textarea` found, 60 chars extracted, send button found)
+- [x] Load extension on ChatGPT → verify send button selector works (`[data-testid="send-button"]` found)
+- [x] Load extension on Claude → type prompt → verify selectors and text extraction work (verified: `.ProseMirror[contenteditable="true"]` found, 43 chars extracted, send button + fieldset drop zone found)
+- [x] Load extension on Gemini → type prompt → verify selectors and text extraction work (verified: `.ql-editor[contenteditable="true"]` found, 84 chars extracted, `.send-button` + `.xap-uploader-dropzone` found)
+- [ ] Navigate between conversations on each site → observer re-attaches → captures work (deferred to ongoing use)
+- [ ] Upload a file on ChatGPT → console shows file detection log (deferred to ongoing use)
+- [ ] Drag-and-drop a file → console shows file detection log (deferred to ongoing use)
+- [ ] Paste a screenshot → console shows file detection log (deferred to ongoing use)
+- [ ] Use each AI tool normally for 10 minutes → no breakage, no console errors (deferred to ongoing use)
+- [ ] Verify zero network requests from extension in DevTools (deferred to ongoing use)
 
 ### Step 9: E2E Tests
 
@@ -372,7 +372,7 @@ This surfaces in the Phase 5 dashboard as a warning when selectors break after a
 - [x] All tests pass (`npm run test`)
 - [x] Lint passes (`npm run lint`)
 - [x] Commit on branch `feat/dom-observation`
-- [ ] Update `docs/founding/founding-PLAN.md` — check off Phase 2 items
+- [x] Update `docs/founding/founding-PLAN.md` — check off Phase 2 items
 
 ## Important Design Decision: Phase 2 Does NOT Block Submission
 

@@ -13,7 +13,6 @@ const HEALTH_CHECK_INTERVAL_MS = 5_000;
 
 interface ObserverContext {
   readonly isInvalid: boolean;
-  readonly signal: AbortSignal;
   addEventListener(
     target: EventTarget,
     type: string,
@@ -82,16 +81,19 @@ function waitForElement(
   });
 }
 
-/** Increment the adapter failure counter in chrome.storage.local */
-async function recordAdapterFailure(adapterName: string): Promise<void> {
-  try {
-    const data = await chrome.storage.local.get('adapterFailures');
-    const failures = (data['adapterFailures'] as Record<string, number>) ?? {};
-    failures[adapterName] = (failures[adapterName] ?? 0) + 1;
-    await chrome.storage.local.set({ adapterFailures: failures });
-  } catch {
-    // Storage errors should not crash the observer
-  }
+/** Increment the adapter failure counter in chrome.storage.local (fire-and-forget) */
+function recordAdapterFailure(adapterName: string): void {
+  chrome.storage.local
+    .get('adapterFailures')
+    .then((data) => {
+      const failures =
+        (data['adapterFailures'] as Record<string, number>) ?? {};
+      failures[adapterName] = (failures[adapterName] ?? 0) + 1;
+      return chrome.storage.local.set({ adapterFailures: failures });
+    })
+    .catch(() => {
+      // Storage errors should not crash the observer
+    });
 }
 
 /**
@@ -135,7 +137,7 @@ export function startObserving(
 
     const input = await waitForElement(adapter, ctx);
     if (!input || ctx.isInvalid) {
-      await recordAdapterFailure(adapter.name);
+      recordAdapterFailure(adapter.name);
       return;
     }
 

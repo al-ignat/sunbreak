@@ -1,4 +1,5 @@
 import type { SiteAdapter } from '../../types';
+import { queryFallback, extractParagraphText, setParagraphText } from './dom-utils';
 
 const INPUT_SELECTORS = [
   '.ql-editor[contenteditable="true"]',
@@ -13,26 +14,6 @@ const SEND_BUTTON_SELECTORS = [
 const DROP_ZONE_SELECTORS = [
   '.xap-uploader-dropzone',
 ] as const;
-
-function queryFallback(selectors: readonly string[]): HTMLElement | null {
-  for (const selector of selectors) {
-    const el = document.querySelector<HTMLElement>(selector);
-    if (el) return el;
-  }
-  return null;
-}
-
-/** Extract text from Quill editor paragraphs */
-function extractQuillText(editor: HTMLElement): string {
-  const paragraphs = editor.querySelectorAll('p');
-  if (paragraphs.length === 0) {
-    return editor.textContent?.trim() ?? '';
-  }
-  return Array.from(paragraphs)
-    .map((p) => p.textContent ?? '')
-    .join('\n')
-    .trim();
-}
 
 export const geminiAdapter: SiteAdapter = {
   name: 'gemini',
@@ -50,20 +31,11 @@ export const geminiAdapter: SiteAdapter = {
   },
 
   getText(input: HTMLElement): string {
-    return extractQuillText(input);
+    return extractParagraphText(input);
   },
 
   setText(input: HTMLElement, text: string): void {
-    const escaped = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-    const paragraphs = escaped
-      .split('\n')
-      .map((line) => `<p>${line || '<br>'}</p>`)
-      .join('');
-    input.innerHTML = paragraphs;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
+    setParagraphText(input, text);
   },
 
   getDropZone(): HTMLElement | null {
