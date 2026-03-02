@@ -1,21 +1,21 @@
 # Implementation Plan
 
 ## Phase 1: Scaffolding (Sessions 1-2)
-- [ ] Project setup: Vite + CRXJS + TypeScript + Preact
-- [ ] Manifest V3 configuration with host permissions
-- [ ] Build pipeline: dev and production builds work
-- [ ] Extension loads in Chrome without errors
-- [ ] Content script injects into ChatGPT page
-- [ ] Content script injects into Claude page
-- [ ] Content script injects into Gemini page
-- [ ] DOM research documented in docs/DOM-RESEARCH.md
+- [x] Project setup: Vite + CRXJS + TypeScript + Preact
+- [x] Manifest V3 configuration with host permissions
+- [x] Build pipeline: dev and production builds work
+- [x] Extension loads in Chrome without errors
+- [x] Content script injects into ChatGPT page
+- [x] Content script injects into Claude page
+- [x] Content script injects into Gemini page
+- [x] DOM research documented in docs/DOM-RESEARCH.md
 
 ## Phase 2: DOM Observation (Sessions 3-4)
-- [ ] ChatGPT adapter: identify input element, capture text
-- [ ] Claude adapter: identify ProseMirror editor, capture text
-- [ ] Gemini adapter: identify input element, capture text
-- [ ] Submission interception: capture before send on each tool
-- [ ] File upload detection (warn on any file upload)
+- [x] ChatGPT adapter: identify input element, capture text
+- [x] Claude adapter: identify ProseMirror editor, capture text
+- [x] Gemini adapter: identify input element, capture text
+- [x] Submission interception: capture before send on each tool
+- [x] File upload detection (warn on any file upload)
 
 ## Phase 3: Classification Engine (Sessions 5-7)
 - [ ] Email pattern detector + tests
