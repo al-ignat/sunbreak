@@ -2,7 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   attachSubmissionInterceptor,
   attachFileDetector,
+  buildRedactedText,
 } from '../../../src/content/interceptor';
+import type { InterceptCallback } from '../../../src/content/interceptor';
 import type { SiteAdapter } from '../../../src/types';
 
 function createMockAdapter(overrides: Partial<SiteAdapter> = {}): SiteAdapter {
@@ -51,6 +53,13 @@ function createMockContext(): {
   return ctx;
 }
 
+/** Create an InterceptCallback that resolves with the given result */
+function createInterceptCallback(
+  result: 'release' | 'block' | 'redact' = 'release',
+): InterceptCallback & ReturnType<typeof vi.fn> {
+  return vi.fn().mockResolvedValue(result);
+}
+
 describe('attachSubmissionInterceptor', () => {
   let input: HTMLDivElement;
 
@@ -61,26 +70,47 @@ describe('attachSubmissionInterceptor', () => {
     document.body.appendChild(input);
   });
 
-  it('captures text on Enter key', () => {
-    const onCapture = vi.fn();
+  it('calls intercept callback on Enter key', () => {
+    const onIntercept = createInterceptCallback('block');
     const adapter = createMockAdapter({ getText: () => 'sensitive data' });
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onCapture);
+    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
 
     input.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      }),
     );
 
-    expect(onCapture).toHaveBeenCalledWith('sensitive data', 'chatgpt');
+    expect(onIntercept).toHaveBeenCalledWith('sensitive data', 'chatgpt');
+  });
+
+  it('blocks the original event (preventDefault)', () => {
+    const onIntercept = createInterceptCallback('block');
+    const adapter = createMockAdapter({ getText: () => 'text' });
+    const ctx = createMockContext();
+
+    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
+
+    const event = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      bubbles: true,
+      cancelable: true,
+    });
+    input.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
   });
 
   it('ignores Shift+Enter', () => {
-    const onCapture = vi.fn();
+    const onIntercept = createInterceptCallback();
     const adapter = createMockAdapter();
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onCapture);
+    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
 
     input.dispatchEvent(
       new KeyboardEvent('keydown', {
@@ -90,56 +120,63 @@ describe('attachSubmissionInterceptor', () => {
       }),
     );
 
-    expect(onCapture).not.toHaveBeenCalled();
+    expect(onIntercept).not.toHaveBeenCalled();
   });
 
   it('ignores non-Enter keys', () => {
-    const onCapture = vi.fn();
+    const onIntercept = createInterceptCallback();
     const adapter = createMockAdapter();
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onCapture);
+    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
 
     input.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'a', bubbles: true }),
     );
 
-    expect(onCapture).not.toHaveBeenCalled();
+    expect(onIntercept).not.toHaveBeenCalled();
   });
 
   it('ignores empty text', () => {
-    const onCapture = vi.fn();
+    const onIntercept = createInterceptCallback();
     const adapter = createMockAdapter({ getText: () => '' });
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onCapture);
+    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
 
     input.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      }),
     );
 
-    expect(onCapture).not.toHaveBeenCalled();
+    expect(onIntercept).not.toHaveBeenCalled();
   });
 
-  it('does not capture after context invalidation', () => {
-    const onCapture = vi.fn();
+  it('does not call callback after context invalidation', () => {
+    const onIntercept = createInterceptCallback();
     const adapter = createMockAdapter();
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onCapture);
+    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
     ctx.invalidate();
 
     input.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      }),
     );
 
-    expect(onCapture).not.toHaveBeenCalled();
+    expect(onIntercept).not.toHaveBeenCalled();
   });
 
-  it('captures on send button click', () => {
-    const onCapture = vi.fn();
+  it('intercepts on send button click', () => {
+    const onIntercept = createInterceptCallback('block');
     const sendBtn = document.createElement('button');
-    sendBtn.setAttribute('data-testid', 'send-button');
     document.body.appendChild(sendBtn);
 
     const adapter = createMockAdapter({
@@ -148,15 +185,44 @@ describe('attachSubmissionInterceptor', () => {
     });
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onCapture);
+    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
 
-    sendBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    sendBtn.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true }),
+    );
 
-    expect(onCapture).toHaveBeenCalledWith('click capture', 'chatgpt');
+    expect(onIntercept).toHaveBeenCalledWith('click capture', 'chatgpt');
+  });
+
+  it('re-triggers keyboard submit on release result', async () => {
+    const onIntercept = createInterceptCallback('release');
+    const adapter = createMockAdapter({ getText: () => 'text' });
+    const ctx = createMockContext();
+
+    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
+
+    const secondKeydownSpy = vi.fn();
+    // Listen for the re-triggered Enter event (non-capture, so it fires after interceptor)
+    input.addEventListener('keydown', secondKeydownSpy);
+
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    // Wait for the async intercept callback to resolve
+    await vi.waitFor(() => {
+      // The second keydown should have been dispatched by the interceptor
+      // It's the re-triggered Enter event
+      expect(secondKeydownSpy).toHaveBeenCalled();
+    });
   });
 
   it('returns a cleanup function', () => {
-    const onCapture = vi.fn();
+    const onIntercept = createInterceptCallback();
     const adapter = createMockAdapter();
     const ctx = createMockContext();
 
@@ -164,17 +230,69 @@ describe('attachSubmissionInterceptor', () => {
       input,
       adapter,
       ctx,
-      onCapture,
+      onIntercept,
     );
 
     expect(typeof cleanup).toBe('function');
     cleanup();
 
     input.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      }),
     );
 
-    expect(onCapture).not.toHaveBeenCalled();
+    expect(onIntercept).not.toHaveBeenCalled();
+  });
+});
+
+describe('buildRedactedText', () => {
+  it('replaces a single finding with its placeholder', () => {
+    const result = buildRedactedText('Email: john@example.com is here', [
+      { startIndex: 7, endIndex: 23, placeholder: '[EMAIL_1]' },
+    ]);
+    expect(result).toBe('Email: [EMAIL_1] is here');
+  });
+
+  it('replaces multiple findings from right to left', () => {
+    const result = buildRedactedText(
+      'Call 555-1234 or email john@test.com',
+      [
+        { startIndex: 5, endIndex: 13, placeholder: '[PHONE_1]' },
+        { startIndex: 23, endIndex: 36, placeholder: '[EMAIL_1]' },
+      ],
+    );
+    expect(result).toBe('Call [PHONE_1] or email [EMAIL_1]');
+  });
+
+  it('handles findings at the start of text', () => {
+    const result = buildRedactedText('john@example.com is my email', [
+      { startIndex: 0, endIndex: 16, placeholder: '[EMAIL_1]' },
+    ]);
+    expect(result).toBe('[EMAIL_1] is my email');
+  });
+
+  it('handles findings at the end of text', () => {
+    const result = buildRedactedText('My email is john@example.com', [
+      { startIndex: 12, endIndex: 28, placeholder: '[EMAIL_1]' },
+    ]);
+    expect(result).toBe('My email is [EMAIL_1]');
+  });
+
+  it('returns original text when no findings', () => {
+    const result = buildRedactedText('Hello world', []);
+    expect(result).toBe('Hello world');
+  });
+
+  it('handles adjacent findings correctly', () => {
+    // Two findings right next to each other
+    const result = buildRedactedText('AB', [
+      { startIndex: 0, endIndex: 1, placeholder: '[X_1]' },
+      { startIndex: 1, endIndex: 2, placeholder: '[Y_1]' },
+    ]);
+    expect(result).toBe('[X_1][Y_1]');
   });
 });
 
@@ -198,7 +316,6 @@ describe('attachFileDetector', () => {
     fileInput.type = 'file';
     document.body.appendChild(fileInput);
 
-    // Simulate file selection
     const file = new File(['content'], 'secret.pdf', {
       type: 'application/pdf',
     });

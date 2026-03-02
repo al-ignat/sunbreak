@@ -1,9 +1,10 @@
-import type { SiteAdapter, PromptCallback, FileCallback } from '../types';
+import type { SiteAdapter, FileCallback } from '../types';
 import { selectAdapter } from './sites';
 import {
   attachSubmissionInterceptor,
   attachFileDetector,
 } from './interceptor';
+import type { InterceptCallback } from './interceptor';
 
 /** How long to wait for the editor element before giving up (ms) */
 const FIND_TIMEOUT_MS = 10_000;
@@ -107,7 +108,7 @@ function recordAdapterFailure(adapterName: string): void {
  */
 export function startObserving(
   ctx: ObserverContext,
-  onPromptCaptured: PromptCallback,
+  onPromptIntercepted: InterceptCallback,
   onFileDetected: FileCallback,
 ): void {
   const maybeAdapter = selectAdapter(window.location.hostname);
@@ -155,7 +156,7 @@ export function startObserving(
       input,
       adapter,
       interceptorCtx,
-      onPromptCaptured,
+      onPromptIntercepted,
     );
 
     cleanupFileDetector = attachFileDetector(

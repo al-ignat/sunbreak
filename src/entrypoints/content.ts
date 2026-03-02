@@ -1,5 +1,6 @@
 import { startObserving } from '../content/observer';
-import type { SiteName } from '../types';
+import { selectAdapter } from '../content/sites';
+import { createOrchestrator } from '../content/orchestrator';
 
 // Match patterns must stay in sync with host_permissions in wxt.config.ts
 export default defineContentScript({
@@ -11,18 +12,14 @@ export default defineContentScript({
   ],
   runAt: 'document_idle',
   main(ctx) {
-    startObserving(
+    const adapter = selectAdapter(window.location.hostname);
+    if (!adapter) return;
+
+    const { onPromptIntercepted, onFileDetected } = createOrchestrator(
+      adapter,
       ctx,
-      (text: string, adapterName: SiteName) => {
-        console.log(
-          `[BYOAI] Prompt captured on ${adapterName}: ${text.length} chars`,
-        );
-      },
-      (filename: string, adapterName: SiteName) => {
-        console.log(
-          `[BYOAI] File detected on ${adapterName}: ${filename}`,
-        );
-      },
     );
+
+    startObserving(ctx, onPromptIntercepted, onFileDetected);
   },
 });
