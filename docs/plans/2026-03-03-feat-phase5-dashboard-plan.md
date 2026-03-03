@@ -1,7 +1,7 @@
 ---
 title: "feat: Build Phase 5 personal dashboard with stats, settings, and activity log"
 type: feat
-status: active
+status: completed
 date: 2026-03-03
 origin: docs/brainstorms/2026-03-02-secure-byoai-product-brainstorm.md
 ---
@@ -157,71 +157,71 @@ First-install experience when all data is zero:
 
 ### Functional — Storage
 
-- [ ] `DailyStats` includes `byTool: Record<string, number>` field — `src/storage/types.ts`
-- [ ] `ExtensionSettings` type defined — `src/storage/types.ts`
-- [ ] `DetectionSettings` type defined — `src/storage/types.ts`
-- [ ] `logCleanPrompt(tool)` accepts and stores tool parameter — `src/storage/events.ts`
-- [ ] `incrementDailyStat(action, tool)` increments `byTool` counter — `src/storage/events.ts`
-- [ ] Storage wrapper functions: `getWeeklyStats()`, `getFlaggedEvents(filter)`, `getDetectionSettings()`, `setDetectionSettings()`, `getKeywords()`, `addKeyword()`, `removeKeyword()`, `importKeywords()`, `exportKeywords()`, `getExtensionSettings()`, `setExtensionSettings()`, `pruneOldStats()` — `src/storage/dashboard.ts`
-- [ ] Background script initializes default `detectionSettings` (all true), `settings` ({ enabled: true, interventionMode: 'warn' }), and empty `keywords` on install — `src/entrypoints/background.ts`
-- [ ] Background script runs `pruneOldStats(90)` on startup and install — `src/entrypoints/background.ts`
-- [ ] Flagged events capped at 1000 (FIFO) — already implemented, verify preserved
+- [x] `DailyStats` includes `byTool: Record<string, number>` field — `src/storage/types.ts`
+- [x] `ExtensionSettings` type defined — `src/storage/types.ts`
+- [x] `DetectionSettings` type defined — `src/storage/types.ts`
+- [x] `logCleanPrompt(tool)` accepts and stores tool parameter — `src/storage/events.ts`
+- [x] `incrementDailyStat(action, tool)` increments `byTool` counter — `src/storage/events.ts`
+- [x] Storage wrapper functions: `getWeeklyStats()`, `getFlaggedEvents(filter)`, `getDetectionSettings()`, `setDetectionSettings()`, `getKeywords()`, `addKeyword()`, `removeKeyword()`, `importKeywords()`, `exportKeywords()`, `getExtensionSettings()`, `setExtensionSettings()`, `pruneOldStats()` — `src/storage/dashboard.ts`
+- [x] Background script initializes default `detectionSettings` (all true), `settings` ({ enabled: true, interventionMode: 'warn' }), and empty `keywords` on install — `src/entrypoints/background.ts`
+- [x] Background script runs `pruneOldStats(90)` on startup and install — `src/entrypoints/background.ts`
+- [x] Flagged events capped at 1000 (FIFO) — already implemented, verify preserved
 
 ### Functional — Orchestrator Bridge
 
-- [ ] Orchestrator fetches `detectionSettings` on init, listens for changes — `src/content/orchestrator.ts`
-- [ ] Orchestrator converts `DetectionSettings` → `Set<FindingType>` and passes to `classify()` as `enabledDetectors`
-- [ ] Orchestrator fetches `settings` on init, listens for changes
-- [ ] When `settings.enabled === false`, orchestrator returns `'release'` without classifying
-- [ ] When `settings.interventionMode === 'log-only'`, orchestrator classifies and logs but skips overlay
-- [ ] `logCleanPrompt()` calls updated to pass `adapterName` — `src/content/orchestrator.ts:118`
+- [x] Orchestrator fetches `detectionSettings` on init, listens for changes — `src/content/orchestrator.ts`
+- [x] Orchestrator converts `DetectionSettings` → `Set<FindingType>` and passes to `classify()` as `enabledDetectors`
+- [x] Orchestrator fetches `settings` on init, listens for changes
+- [x] When `settings.enabled === false`, orchestrator returns `'release'` without classifying
+- [x] When `settings.interventionMode === 'log-only'`, orchestrator classifies and logs but skips overlay
+- [x] `logCleanPrompt()` calls updated to pass `adapterName` — `src/content/orchestrator.ts:118`
 
 ### Functional — Popup
 
-- [ ] Popup width updated to 400px (from 320px) — `src/entrypoints/popup/index.html`
-- [ ] Header: "Secure BYOAI" + settings gear icon (navigates to dashboard settings tab)
-- [ ] Stats summary: "This week: N AI interactions, N flagged, N redacted. Compliance rate: X%"
-- [ ] Recent activity: last 5 flagged events showing date, tool icon, categories, action taken
-- [ ] Quick settings: ON/OFF toggle per detection category, writes to `detectionSettings`
-- [ ] "View full dashboard" link opens dashboard page in new tab
-- [ ] Empty state shown on first install (no data yet)
-- [ ] Reads storage once on mount (no live updates needed)
+- [x] Popup width updated to 400px (from 320px) — `src/entrypoints/popup/index.html`
+- [x] Header: "Secure BYOAI" + settings gear icon (navigates to dashboard settings tab)
+- [x] Stats summary: "This week: N AI interactions, N flagged, N redacted. Compliance rate: X%"
+- [x] Recent activity: last 5 flagged events showing date, tool icon, categories, action taken
+- [x] Quick settings: ON/OFF toggle per detection category, writes to `detectionSettings`
+- [x] "View full dashboard" link opens dashboard page in new tab
+- [x] Empty state shown on first install (no data yet)
+- [x] Reads storage once on mount (no live updates needed)
 
 ### Functional — Dashboard
 
-- [ ] New WXT entrypoint: `src/entrypoints/dashboard/` — `index.html`, `main.tsx`, `App.tsx`
-- [ ] Horizontal tab navigation: Overview | Activity Log | Settings | Keywords | Report Cards
-- [ ] **Overview tab:** Hand-rolled SVG bar charts, toggle between "Last 7 Days" / "Last 30 Days", stacked bars (flagged vs. clean), per-tool breakdown
-- [ ] **Activity Log tab:** Scrollable table of flagged events, columns: Date/time, Tool, Categories, Action. Filter by preset date range (7d / 30d / All) and by tool (dropdown)
-- [ ] **Settings tab:** ON/OFF toggle per detection category with description. Extension enabled/disabled toggle. Intervention mode toggle (warn / log-only)
-- [ ] **Keywords tab:** Add keyword input + button, keyword list with delete buttons, import from .txt file (union merge, skip duplicates), export as .txt file (blob URL download). Max 500 keywords, max 100 chars each. Validation: reject empty, reject duplicates
-- [ ] **Report Cards tab:** Static curated content for ChatGPT, Claude, Gemini — data retention, training usage, privacy modes. Note: "Information current as of [date]. Check provider websites for latest policies."
-- [ ] Dashboard listens to `chrome.storage.onChanged` for live updates
-- [ ] Empty states for all sections
+- [x] New WXT entrypoint: `src/entrypoints/dashboard/` — `index.html`, `main.tsx`, `App.tsx`
+- [x] Horizontal tab navigation: Overview | Activity Log | Settings | Keywords | Report Cards
+- [x] **Overview tab:** Hand-rolled SVG bar charts, toggle between "Last 7 Days" / "Last 30 Days", stacked bars (flagged vs. clean), per-tool breakdown
+- [x] **Activity Log tab:** Scrollable table of flagged events, columns: Date/time, Tool, Categories, Action. Filter by preset date range (7d / 30d / All) and by tool (dropdown)
+- [x] **Settings tab:** ON/OFF toggle per detection category with description. Extension enabled/disabled toggle. Intervention mode toggle (warn / log-only)
+- [x] **Keywords tab:** Add keyword input + button, keyword list with delete buttons, import from .txt file (union merge, skip duplicates), export as .txt file (blob URL download). Max 500 keywords, max 100 chars each. Validation: reject empty, reject duplicates
+- [x] **Report Cards tab:** Static curated content for ChatGPT, Claude, Gemini — data retention, training usage, privacy modes. Note: "Information current as of [date]. Check provider websites for latest policies."
+- [x] Dashboard listens to `chrome.storage.onChanged` for live updates
+- [x] Empty states for all sections
 
 ### Non-Functional
 
-- [ ] All `chrome.storage` calls go through `src/storage/` — no direct calls in UI components
-- [ ] No `any` types. No `require()`. Named exports only (except Preact default exports)
-- [ ] Zero network requests from dashboard/popup (verify with DevTools)
-- [ ] Popup renders within 100ms of opening
-- [ ] Dashboard tab loads within 200ms
-- [ ] SVG charts render without jank
-- [ ] WCAG AA: keyboard navigable, focus indicators, sufficient contrast, screen-reader-friendly chart alternatives (visually hidden data table alongside SVG)
+- [x] All `chrome.storage` calls go through `src/storage/` — no direct calls in UI components
+- [x] No `any` types. No `require()`. Named exports only (except Preact default exports)
+- [x] Zero network requests from dashboard/popup (verify with DevTools)
+- [x] Popup renders within 100ms of opening
+- [x] Dashboard tab loads within 200ms
+- [x] SVG charts render without jank
+- [x] WCAG AA: keyboard navigable, focus indicators, sufficient contrast, screen-reader-friendly chart alternatives (visually hidden data table alongside SVG)
 
 ### Testing
 
-- [ ] Unit tests for all new storage wrapper functions — `tests/unit/storage/dashboard.test.ts`
-- [ ] Unit tests for `pruneOldStats` — handles empty stats, prunes correctly, preserves recent
-- [ ] Unit tests for updated `incrementDailyStat` — verifies `byTool` field is populated
-- [ ] Unit tests for `logCleanPrompt(tool)` — verifies tool parameter flows through
-- [ ] Unit tests for popup component — renders stats, toggles fire, empty state shown
-- [ ] Unit tests for dashboard tabs — each tab renders, navigation works
-- [ ] Unit tests for SVG chart component — renders bars from data, handles empty data
-- [ ] Unit tests for activity log — filters work, renders events correctly
-- [ ] Unit tests for keyword CRUD — add, remove, import (dedup), export, validation
-- [ ] Unit tests for orchestrator bridge — detectionSettings toggle disables detectors, enabled toggle skips classification, log-only mode skips overlay
-- [ ] Existing Phase 3 and Phase 4 test suites still pass (no regressions)
+- [x] Unit tests for all new storage wrapper functions — `tests/unit/storage/dashboard.test.ts`
+- [x] Unit tests for `pruneOldStats` — handles empty stats, prunes correctly, preserves recent
+- [x] Unit tests for updated `incrementDailyStat` — verifies `byTool` field is populated
+- [x] Unit tests for `logCleanPrompt(tool)` — verifies tool parameter flows through
+- [x] Unit tests for popup component — renders stats, toggles fire, empty state shown
+- [x] Unit tests for dashboard tabs — each tab renders, navigation works
+- [x] Unit tests for SVG chart component — renders bars from data, handles empty data
+- [x] Unit tests for activity log — filters work, renders events correctly
+- [x] Unit tests for keyword CRUD — add, remove, import (dedup), export, validation
+- [x] Unit tests for orchestrator bridge — detectionSettings toggle disables detectors, enabled toggle skips classification, log-only mode skips overlay
+- [x] Existing Phase 3 and Phase 4 test suites still pass (no regressions)
 
 ## File Structure
 

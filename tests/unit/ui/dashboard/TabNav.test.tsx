@@ -35,7 +35,7 @@ describe('TabNav', () => {
     const keywordsTab = Array.from(buttons).find(
       (b) => b.textContent === 'Keywords',
     );
-    fireEvent.click(keywordsTab!);
+    fireEvent.click(keywordsTab as HTMLButtonElement);
     expect(onTabChange).toHaveBeenCalledWith('keywords');
   });
 });

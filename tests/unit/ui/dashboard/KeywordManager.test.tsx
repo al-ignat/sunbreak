@@ -61,7 +61,7 @@ describe('KeywordManager', () => {
     fireEvent.input(input, { target: { value: 'new-keyword' } });
 
     const addButton = container.querySelector('button');
-    fireEvent.click(addButton!);
+    fireEvent.click(addButton as HTMLButtonElement);
 
     await vi.waitFor(() => {
       expect(addKeyword).toHaveBeenCalledWith('new-keyword');
@@ -82,7 +82,7 @@ describe('KeywordManager', () => {
 
     const buttons = container.querySelectorAll('button');
     const addBtn = Array.from(buttons).find((b) => b.textContent === 'Add');
-    fireEvent.click(addBtn!);
+    fireEvent.click(addBtn as HTMLButtonElement);
 
     await vi.waitFor(() => {
       expect(container.textContent).toContain('Keyword already exists');
@@ -115,7 +115,7 @@ describe('KeywordManager', () => {
     const removeBtn = container.querySelector(
       'button[aria-label="Remove keyword alpha"]',
     );
-    fireEvent.click(removeBtn!);
+    fireEvent.click(removeBtn as HTMLButtonElement);
 
     await vi.waitFor(() => {
       expect(removeKeyword).toHaveBeenCalledWith('alpha');

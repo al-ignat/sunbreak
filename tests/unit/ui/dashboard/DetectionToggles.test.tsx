@@ -51,7 +51,7 @@ describe('DetectionToggles', () => {
     expect(checkboxes.length).toBe(DETECTION_CATEGORIES.length);
 
     // Toggle the first one off
-    fireEvent.click(checkboxes[0]!);
+    fireEvent.click(checkboxes[0] as HTMLInputElement);
     expect(onToggle).toHaveBeenCalledWith('email', false);
   });
 
