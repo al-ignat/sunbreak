@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import type { AggregatedStats } from '../../storage/types';
+import { toolLabel } from '../format';
 
 export interface StatsCardProps {
   readonly stats: AggregatedStats;
@@ -42,15 +43,6 @@ export function StatsCard({ stats, periodLabel }: StatsCardProps): JSX.Element {
       )}
     </div>
   );
-}
-
-function toolLabel(tool: string): string {
-  switch (tool) {
-    case 'chatgpt': return 'ChatGPT';
-    case 'claude': return 'Claude';
-    case 'gemini': return 'Gemini';
-    default: return tool;
-  }
 }
 
 const cardStyle: JSX.CSSProperties = {

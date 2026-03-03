@@ -62,12 +62,50 @@ export default function App(): JSX.Element {
     }
   }, []);
 
+  const refreshStats = useCallback(async (): Promise<void> => {
+    try {
+      const [s7, s30] = await Promise.all([getWeeklyStats(7), getWeeklyStats(30)]);
+      setStats7(s7);
+      setStats30(s30);
+    } catch { /* ignore */ }
+  }, []);
+
+  const refreshEvents = useCallback(async (): Promise<void> => {
+    try {
+      setEvents(await getFlaggedEvents());
+    } catch { /* ignore */ }
+  }, []);
+
+  const refreshSettings = useCallback(async (): Promise<void> => {
+    try {
+      const [ds, es] = await Promise.all([getDetectionSettings(), getExtensionSettings()]);
+      setDetectionSettingsLocal(ds);
+      setExtensionSettingsLocal(es);
+    } catch { /* ignore */ }
+  }, []);
+
+  const refreshKeywords = useCallback(async (): Promise<void> => {
+    try {
+      setKeywordsLocal(await getKeywords());
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     void loadData();
 
-    // Listen for live storage updates
-    const listener = (): void => {
-      void loadData();
+    // Selectively refresh only the data that changed
+    const listener = (changes: Record<string, chrome.storage.StorageChange>): void => {
+      const keys = Object.keys(changes);
+      if (keys.includes('dailyStats') || keys.includes('flaggedEvents')) {
+        void refreshStats();
+        void refreshEvents();
+      }
+      if (keys.includes('detectionSettings') || keys.includes('settings')) {
+        void refreshSettings();
+      }
+      if (keys.includes('keywords')) {
+        void refreshKeywords();
+      }
     };
 
     if (chrome.storage?.onChanged) {
@@ -79,7 +117,7 @@ export default function App(): JSX.Element {
         chrome.storage.onChanged.removeListener(listener);
       }
     };
-  }, [loadData]);
+  }, [loadData, refreshStats, refreshEvents, refreshSettings, refreshKeywords]);
 
   function handleTabChange(tab: TabId): void {
     setActiveTab(tab);

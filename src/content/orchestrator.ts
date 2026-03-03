@@ -1,5 +1,5 @@
 import type { SiteAdapter, SiteName, FileCallback } from '../types';
-import type { Finding, FindingType } from '../classifier/types';
+import type { Finding } from '../classifier/types';
 import { classify } from '../classifier/engine';
 import { createOverlayController } from '../ui/overlay/overlay-controller';
 import type { OverlayContext } from '../ui/overlay/overlay-controller';
@@ -16,6 +16,12 @@ import {
   DEFAULT_DETECTION_SETTINGS,
   DEFAULT_EXTENSION_SETTINGS,
 } from '../storage/types';
+import {
+  getDetectionSettings,
+  getExtensionSettings,
+  getKeywords,
+  toEnabledDetectors,
+} from '../storage/dashboard';
 
 /**
  * Context for the orchestrator.
@@ -51,19 +57,6 @@ function toOverlayFindings(
 /** Get unique finding type categories from findings */
 function getCategories(findings: ReadonlyArray<Finding>): string[] {
   return [...new Set(findings.map((f) => f.type))];
-}
-
-/** Convert DetectionSettings to a Set of enabled FindingTypes */
-function toEnabledDetectors(
-  settings: DetectionSettings,
-): Set<FindingType> {
-  const enabled = new Set<FindingType>();
-  for (const [type, on] of Object.entries(settings)) {
-    if (on) {
-      enabled.add(type as FindingType);
-    }
-  }
-  return enabled;
 }
 
 /**
@@ -104,9 +97,7 @@ export function createOrchestrator(
   };
 
   // Fetch all cached settings initially
-  void fetchKeywords();
-  void fetchDetectionSettings();
-  void fetchExtensionSettings();
+  void fetchAllSettings();
 
   // Listen for storage changes
   if (chrome.storage?.onChanged) {
@@ -132,35 +123,19 @@ export function createOrchestrator(
     );
   }
 
-  async function fetchKeywords(): Promise<void> {
+  async function fetchAllSettings(): Promise<void> {
     try {
-      const data = await chrome.storage.local.get('keywords');
-      cachedKeywords = (data['keywords'] as string[] | undefined) ?? [];
+      const [kw, ds, es] = await Promise.all([
+        getKeywords(),
+        getDetectionSettings(),
+        getExtensionSettings(),
+      ]);
+      cachedKeywords = [...kw];
+      cachedDetectionSettings = ds;
+      cachedExtensionSettings = es;
     } catch {
       cachedKeywords = [];
-    }
-  }
-
-  async function fetchDetectionSettings(): Promise<void> {
-    try {
-      const data = await chrome.storage.local.get('detectionSettings');
-      cachedDetectionSettings =
-        (data['detectionSettings'] as DetectionSettings | undefined) ?? {
-          ...DEFAULT_DETECTION_SETTINGS,
-        };
-    } catch {
       cachedDetectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
-    }
-  }
-
-  async function fetchExtensionSettings(): Promise<void> {
-    try {
-      const data = await chrome.storage.local.get('settings');
-      cachedExtensionSettings =
-        (data['settings'] as ExtensionSettings | undefined) ?? {
-          ...DEFAULT_EXTENSION_SETTINGS,
-        };
-    } catch {
       cachedExtensionSettings = { ...DEFAULT_EXTENSION_SETTINGS };
     }
   }

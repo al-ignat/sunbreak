@@ -6,6 +6,7 @@ import type { FindingType } from '../../classifier/types';
 import { getWeeklyStats, getFlaggedEvents, getDetectionSettings, setDetectionSettings } from '../../storage/dashboard';
 import { StatsCard } from '../../ui/dashboard/StatsCard';
 import { DetectionToggles } from '../../ui/dashboard/DetectionToggles';
+import { toolLabel, toolColor, actionLabel, actionColor } from '../../ui/format';
 
 export default function App(): JSX.Element {
   const [stats, setStats] = useState<AggregatedStats | null>(null);
@@ -122,44 +123,6 @@ function formatDate(iso: string): string {
   const month = d.getMonth() + 1;
   const day = d.getDate();
   return `${month}/${day}`;
-}
-
-function toolLabel(tool: string): string {
-  switch (tool) {
-    case 'chatgpt': return 'ChatGPT';
-    case 'claude': return 'Claude';
-    case 'gemini': return 'Gemini';
-    default: return tool;
-  }
-}
-
-function toolColor(tool: string): string {
-  switch (tool) {
-    case 'chatgpt': return '#10A37F';
-    case 'claude': return '#D97706';
-    case 'gemini': return '#4285F4';
-    default: return '#555';
-  }
-}
-
-function actionLabel(action: string): string {
-  switch (action) {
-    case 'redacted': return 'Redacted';
-    case 'sent-anyway': return 'Sent';
-    case 'cancelled': return 'Cancelled';
-    case 'edited': return 'Edited';
-    default: return action;
-  }
-}
-
-function actionColor(action: string): string {
-  switch (action) {
-    case 'redacted': return '#2E7D32';
-    case 'sent-anyway': return '#E65100';
-    case 'cancelled': return '#888';
-    case 'edited': return '#1565C0';
-    default: return '#555';
-  }
 }
 
 const containerStyle: JSX.CSSProperties = {

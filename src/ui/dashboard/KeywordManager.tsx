@@ -6,6 +6,7 @@ import {
   importKeywords,
   exportKeywords,
 } from '../../storage/dashboard';
+import { sectionStyle, sectionHeaderStyle } from './styles';
 
 export interface KeywordManagerProps {
   readonly keywords: ReadonlyArray<string>;
@@ -47,6 +48,13 @@ export function KeywordManager({
   async function handleImport(): Promise<void> {
     const file = fileInputRef.current?.files?.[0];
     if (!file) return;
+
+    // Guard against accidentally importing huge files
+    const MAX_IMPORT_SIZE = 512_000; // 512 KB
+    if (file.size > MAX_IMPORT_SIZE) {
+      setImportStatus('File too large. Maximum 512 KB.');
+      return;
+    }
 
     try {
       const text = await file.text();
@@ -175,20 +183,6 @@ export function KeywordManager({
     </div>
   );
 }
-
-const sectionStyle: JSX.CSSProperties = {
-  background: 'white',
-  borderRadius: '8px',
-  border: '1px solid #E0E0E0',
-  padding: '20px',
-};
-
-const sectionHeaderStyle: JSX.CSSProperties = {
-  fontSize: '14px',
-  fontWeight: 600,
-  color: '#333',
-  margin: '0 0 12px',
-};
 
 const inputStyle: JSX.CSSProperties = {
   flex: 1,

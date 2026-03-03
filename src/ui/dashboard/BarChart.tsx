@@ -2,6 +2,8 @@ import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
 import type { AggregatedStats } from '../../storage/types';
 import { StatsCard } from './StatsCard';
+import { ToggleButton } from './ToggleButton';
+import { emptyStateStyle } from './styles';
 
 export interface BarChartProps {
   readonly stats7: AggregatedStats | null;
@@ -28,12 +30,12 @@ export function BarChart({ stats7, stats30 }: BarChartProps): JSX.Element {
 
       {/* Period Toggle */}
       <div style={{ display: 'flex', gap: '8px', margin: '16px 0' }}>
-        <PeriodButton active={period === '7d'} onClick={(): void => setPeriod('7d')}>
+        <ToggleButton active={period === '7d'} onClick={(): void => setPeriod('7d')}>
           Last 7 Days
-        </PeriodButton>
-        <PeriodButton active={period === '30d'} onClick={(): void => setPeriod('30d')}>
+        </ToggleButton>
+        <ToggleButton active={period === '30d'} onClick={(): void => setPeriod('30d')}>
           Last 30 Days
-        </PeriodButton>
+        </ToggleButton>
       </div>
 
       {/* Chart */}
@@ -191,38 +193,3 @@ function InteractionChart({ breakdown }: InteractionChartProps): JSX.Element {
   );
 }
 
-interface PeriodButtonProps {
-  readonly active: boolean;
-  readonly onClick: () => void;
-  readonly children: string;
-}
-
-function PeriodButton({ active, onClick, children }: PeriodButtonProps): JSX.Element {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '6px 14px',
-        fontSize: '12px',
-        fontWeight: active ? 600 : 400,
-        background: active ? '#FF9800' : 'white',
-        color: active ? 'white' : '#666',
-        border: `1px solid ${active ? '#FF9800' : '#DDD'}`,
-        borderRadius: '4px',
-        cursor: 'pointer',
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-const emptyStateStyle: JSX.CSSProperties = {
-  textAlign: 'center',
-  padding: '40px 20px',
-  color: '#888',
-  fontSize: '14px',
-  background: 'white',
-  borderRadius: '8px',
-  border: '1px solid #E0E0E0',
-};

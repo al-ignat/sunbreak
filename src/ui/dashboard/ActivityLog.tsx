@@ -1,6 +1,9 @@
 import type { JSX } from 'preact';
 import { useState, useMemo } from 'preact/hooks';
 import type { FlaggedEvent } from '../../storage/types';
+import { toolLabel, toolColor, actionLabel, actionColor } from '../format';
+import { ToggleButton } from './ToggleButton';
+import { emptyStateStyle } from './styles';
 
 export interface ActivityLogProps {
   readonly events: ReadonlyArray<FlaggedEvent>;
@@ -43,15 +46,15 @@ export function ActivityLog({ events }: ActivityLogProps): JSX.Element {
       {/* Filters */}
       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: '4px' }}>
-          <FilterButton active={datePreset === '7d'} onClick={(): void => setDatePreset('7d')}>
+          <ToggleButton active={datePreset === '7d'} onClick={(): void => setDatePreset('7d')}>
             Last 7 days
-          </FilterButton>
-          <FilterButton active={datePreset === '30d'} onClick={(): void => setDatePreset('30d')}>
+          </ToggleButton>
+          <ToggleButton active={datePreset === '30d'} onClick={(): void => setDatePreset('30d')}>
             Last 30 days
-          </FilterButton>
-          <FilterButton active={datePreset === 'all'} onClick={(): void => setDatePreset('all')}>
+          </ToggleButton>
+          <ToggleButton active={datePreset === 'all'} onClick={(): void => setDatePreset('all')}>
             All time
-          </FilterButton>
+          </ToggleButton>
         </div>
 
         <select
@@ -132,69 +135,7 @@ function formatDateTime(iso: string): string {
   });
 }
 
-function toolLabel(tool: string): string {
-  switch (tool) {
-    case 'chatgpt': return 'ChatGPT';
-    case 'claude': return 'Claude';
-    case 'gemini': return 'Gemini';
-    default: return tool;
-  }
-}
 
-function toolColor(tool: string): string {
-  switch (tool) {
-    case 'chatgpt': return '#10A37F';
-    case 'claude': return '#D97706';
-    case 'gemini': return '#4285F4';
-    default: return '#555';
-  }
-}
-
-function actionLabel(action: string): string {
-  switch (action) {
-    case 'redacted': return 'Redacted';
-    case 'sent-anyway': return 'Sent Anyway';
-    case 'cancelled': return 'Cancelled';
-    case 'edited': return 'Edited';
-    default: return action;
-  }
-}
-
-function actionColor(action: string): string {
-  switch (action) {
-    case 'redacted': return '#2E7D32';
-    case 'sent-anyway': return '#E65100';
-    case 'cancelled': return '#888';
-    case 'edited': return '#1565C0';
-    default: return '#555';
-  }
-}
-
-interface FilterButtonProps {
-  readonly active: boolean;
-  readonly onClick: () => void;
-  readonly children: string;
-}
-
-function FilterButton({ active, onClick, children }: FilterButtonProps): JSX.Element {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '5px 10px',
-        fontSize: '12px',
-        fontWeight: active ? 600 : 400,
-        background: active ? '#FF9800' : 'white',
-        color: active ? 'white' : '#666',
-        border: `1px solid ${active ? '#FF9800' : '#DDD'}`,
-        borderRadius: '4px',
-        cursor: 'pointer',
-      }}
-    >
-      {children}
-    </button>
-  );
-}
 
 const thStyle: JSX.CSSProperties = {
   padding: '10px 12px',
@@ -230,12 +171,3 @@ const categoryBadgeStyle: JSX.CSSProperties = {
   borderRadius: '3px',
 };
 
-const emptyStateStyle: JSX.CSSProperties = {
-  textAlign: 'center',
-  padding: '40px 20px',
-  color: '#888',
-  fontSize: '14px',
-  background: 'white',
-  borderRadius: '8px',
-  border: '1px solid #E0E0E0',
-};

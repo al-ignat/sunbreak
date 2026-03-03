@@ -260,6 +260,20 @@ export async function exportKeywords(): Promise<string> {
   return keywords.join('\n');
 }
 
+/** Clear all flagged events from storage */
+export async function clearFlaggedEvents(): Promise<void> {
+  await chrome.storage.local.set({ flaggedEvents: [] });
+}
+
+/** Reset all settings and keywords to defaults */
+export async function resetToDefaults(): Promise<void> {
+  await chrome.storage.local.set({
+    detectionSettings: DEFAULT_DETECTION_SETTINGS,
+    settings: DEFAULT_EXTENSION_SETTINGS,
+    keywords: [],
+  });
+}
+
 /**
  * Prune daily stats older than maxAgeDays.
  * Returns the number of entries pruned.

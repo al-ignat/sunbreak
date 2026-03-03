@@ -3,6 +3,7 @@ import type { DetectionSettings, ExtensionSettings } from '../../storage/types';
 import type { FindingType } from '../../classifier/types';
 import { setDetectionSettings, setExtensionSettings } from '../../storage/dashboard';
 import { DetectionToggles } from './DetectionToggles';
+import { sectionStyle, sectionHeaderStyle } from './styles';
 
 export interface SettingsPanelProps {
   readonly detectionSettings: DetectionSettings;
@@ -15,19 +16,24 @@ export function SettingsPanel({
   extensionSettings,
   onDataChange,
 }: SettingsPanelProps): JSX.Element {
-  function handleDetectionToggle(type: FindingType, enabled: boolean): void {
+  async function handleDetectionToggle(type: FindingType, enabled: boolean): Promise<void> {
     const updated = { ...detectionSettings, [type]: enabled };
-    void setDetectionSettings(updated).then(onDataChange);
+    await setDetectionSettings(updated);
+    await onDataChange();
   }
 
-  function handleEnabledToggle(e: Event): void {
+  async function handleEnabledToggle(e: Event): Promise<void> {
     const enabled = (e.target as HTMLInputElement).checked;
-    void setExtensionSettings({ enabled }).then(onDataChange);
+    await setExtensionSettings({ enabled });
+    await onDataChange();
   }
 
-  function handleModeChange(e: Event): void {
-    const mode = (e.target as HTMLSelectElement).value as ExtensionSettings['interventionMode'];
-    void setExtensionSettings({ interventionMode: mode }).then(onDataChange);
+  async function handleModeChange(e: Event): Promise<void> {
+    const value = (e.target as HTMLSelectElement).value;
+    const mode: ExtensionSettings['interventionMode'] =
+      value === 'log-only' ? 'log-only' : 'warn';
+    await setExtensionSettings({ interventionMode: mode });
+    await onDataChange();
   }
 
   return (
@@ -95,16 +101,3 @@ export function SettingsPanel({
   );
 }
 
-const sectionStyle: JSX.CSSProperties = {
-  background: 'white',
-  borderRadius: '8px',
-  border: '1px solid #E0E0E0',
-  padding: '20px',
-};
-
-const sectionHeaderStyle: JSX.CSSProperties = {
-  fontSize: '14px',
-  fontWeight: 600,
-  color: '#333',
-  margin: '0 0 12px',
-};
