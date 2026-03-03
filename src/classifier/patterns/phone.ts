@@ -33,12 +33,16 @@ export function detectPhones(text: string): Finding[] {
     const startIndex = match.index;
     const digits = countDigits(value);
 
-    // Require at least 7 digits to be considered a phone number
-    if (digits < 7) continue;
+    // Require 7-12 digits to be a phone number.
+    // Fewer than 7 is too short; more than 12 is likely a credit card.
+    if (digits < 7 || digits > 12) continue;
 
     // Skip if it looks like a date (YYYY-MM-DD or DD-MM-YYYY pattern)
     if (/^\d{4}-\d{2}-\d{2}$/.test(value.trim())) continue;
     if (/^\d{2}-\d{2}-\d{4}$/.test(value.trim())) continue;
+
+    // Skip if it looks like a US SSN (XXX-XX-XXXX)
+    if (/^\d{3}-\d{2}-\d{4}$/.test(value.trim())) continue;
 
     findings.push({
       type: 'phone',

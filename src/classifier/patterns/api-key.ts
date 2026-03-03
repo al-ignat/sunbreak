@@ -19,12 +19,12 @@ const PROVIDER_PATTERNS: readonly KeyPattern[] = [
     confidence: 'HIGH',
   },
   {
-    pattern: /sk_live_[A-Za-z0-9]{24,}/g,
+    pattern: /[sr]k_(?:live|test)_[A-Za-z0-9]{24,}/g,
     label: 'Stripe Secret Key',
     confidence: 'HIGH',
   },
   {
-    pattern: /pk_live_[A-Za-z0-9]{24,}/g,
+    pattern: /pk_(?:live|test)_[A-Za-z0-9]{24,}/g,
     label: 'Stripe Publishable Key',
     confidence: 'HIGH',
   },

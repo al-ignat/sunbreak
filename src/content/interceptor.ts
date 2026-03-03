@@ -53,10 +53,30 @@ export function attachSubmissionInterceptor(
   // and should pass through without interception
   let bypassNext = false;
 
+  /** Look up the current input element, surviving SPA navigations */
+  function currentInput(): HTMLElement | null {
+    // Prefer the original reference if still connected
+    if (input.isConnected) return input;
+    // Otherwise query the DOM for the current editor
+    return adapter.findInput();
+  }
+
   const handleKeydown = (e: KeyboardEvent): void => {
     if (ctx.isInvalid) return;
     if (e.key !== 'Enter') return;
     if (e.shiftKey || e.isComposing) return;
+
+    const el = currentInput();
+    if (!el) return;
+
+    // Only intercept if the keypress is related to the prompt input.
+    // Check both activeElement (reliable in browsers) and e.target (reliable in tests)
+    const focused = document.activeElement;
+    const target = e.target as HTMLElement | null;
+    const isFromInput =
+      (focused != null && el.contains(focused)) ||
+      (target != null && el.contains(target));
+    if (!isFromInput) return;
 
     // Let re-triggered events pass through
     if (bypassNext) {
@@ -64,7 +84,7 @@ export function attachSubmissionInterceptor(
       return;
     }
 
-    const text = adapter.getText(input);
+    const text = adapter.getText(el);
     if (text.length === 0) return;
 
     // Block the original submission
@@ -75,7 +95,7 @@ export function attachSubmissionInterceptor(
     void onIntercept(text, adapter.name).then((result) => {
       if (ctx.isInvalid) return;
       if (result === 'release' || result === 'redact') {
-        triggerKeyboardSubmit(input);
+        triggerKeyboardSubmit(el);
       }
       // 'block' means overlay is showing — do nothing
     });
@@ -97,7 +117,10 @@ export function attachSubmissionInterceptor(
     if (!sendButton) return;
     if (!sendButton.contains(target) && sendButton !== target) return;
 
-    const text = adapter.getText(input);
+    const el = currentInput();
+    if (!el) return;
+
+    const text = adapter.getText(el);
     if (text.length === 0) return;
 
     // Block the original submission
@@ -139,14 +162,28 @@ export function attachSubmissionInterceptor(
     }
   }
 
-  // Capture phase to fire before the site's own handlers
-  ctx.addEventListener(input, 'keydown', handleKeydown, true);
-  ctx.addEventListener(document, 'click', handleClick, true);
+  // Use direct addEventListener (not ctx.addEventListener) on window/document
+  // so that cleanup actually removes the exact handler reference.
+  // ctx.addEventListener wraps the handler, causing removeEventListener to
+  // fail silently — stale listeners pile up on re-attachment.
+  //
+  // window capture fires before document capture in the event chain,
+  // ensuring we intercept before any framework handler (React, ProseMirror).
+  const keydownListener = handleKeydown as EventListener;
+  const clickListener = handleClick as EventListener;
 
-  return (): void => {
-    input.removeEventListener('keydown', handleKeydown, true);
-    document.removeEventListener('click', handleClick, true);
+  window.addEventListener('keydown', keydownListener, true);
+  window.addEventListener('click', clickListener, true);
+
+  const cleanup = (): void => {
+    window.removeEventListener('keydown', keydownListener, true);
+    window.removeEventListener('click', clickListener, true);
   };
+
+  // Also remove on context invalidation (extension reload)
+  ctx.onInvalidated(cleanup);
+
+  return cleanup;
 }
 
 /**
