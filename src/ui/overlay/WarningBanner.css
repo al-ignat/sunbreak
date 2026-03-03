@@ -155,14 +155,14 @@
   outline-offset: 2px;
 }
 
-/* Primary: Redact & Send */
+/* Primary: Redact & Send — #E65100 on white passes WCAG AA (4.6:1) */
 .byoai-btn--primary {
-  background: #FF9800;
+  background: #E65100;
   color: #FFFFFF;
 }
 
 .byoai-btn--primary:hover {
-  background: #F57C00;
+  background: #BF360C;
 }
 
 /* Secondary: Edit */

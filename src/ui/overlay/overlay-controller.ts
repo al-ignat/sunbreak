@@ -297,12 +297,12 @@ function getOverlayStyles(): string {
 }
 
 .byoai-btn--primary {
-  background: #FF9800;
+  background: #E65100;
   color: #FFFFFF;
 }
 
 .byoai-btn--primary:hover {
-  background: #F57C00;
+  background: #BF360C;
 }
 
 .byoai-btn--secondary {
