@@ -3,6 +3,7 @@
 globalThis.chrome = {
   runtime: {
     onInstalled: { addListener: (): void => {} },
+    onStartup: { addListener: (): void => {} },
     getURL: (path: string): string => `chrome-extension://test-id/${path}`,
   },
   storage: {
@@ -10,5 +11,13 @@ globalThis.chrome = {
       get: (): Promise<Record<string, unknown>> => Promise.resolve({}),
       set: (): Promise<void> => Promise.resolve(),
     },
+    onChanged: {
+      addListener: (): void => {},
+      removeListener: (): void => {},
+    },
+  },
+  tabs: {
+    create: (): Promise<chrome.tabs.Tab> =>
+      Promise.resolve({} as chrome.tabs.Tab),
   },
 } as unknown as typeof chrome;
