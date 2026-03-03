@@ -1,5 +1,5 @@
 import type { SiteAdapter, SiteName, FileCallback } from '../types';
-import type { Finding } from '../classifier/types';
+import type { Finding, FindingType } from '../classifier/types';
 import { classify } from '../classifier/engine';
 import { createOverlayController } from '../ui/overlay/overlay-controller';
 import type { OverlayContext } from '../ui/overlay/overlay-controller';
@@ -7,7 +7,15 @@ import type { OverlayFinding } from '../ui/overlay/types';
 import { buildRedactedText } from './interceptor';
 import type { InterceptResult } from './interceptor';
 import { logFlaggedEvent, logCleanPrompt } from '../storage/events';
-import type { FlaggedEvent } from '../storage/types';
+import type {
+  FlaggedEvent,
+  DetectionSettings,
+  ExtensionSettings,
+} from '../storage/types';
+import {
+  DEFAULT_DETECTION_SETTINGS,
+  DEFAULT_EXTENSION_SETTINGS,
+} from '../storage/types';
 
 /**
  * Context for the orchestrator.
@@ -45,6 +53,19 @@ function getCategories(findings: ReadonlyArray<Finding>): string[] {
   return [...new Set(findings.map((f) => f.type))];
 }
 
+/** Convert DetectionSettings to a Set of enabled FindingTypes */
+function toEnabledDetectors(
+  settings: DetectionSettings,
+): Set<FindingType> {
+  const enabled = new Set<FindingType>();
+  for (const [type, on] of Object.entries(settings)) {
+    if (on) {
+      enabled.add(type as FindingType);
+    }
+  }
+  return enabled;
+}
+
 /**
  * Create the full interception orchestrator.
  *
@@ -73,17 +94,39 @@ export function createOrchestrator(
 
   // Cache keywords from chrome.storage.local
   let cachedKeywords: string[] = [];
+  // Cache detection settings
+  let cachedDetectionSettings: DetectionSettings = {
+    ...DEFAULT_DETECTION_SETTINGS,
+  };
+  // Cache extension settings
+  let cachedExtensionSettings: ExtensionSettings = {
+    ...DEFAULT_EXTENSION_SETTINGS,
+  };
 
-  // Fetch keywords initially
+  // Fetch all cached settings initially
   void fetchKeywords();
+  void fetchDetectionSettings();
+  void fetchExtensionSettings();
 
-  // Listen for keyword changes
+  // Listen for storage changes
   if (chrome.storage?.onChanged) {
     chrome.storage.onChanged.addListener(
       (changes: Record<string, chrome.storage.StorageChange>) => {
         if (changes['keywords']) {
           cachedKeywords =
             (changes['keywords'].newValue as string[] | undefined) ?? [];
+        }
+        if (changes['detectionSettings']) {
+          cachedDetectionSettings =
+            (changes['detectionSettings'].newValue as
+              | DetectionSettings
+              | undefined) ?? { ...DEFAULT_DETECTION_SETTINGS };
+        }
+        if (changes['settings']) {
+          cachedExtensionSettings =
+            (changes['settings'].newValue as
+              | ExtensionSettings
+              | undefined) ?? { ...DEFAULT_EXTENSION_SETTINGS };
         }
       },
     );
@@ -94,8 +137,31 @@ export function createOrchestrator(
       const data = await chrome.storage.local.get('keywords');
       cachedKeywords = (data['keywords'] as string[] | undefined) ?? [];
     } catch {
-      // Storage errors should not crash the orchestrator
       cachedKeywords = [];
+    }
+  }
+
+  async function fetchDetectionSettings(): Promise<void> {
+    try {
+      const data = await chrome.storage.local.get('detectionSettings');
+      cachedDetectionSettings =
+        (data['detectionSettings'] as DetectionSettings | undefined) ?? {
+          ...DEFAULT_DETECTION_SETTINGS,
+        };
+    } catch {
+      cachedDetectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
+    }
+  }
+
+  async function fetchExtensionSettings(): Promise<void> {
+    try {
+      const data = await chrome.storage.local.get('settings');
+      cachedExtensionSettings =
+        (data['settings'] as ExtensionSettings | undefined) ?? {
+          ...DEFAULT_EXTENSION_SETTINGS,
+        };
+    } catch {
+      cachedExtensionSettings = { ...DEFAULT_EXTENSION_SETTINGS };
     }
   }
 
@@ -105,8 +171,17 @@ export function createOrchestrator(
   ): Promise<InterceptResult> {
     if (ctx.isInvalid) return 'release';
 
-    // Run classifier
-    const result = classify(text, { keywords: cachedKeywords });
+    // Respect extension enabled toggle
+    if (!cachedExtensionSettings.enabled) {
+      return 'release';
+    }
+
+    // Run classifier with enabled detectors
+    const enabledDetectors = toEnabledDetectors(cachedDetectionSettings);
+    const result = classify(text, {
+      keywords: cachedKeywords,
+      enabledDetectors,
+    });
 
     // Filter to HIGH and MEDIUM confidence only
     const visibleFindings = result.findings.filter(
@@ -115,7 +190,21 @@ export function createOrchestrator(
 
     // Zero-interference: if nothing to show, release immediately
     if (visibleFindings.length === 0) {
-      logCleanPrompt();
+      logCleanPrompt(adapterName);
+      return 'release';
+    }
+
+    // In log-only mode, log the event but skip the overlay
+    if (cachedExtensionSettings.interventionMode === 'log-only') {
+      const logOnlyEvent: FlaggedEvent = {
+        id: generateEventId(),
+        timestamp: new Date().toISOString(),
+        tool: adapterName,
+        categories: getCategories(visibleFindings),
+        findingCount: visibleFindings.length,
+        action: 'sent-anyway',
+      };
+      logFlaggedEvent(logOnlyEvent);
       return 'release';
     }
 

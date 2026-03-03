@@ -129,7 +129,7 @@ describe('logCleanPrompt', () => {
   });
 
   it('increments daily interaction counter', async () => {
-    logCleanPrompt();
+    logCleanPrompt('chatgpt');
 
     await vi.waitFor(() => {
       const dailyStats = storageData['dailyStats'] as Record<
@@ -149,6 +149,6 @@ describe('logCleanPrompt', () => {
       new Error('storage error'),
     );
 
-    expect(() => logCleanPrompt()).not.toThrow();
+    expect(() => logCleanPrompt('chatgpt')).not.toThrow();
   });
 });

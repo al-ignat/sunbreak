@@ -32,20 +32,21 @@ export function logFlaggedEvent(event: FlaggedEvent): void {
     });
 
   // Also update daily stats
-  incrementDailyStat(event.action);
+  incrementDailyStat(event.action, event.tool);
 }
 
 /**
  * Log a clean prompt interaction (no findings).
  * Fire-and-forget: errors are silently caught.
  */
-export function logCleanPrompt(): void {
-  incrementDailyStat('clean');
+export function logCleanPrompt(tool: string): void {
+  incrementDailyStat('clean', tool);
 }
 
 /** Increment a daily stat counter */
 function incrementDailyStat(
   action: FlaggedEvent['action'] | 'clean',
+  tool: string,
 ): void {
   const key = todayKey();
   const storageKey = 'dailyStats';
@@ -62,7 +63,11 @@ function incrementDailyStat(
         sentAnywayCount: 0,
         cancelledCount: 0,
         editedCount: 0,
+        byTool: {},
       };
+
+      const byTool = { ...today.byTool };
+      byTool[tool] = (byTool[tool] ?? 0) + 1;
 
       const updated: DailyStats = {
         totalInteractions: today.totalInteractions + 1,
@@ -76,6 +81,7 @@ function incrementDailyStat(
           today.cancelledCount + (action === 'cancelled' ? 1 : 0),
         editedCount:
           today.editedCount + (action === 'edited' ? 1 : 0),
+        byTool,
       };
 
       allStats[key] = updated;
