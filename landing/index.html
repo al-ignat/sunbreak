@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sunbreak — Use AI Tools at Work, Safely</title>
+  <meta name="description" content="Sunbreak detects sensitive personal data in your AI prompts before they're sent. 100% local. Zero network requests. One-click redaction.">
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.7;
+      color: #1a1a1a;
+      background: #fafafa;
+      padding: 0;
+    }
+
+    a {
+      color: #e65100;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* ---- Hero ---- */
+    .hero {
+      background: linear-gradient(135deg, #FF9800 0%, #E65100 100%);
+      color: #fff;
+      padding: 4rem 1.5rem 3.5rem;
+      text-align: center;
+    }
+
+    .hero-inner {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      font-size: 2.75rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.15rem;
+    }
+
+    .hero .subtitle {
+      font-size: 1rem;
+      font-weight: 500;
+      opacity: 0.88;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+
+    .hero .tagline {
+      font-size: 1.35rem;
+      font-weight: 400;
+      opacity: 0.95;
+      margin-bottom: 2rem;
+    }
+
+    .cta-button {
+      display: inline-block;
+      background: #fff;
+      color: #E65100;
+      font-size: 1.05rem;
+      font-weight: 700;
+      padding: 0.85rem 2rem;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .cta-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      text-decoration: none;
+    }
+
+    /* ---- Sections shared ---- */
+    section {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    section h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #e65100;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    /* ---- Features ---- */
+    .features {
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .feature-card {
+      background: #fff;
+      border: 1px solid #ffe0b2;
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .feature-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 0.4rem;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      color: #555;
+      line-height: 1.55;
+    }
+
+    /* ---- How It Works ---- */
+    .how-it-works {
+      background: #fff3e0;
+      max-width: none;
+      padding: 3rem 1.5rem;
+    }
+
+    .how-it-works-inner {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1.5rem;
+      counter-reset: step;
+    }
+
+    .step {
+      text-align: center;
+      padding: 1rem 0.5rem;
+    }
+
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      background: #E65100;
+      color: #fff;
+      font-size: 1.15rem;
+      font-weight: 700;
+      border-radius: 50%;
+      margin-bottom: 0.75rem;
+    }
+
+    .step h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 0.35rem;
+    }
+
+    .step p {
+      font-size: 0.88rem;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    /* ---- Privacy callout ---- */
+    .privacy-callout {
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .callout-box {
+      background: #fff;
+      border-left: 4px solid #FF9800;
+      padding: 1.25rem 1.5rem;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .callout-box p {
+      font-size: 0.95rem;
+      color: #4e2c00;
+    }
+
+    .callout-box strong {
+      color: #e65100;
+    }
+
+    /* ---- CTA bottom ---- */
+    .cta-bottom {
+      text-align: center;
+      padding-bottom: 3.5rem;
+    }
+
+    .cta-bottom p {
+      font-size: 1.05rem;
+      color: #555;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ---- Footer ---- */
+    footer {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 3rem;
+      border-top: 1px solid #e0e0e0;
+      font-size: 0.85rem;
+      color: #888;
+      text-align: center;
+    }
+
+    footer .footer-links {
+      margin-bottom: 0.5rem;
+    }
+
+    footer .footer-links a {
+      color: #e65100;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 600px) {
+      .hero {
+        padding: 3rem 1rem 2.5rem;
+      }
+
+      .hero h1 {
+        font-size: 2rem;
+      }
+
+      .hero .tagline {
+        font-size: 1.1rem;
+      }
+
+      section {
+        padding: 2rem 1rem;
+      }
+
+      .feature-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .how-it-works {
+        padding: 2rem 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Sunbreak</h1>
+      <p class="subtitle">Secure BYOAI</p>
+      <p class="tagline">Use AI tools at work &mdash; safely.</p>
+      <a href="#" class="cta-button">Install from Chrome Web Store</a>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <h2>What Sunbreak Does</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">&#128269;</div>
+        <h3>Detects sensitive data</h3>
+        <p>Scans your prompts for emails, credit card numbers, SSNs, API keys, and phone numbers before they reach ChatGPT, Claude, or Gemini.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">&#9989;</div>
+        <h3>One-click redaction</h3>
+        <p>Replace detected PII with safe placeholders instantly. No manual editing required.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">&#128274;</div>
+        <h3>100% local</h3>
+        <p>All classification runs inside your browser. Zero network requests. Your data never leaves your machine.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" aria-hidden="true">&#128202;</div>
+        <h3>Personal dashboard</h3>
+        <p>Track what has been caught with detection stats, activity logs, and category breakdowns.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <div class="how-it-works">
+    <div class="how-it-works-inner">
+      <h2>How It Works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Type your prompt</h3>
+          <p>Write in ChatGPT, Claude, or Gemini as you normally would.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>Sunbreak scans</h3>
+          <p>Your text is checked locally for sensitive personal data in real time.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Review and redact</h3>
+          <p>If something is found, review the warning and redact with one click.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy callout -->
+  <section class="privacy-callout">
+    <h2>Your Privacy, First</h2>
+    <div class="callout-box">
+      <p>
+        Sunbreak makes <strong>zero network requests</strong>. There are no servers,
+        no analytics, and no telemetry. Everything runs locally in your browser.
+        Read the full <a href="privacy.html">privacy policy</a> for details.
+      </p>
+    </div>
+  </section>
+
+  <!-- Bottom CTA -->
+  <section class="cta-bottom">
+    <p>Keep your sensitive data out of AI prompts.</p>
+    <a href="#" class="cta-button">Install from Chrome Web Store</a>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p class="footer-links">
+      <a href="privacy.html">Privacy Policy</a>
+    </p>
+    <p>Made with care for your privacy.</p>
+    <p>&copy; 2026 Sunbreak. All rights reserved.</p>
+  </footer>
+
+</body>
+</html>

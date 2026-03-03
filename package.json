@@ -1,6 +1,6 @@
 {
   "name": "secure-byoai",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,12 +8,14 @@
     "build": "wxt build",
     "test": "vitest run",
     "test:watch": "vitest watch",
-    "lint": "eslint src/ tests/"
+    "lint": "eslint src/ tests/",
+    "test:e2e": "wxt build && playwright test"
   },
   "dependencies": {
     "preact": "^10.28.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@preact/preset-vite": "^2.10.3",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/preact": "^3.2.4",

@@ -171,28 +171,52 @@ describe('classify', () => {
   });
 
   describe('performance', () => {
-    it('classifies 10K character input in under 50ms', () => {
-      // Build a realistic 10K character prompt with some PII
-      const segments = [
-        'Please help me debug my application. ',
-        'The server at 192.168.1.100 is not responding. ',
-        'My colleague john@example.com reported the issue. ',
-        'Here is the error log from the production system. ',
-        'The user called from 555-123-4567 about this problem. ',
-        'We need to check the database configuration. ',
-        'The API endpoint returns a 500 error when called. ',
-        'Lorem ipsum dolor sit amet consectetur adipiscing. ',
-      ];
+    // Reusable realistic prompt segments with mixed PII types
+    const segments = [
+      'Please help me debug my application. ',
+      'The server at 192.168.1.100 is not responding. ',
+      'My colleague john@example.com reported the issue. ',
+      'Here is the error log from the production system. ',
+      'The user called from 555-123-4567 about this problem. ',
+      'We need to check the database configuration. ',
+      'The API endpoint returns a 500 error when called. ',
+      'Lorem ipsum dolor sit amet consectetur adipiscing. ',
+    ];
 
+    function buildRealisticPrompt(targetLength: number): string {
       let text = '';
-      while (text.length < 10_000) {
+      while (text.length < targetLength) {
         text += segments[text.length % segments.length] ?? segments[0];
       }
-      text = text.slice(0, 10_000);
+      return text.slice(0, targetLength);
+    }
 
+    it('classifies 100-char prompt in under 50ms', () => {
+      const text = 'Contact john@example.com or call 555-123-4567 about the project deadline for our team.';
+      const result = classify(text, { keywords: [] });
+      expect(result.durationMs).toBeLessThan(50);
+      expect(result.findings.length).toBeGreaterThan(0);
+    });
+
+    it('classifies 1K-char prompt with multiple findings in under 50ms', () => {
+      const text = buildRealisticPrompt(1_000);
       const result = classify(text, { keywords: ['database', 'production'] });
       expect(result.durationMs).toBeLessThan(50);
       expect(result.findings.length).toBeGreaterThan(0);
+    });
+
+    it('classifies 10K character input in under 50ms', () => {
+      const text = buildRealisticPrompt(10_000);
+      const result = classify(text, { keywords: ['database', 'production'] });
+      expect(result.durationMs).toBeLessThan(50);
+      expect(result.findings.length).toBeGreaterThan(0);
+    });
+
+    it('classifies 50K character input (at truncation limit) in under 50ms', () => {
+      const text = buildRealisticPrompt(50_000);
+      const result = classify(text, { keywords: ['database'] });
+      expect(result.durationMs).toBeLessThan(50);
+      expect(result.truncated).toBe(false); // exactly 50K, not over
     });
   });
 
