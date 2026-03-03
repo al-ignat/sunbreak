@@ -9,79 +9,91 @@ function todayKey(): string {
 }
 
 /**
+ * Serial write queue to prevent concurrent read-modify-write races.
+ * All storage mutations flow through this chain.
+ */
+let writeQueue: Promise<void> = Promise.resolve();
+
+function enqueue(fn: () => Promise<void>): void {
+  writeQueue = writeQueue.then(fn).catch(() => {
+    // Storage errors must not crash the extension
+  });
+}
+
+/**
  * Log a flagged event to chrome.storage.local.
  * Fire-and-forget: errors are silently caught.
  * Maintains a FIFO cap of 1000 events.
+ * Write-serialized to prevent concurrent clobber.
  */
 export function logFlaggedEvent(event: FlaggedEvent): void {
-  chrome.storage.local
-    .get('flaggedEvents')
-    .then((data: Record<string, unknown>) => {
-      const events = (data['flaggedEvents'] as FlaggedEvent[] | undefined) ?? [];
-      events.push(event);
+  enqueue(async () => {
+    const data = await chrome.storage.local.get('flaggedEvents');
+    const events = (data['flaggedEvents'] as FlaggedEvent[] | undefined) ?? [];
+    events.push(event);
 
-      // FIFO: trim oldest events if over cap
-      while (events.length > MAX_FLAGGED_EVENTS) {
-        events.shift();
-      }
+    // FIFO: trim oldest events if over cap
+    while (events.length > MAX_FLAGGED_EVENTS) {
+      events.shift();
+    }
 
-      return chrome.storage.local.set({ flaggedEvents: events });
-    })
-    .catch(() => {
-      // Storage errors must not crash the extension
-    });
+    await chrome.storage.local.set({ flaggedEvents: events });
 
-  // Also update daily stats
-  incrementDailyStat(event.action);
+    // Update daily stats within the same serialized chain
+    await doIncrementDailyStat(event.action, event.tool);
+  });
 }
 
 /**
  * Log a clean prompt interaction (no findings).
  * Fire-and-forget: errors are silently caught.
+ * Write-serialized to prevent concurrent clobber.
  */
-export function logCleanPrompt(): void {
-  incrementDailyStat('clean');
+export function logCleanPrompt(tool: string): void {
+  enqueue(async () => {
+    await doIncrementDailyStat('clean', tool);
+  });
 }
 
-/** Increment a daily stat counter */
-function incrementDailyStat(
+/** Increment a daily stat counter (must be called within the write queue) */
+async function doIncrementDailyStat(
   action: FlaggedEvent['action'] | 'clean',
-): void {
+  tool: string,
+): Promise<void> {
   const key = todayKey();
   const storageKey = 'dailyStats';
 
-  chrome.storage.local
-    .get(storageKey)
-    .then((data: Record<string, unknown>) => {
-      const allStats =
-        (data[storageKey] as Record<string, DailyStats> | undefined) ?? {};
-      const today: DailyStats = allStats[key] ?? {
-        totalInteractions: 0,
-        flaggedCount: 0,
-        redactedCount: 0,
-        sentAnywayCount: 0,
-        cancelledCount: 0,
-        editedCount: 0,
-      };
+  const data = await chrome.storage.local.get(storageKey);
+  const allStats =
+    (data[storageKey] as Record<string, DailyStats> | undefined) ?? {};
+  const today: DailyStats = allStats[key] ?? {
+    totalInteractions: 0,
+    flaggedCount: 0,
+    redactedCount: 0,
+    sentAnywayCount: 0,
+    cancelledCount: 0,
+    editedCount: 0,
+    byTool: {},
+  };
 
-      const updated: DailyStats = {
-        totalInteractions: today.totalInteractions + 1,
-        flaggedCount:
-          today.flaggedCount + (action !== 'clean' ? 1 : 0),
-        redactedCount:
-          today.redactedCount + (action === 'redacted' ? 1 : 0),
-        sentAnywayCount:
-          today.sentAnywayCount + (action === 'sent-anyway' ? 1 : 0),
-        cancelledCount:
-          today.cancelledCount + (action === 'cancelled' ? 1 : 0),
-        editedCount:
-          today.editedCount + (action === 'edited' ? 1 : 0),
-      };
+  const byTool = { ...today.byTool };
+  byTool[tool] = (byTool[tool] ?? 0) + 1;
 
-      allStats[key] = updated;
-      return chrome.storage.local.set({ [storageKey]: allStats });
-    })
-    .catch(() => {
-      // Storage errors must not crash the extension
-    });
+  const updated: DailyStats = {
+    totalInteractions: today.totalInteractions + 1,
+    flaggedCount:
+      today.flaggedCount + (action !== 'clean' ? 1 : 0),
+    redactedCount:
+      today.redactedCount + (action === 'redacted' ? 1 : 0),
+    sentAnywayCount:
+      today.sentAnywayCount + (action === 'sent-anyway' ? 1 : 0),
+    cancelledCount:
+      today.cancelledCount + (action === 'cancelled' ? 1 : 0),
+    editedCount:
+      today.editedCount + (action === 'edited' ? 1 : 0),
+    byTool,
+  };
+
+  allStats[key] = updated;
+  await chrome.storage.local.set({ [storageKey]: allStats });
 }

@@ -40,13 +40,13 @@
 - [ ] Visual design: helpful, not hostile. Grammarly-like.
 
 ## Phase 5: Dashboard (Sessions 11-12)
-- [ ] Storage layer for anonymised stats
-- [ ] Extension popup: quick stats view
-- [ ] Full dashboard page: weekly/monthly stats
-- [ ] Flagged event log (metadata only, no content)
-- [ ] Settings panel: toggle detection categories
-- [ ] Settings panel: manage custom keyword lists
-- [ ] AI Tool Report Cards (static info page)
+- [x] Storage layer for anonymised stats
+- [x] Extension popup: quick stats view
+- [x] Full dashboard page: weekly/monthly stats
+- [x] Flagged event log (metadata only, no content)
+- [x] Settings panel: toggle detection categories
+- [x] Settings panel: manage custom keyword lists
+- [x] AI Tool Report Cards (static info page)
 
 ## Phase 6: Integration & Polish (Sessions 13-15)
 - [ ] End-to-end flow: type prompt -> detect -> warn -> redact -> send

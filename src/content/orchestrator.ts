@@ -7,7 +7,21 @@ import type { OverlayFinding } from '../ui/overlay/types';
 import { buildRedactedText } from './interceptor';
 import type { InterceptResult } from './interceptor';
 import { logFlaggedEvent, logCleanPrompt } from '../storage/events';
-import type { FlaggedEvent } from '../storage/types';
+import type {
+  FlaggedEvent,
+  DetectionSettings,
+  ExtensionSettings,
+} from '../storage/types';
+import {
+  DEFAULT_DETECTION_SETTINGS,
+  DEFAULT_EXTENSION_SETTINGS,
+} from '../storage/types';
+import {
+  getDetectionSettings,
+  getExtensionSettings,
+  getKeywords,
+  toEnabledDetectors,
+} from '../storage/dashboard';
 
 /**
  * Context for the orchestrator.
@@ -73,11 +87,19 @@ export function createOrchestrator(
 
   // Cache keywords from chrome.storage.local
   let cachedKeywords: string[] = [];
+  // Cache detection settings
+  let cachedDetectionSettings: DetectionSettings = {
+    ...DEFAULT_DETECTION_SETTINGS,
+  };
+  // Cache extension settings
+  let cachedExtensionSettings: ExtensionSettings = {
+    ...DEFAULT_EXTENSION_SETTINGS,
+  };
 
-  // Fetch keywords initially
-  void fetchKeywords();
+  // Fetch all cached settings initially
+  void fetchAllSettings();
 
-  // Listen for keyword changes
+  // Listen for storage changes
   if (chrome.storage?.onChanged) {
     chrome.storage.onChanged.addListener(
       (changes: Record<string, chrome.storage.StorageChange>) => {
@@ -85,17 +107,36 @@ export function createOrchestrator(
           cachedKeywords =
             (changes['keywords'].newValue as string[] | undefined) ?? [];
         }
+        if (changes['detectionSettings']) {
+          cachedDetectionSettings =
+            (changes['detectionSettings'].newValue as
+              | DetectionSettings
+              | undefined) ?? { ...DEFAULT_DETECTION_SETTINGS };
+        }
+        if (changes['settings']) {
+          cachedExtensionSettings =
+            (changes['settings'].newValue as
+              | ExtensionSettings
+              | undefined) ?? { ...DEFAULT_EXTENSION_SETTINGS };
+        }
       },
     );
   }
 
-  async function fetchKeywords(): Promise<void> {
+  async function fetchAllSettings(): Promise<void> {
     try {
-      const data = await chrome.storage.local.get('keywords');
-      cachedKeywords = (data['keywords'] as string[] | undefined) ?? [];
+      const [kw, ds, es] = await Promise.all([
+        getKeywords(),
+        getDetectionSettings(),
+        getExtensionSettings(),
+      ]);
+      cachedKeywords = [...kw];
+      cachedDetectionSettings = ds;
+      cachedExtensionSettings = es;
     } catch {
-      // Storage errors should not crash the orchestrator
       cachedKeywords = [];
+      cachedDetectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
+      cachedExtensionSettings = { ...DEFAULT_EXTENSION_SETTINGS };
     }
   }
 
@@ -105,8 +146,17 @@ export function createOrchestrator(
   ): Promise<InterceptResult> {
     if (ctx.isInvalid) return 'release';
 
-    // Run classifier
-    const result = classify(text, { keywords: cachedKeywords });
+    // Respect extension enabled toggle
+    if (!cachedExtensionSettings.enabled) {
+      return 'release';
+    }
+
+    // Run classifier with enabled detectors
+    const enabledDetectors = toEnabledDetectors(cachedDetectionSettings);
+    const result = classify(text, {
+      keywords: cachedKeywords,
+      enabledDetectors,
+    });
 
     // Filter to HIGH and MEDIUM confidence only
     const visibleFindings = result.findings.filter(
@@ -115,7 +165,21 @@ export function createOrchestrator(
 
     // Zero-interference: if nothing to show, release immediately
     if (visibleFindings.length === 0) {
-      logCleanPrompt();
+      logCleanPrompt(adapterName);
+      return 'release';
+    }
+
+    // In log-only mode, log the event but skip the overlay
+    if (cachedExtensionSettings.interventionMode === 'log-only') {
+      const logOnlyEvent: FlaggedEvent = {
+        id: generateEventId(),
+        timestamp: new Date().toISOString(),
+        tool: adapterName,
+        categories: getCategories(visibleFindings),
+        findingCount: visibleFindings.length,
+        action: 'sent-anyway',
+      };
+      logFlaggedEvent(logOnlyEvent);
       return 'release';
     }
 
