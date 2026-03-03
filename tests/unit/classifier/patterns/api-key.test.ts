@@ -4,6 +4,8 @@ import { detectApiKeys } from '../../../../src/classifier/patterns/api-key';
 // Build test keys dynamically to avoid GitHub push protection false positives
 const STRIPE_SK = ['sk', 'live', 'TESTKEY00000000000000000x'].join('_');
 const STRIPE_PK = ['pk', 'live', 'TESTKEY00000000000000000x'].join('_');
+const STRIPE_SK_TEST = ['sk', 'test', '4eC39HqLyjWDarhtT657Cd7x'].join('_');
+const STRIPE_RK = ['rk', 'live', 'TESTKEY00000000000000000x'].join('_');
 
 describe('detectApiKeys', () => {
   describe('true positives — provider-specific', () => {
@@ -39,6 +41,19 @@ describe('detectApiKeys', () => {
     it('detects Stripe publishable key', () => {
       const findings = detectApiKeys(`Public: ${STRIPE_PK}`);
       const stripe = findings.filter(f => f.label === 'Stripe Publishable Key');
+      expect(stripe).toHaveLength(1);
+    });
+
+    it('detects Stripe test mode secret key', () => {
+      const findings = detectApiKeys(`Stripe test: ${STRIPE_SK_TEST}`);
+      const stripe = findings.filter(f => f.label === 'Stripe Secret Key');
+      expect(stripe).toHaveLength(1);
+      expect(stripe[0]?.confidence).toBe('HIGH');
+    });
+
+    it('detects Stripe restricted key (rk_live_)', () => {
+      const findings = detectApiKeys(`Restricted: ${STRIPE_RK}`);
+      const stripe = findings.filter(f => f.label === 'Stripe Secret Key');
       expect(stripe).toHaveLength(1);
     });
 

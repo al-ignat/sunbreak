@@ -27,7 +27,7 @@ Danish CPR:  150102-3456
 UK NI:       AB 12 34 56 C
 IPv4:        192.168.1.1
 IPv6:        2001:db8::1
-Stripe key:  sk_test_4eC39HqLyjWDarhtT657Cd7
+Stripe key:  sk_test_EXAMPLE00000000000000000x
 AWS key:     AKIAIOSFODNN7EXAMPLE
 ```
 

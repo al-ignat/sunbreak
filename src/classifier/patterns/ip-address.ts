@@ -48,14 +48,10 @@ function detectIPv4(text: string): Finding[] {
       continue;
     }
 
-    // Skip if preceded by 'v' or 'version' (likely a version number)
+    // Skip if preceded by version-like context (e.g., "version 1.2.3.4", "v1.2.3.4")
     if (match.index > 0) {
-      const charBefore = text[match.index - 1];
-      if (charBefore === 'v' || charBefore === 'V') continue;
-    }
-    if (match.index >= 8) {
-      const wordBefore = text.slice(Math.max(0, match.index - 8), match.index).toLowerCase();
-      if (wordBefore.endsWith('version')) continue;
+      const textBefore = text.slice(Math.max(0, match.index - 12), match.index);
+      if (/(?:version|ver\.?|v)\s*$/i.test(textBefore)) continue;
     }
 
     findings.push({

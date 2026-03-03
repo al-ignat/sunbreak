@@ -62,6 +62,21 @@ describe('detectIpAddresses', () => {
       expect(findings).toHaveLength(0);
     });
 
+    it('skips version numbers with space after "version"', () => {
+      const findings = detectIpAddresses('version 1.2.3.4');
+      expect(findings).toHaveLength(0);
+    });
+
+    it('skips version numbers preceded by "v"', () => {
+      const findings = detectIpAddresses('Update to v1.2.3.4 now');
+      expect(findings).toHaveLength(0);
+    });
+
+    it('skips version numbers preceded by "ver."', () => {
+      const findings = detectIpAddresses('Using ver. 2.0.0.1');
+      expect(findings).toHaveLength(0);
+    });
+
     it('rejects leading zeros in octets', () => {
       const findings = detectIpAddresses('IP: 192.168.01.1');
       expect(findings).toHaveLength(0);

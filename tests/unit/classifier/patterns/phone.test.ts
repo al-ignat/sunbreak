@@ -73,6 +73,21 @@ describe('detectPhones', () => {
       const findings = detectPhones('IP: 192.168.1.1');
       expect(findings).toHaveLength(0);
     });
+
+    it('does not match credit card numbers (13+ digits)', () => {
+      const findings = detectPhones('Card: 1234-5678-9012-3456');
+      expect(findings).toHaveLength(0);
+    });
+
+    it('does not match SSN format (XXX-XX-XXXX)', () => {
+      const findings = detectPhones('SSN: 000-00-0000');
+      expect(findings).toHaveLength(0);
+    });
+
+    it('does not match SSN-like numbers even without SSN label', () => {
+      const findings = detectPhones('Number: 123-45-6789');
+      expect(findings).toHaveLength(0);
+    });
   });
 
   describe('startIndex and endIndex accuracy', () => {
