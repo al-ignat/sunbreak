@@ -5,9 +5,21 @@ export default defineConfig({
   srcDir: 'src',
   manifest: {
     name: 'Secure BYOAI',
-    version: '0.1.0',
+    version: '1.0.0',
     description:
       'Use AI tools at work — safely. Detects sensitive data before you send it.',
+    icons: {
+      '16': 'icons/icon-16.png',
+      '32': 'icons/icon-32.png',
+      '48': 'icons/icon-48.png',
+      '128': 'icons/icon-128.png',
+    },
+    action: {
+      default_icon: {
+        '16': 'icons/icon-16.png',
+        '32': 'icons/icon-32.png',
+      },
+    },
     permissions: ['storage'],
     // Must stay in sync with matches in src/entrypoints/content.ts
     host_permissions: [

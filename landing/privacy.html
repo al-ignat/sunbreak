@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Sunbreak (Secure BYOAI)</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.7;
+      color: #1a1a1a;
+      background: #fafafa;
+      padding: 0;
+    }
+
+    header {
+      background: #FF9800;
+      color: #fff;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    header p {
+      font-size: 0.95rem;
+      opacity: 0.92;
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+    }
+
+    .effective-date {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 2rem;
+    }
+
+    .summary-box {
+      background: #fff3e0;
+      border-left: 4px solid #FF9800;
+      padding: 1.25rem 1.5rem;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 2.5rem;
+    }
+
+    .summary-box p {
+      font-size: 0.95rem;
+      color: #4e2c00;
+    }
+
+    .summary-box strong {
+      color: #e65100;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #e65100;
+      margin-top: 2.25rem;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 2px solid #ffe0b2;
+    }
+
+    p {
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+
+    ul {
+      margin: 0.5rem 0 1rem 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    ul li {
+      margin-bottom: 0.4rem;
+    }
+
+    ul li strong {
+      color: #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0 1.5rem;
+      font-size: 0.9rem;
+    }
+
+    table th,
+    table td {
+      text-align: left;
+      padding: 0.65rem 0.85rem;
+      border: 1px solid #e0e0e0;
+    }
+
+    table th {
+      background: #fff3e0;
+      color: #4e2c00;
+      font-weight: 600;
+    }
+
+    table td {
+      background: #fff;
+    }
+
+    .highlight {
+      background: #fff8e1;
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+      font-weight: 600;
+      color: #e65100;
+    }
+
+    footer {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1.5rem 1.5rem 3rem;
+      border-top: 1px solid #e0e0e0;
+      font-size: 0.85rem;
+      color: #888;
+      text-align: center;
+    }
+
+    a {
+      color: #e65100;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        padding: 1.75rem 1rem;
+      }
+
+      header h1 {
+        font-size: 1.4rem;
+      }
+
+      main {
+        padding: 1.75rem 1rem 3rem;
+      }
+
+      h2 {
+        font-size: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Sunbreak Privacy Policy</h1>
+    <p>Secure BYOAI &mdash; Chrome Extension</p>
+  </header>
+
+  <main>
+    <p class="effective-date">Effective date: March 3, 2026</p>
+
+    <div class="summary-box">
+      <p>
+        <strong>The short version:</strong> Sunbreak works entirely inside your
+        browser. Your prompts and personal data are never stored, transmitted, or
+        shared with anyone &mdash; including us. The extension makes
+        <strong>zero network requests</strong>.
+      </p>
+    </div>
+
+    <!-- 1 -->
+    <h2>1. What Sunbreak Does</h2>
+    <p>
+      Sunbreak detects sensitive personal information &mdash; such as email
+      addresses, phone numbers, credit card numbers, Social Security numbers, and
+      API keys &mdash; inside prompts you write on supported AI tool pages
+      (ChatGPT, Claude, and Gemini). When a potential exposure is found, the
+      extension warns you and offers one-click redaction before the prompt is
+      sent.
+    </p>
+    <p>
+      All classification is performed locally in your browser using pattern
+      matching. No data ever leaves the browser.
+    </p>
+
+    <!-- 2 -->
+    <h2>2. Data We Read</h2>
+    <p>
+      To perform its function, Sunbreak reads the text you type into prompt input
+      fields on the following pages:
+    </p>
+    <ul>
+      <li>chatgpt.com and chat.openai.com (ChatGPT)</li>
+      <li>claude.ai (Claude)</li>
+      <li>gemini.google.com (Gemini)</li>
+    </ul>
+    <p>
+      This text is scanned locally and in real time. It is <strong>never
+      stored</strong> and <strong>never transmitted</strong> anywhere. Once the
+      scan completes, the raw prompt text is immediately discarded from memory.
+    </p>
+
+    <!-- 3 -->
+    <h2>3. Data We Store</h2>
+    <p>
+      Sunbreak stores a small amount of data in
+      <code>chrome.storage.local</code> (your browser's local extension storage).
+      This data never leaves your device.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>Stored Item</th>
+          <th>Example</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Aggregate detection statistics</td>
+          <td>"5 emails detected today"</td>
+          <td>Powers the personal dashboard</td>
+        </tr>
+        <tr>
+          <td>User settings and preferences</td>
+          <td>Enabled detectors, custom keywords</td>
+          <td>Remembers your configuration</td>
+        </tr>
+        <tr>
+          <td>Activity log entries</td>
+          <td>"Credit card pattern blocked on ChatGPT"</td>
+          <td>Lets you review past warnings</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      <strong>We never store raw prompt text, personal data values, or any
+      content you type.</strong> Only aggregate counts and metadata (such as
+      detection category and timestamp) are retained.
+    </p>
+
+    <!-- 4 -->
+    <h2>4. Data We Share</h2>
+    <p>
+      <span class="highlight">None.</span> Sunbreak makes zero network requests.
+      There are no servers, no APIs, no analytics endpoints, and no telemetry.
+      Your data stays on your machine and nowhere else.
+    </p>
+
+    <!-- 5 -->
+    <h2>5. Third-Party Services</h2>
+    <p>
+      Sunbreak does not integrate with, send data to, or receive data from any
+      third-party service. There are no analytics tools, no crash reporters, no
+      advertising SDKs, and no external dependencies at runtime.
+    </p>
+
+    <!-- 6 -->
+    <h2>6. How to Delete Your Data</h2>
+    <p>You can remove all data Sunbreak has stored at any time:</p>
+    <ul>
+      <li>
+        <strong>Uninstall the extension</strong> &mdash; Chrome automatically
+        deletes all associated <code>chrome.storage.local</code> data when an
+        extension is removed.
+      </li>
+      <li>
+        <strong>Clear extension storage manually</strong> &mdash; Go to
+        <code>chrome://extensions</code>, find Sunbreak, click
+        <em>Details &rarr; Clear storage</em>.
+      </li>
+      <li>
+        <strong>Use the in-app setting</strong> &mdash; Open the Sunbreak
+        dashboard and use the "Clear all data" option in Settings.
+      </li>
+    </ul>
+
+    <!-- 7 -->
+    <h2>7. Permissions Explained</h2>
+    <p>
+      Sunbreak requests the minimum set of Chrome permissions needed to function:
+    </p>
+    <ul>
+      <li>
+        <strong>Active Tab / Host permissions</strong> &mdash; To read prompt
+        text on supported AI tool pages only.
+      </li>
+      <li>
+        <strong>Storage</strong> &mdash; To save your settings and aggregate
+        statistics locally.
+      </li>
+    </ul>
+    <p>
+      The extension does not request permissions for browsing history, bookmarks,
+      downloads, or any data beyond what is listed above.
+    </p>
+
+    <!-- 8 -->
+    <h2>8. Chrome Web Store Compliance</h2>
+    <p>
+      This extension complies with the
+      <a
+        href="https://developer.chrome.com/docs/webstore/program-policies/user-data-faq/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >Chrome Web Store User Data Policy</a>, including the Limited Use
+      requirements. Specifically:
+    </p>
+    <ul>
+      <li>
+        User data is used solely to provide the extension's core functionality
+        (detecting sensitive data in prompts).
+      </li>
+      <li>User data is not transferred to third parties.</li>
+      <li>User data is not used for advertising or creditworthiness purposes.</li>
+      <li>
+        User data is not sold to third parties and is not used by any entity
+        other than the extension's core, user-facing features.
+      </li>
+    </ul>
+
+    <!-- 9 -->
+    <h2>9. Children's Privacy</h2>
+    <p>
+      Sunbreak is not directed at children under 13 and does not knowingly
+      collect personal information from children.
+    </p>
+
+    <!-- 10 -->
+    <h2>10. Changes to This Policy</h2>
+    <p>
+      If this privacy policy is updated, the revised version will be published at
+      this URL with an updated effective date. Because Sunbreak collects no
+      contact information, we cannot notify users directly &mdash; please check
+      this page periodically.
+    </p>
+
+    <!-- 11 -->
+    <h2>11. Contact</h2>
+    <p>
+      If you have questions about this privacy policy or Sunbreak's data
+      practices, please reach out:
+    </p>
+    <p>
+      Email: <a href="mailto:privacy@sunbreak.example.com">privacy@sunbreak.example.com</a>
+    </p>
+  </main>
+
+  <footer>
+    &copy; 2026 Sunbreak. All rights reserved.
+  </footer>
+</body>
+</html>

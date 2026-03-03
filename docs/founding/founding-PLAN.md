@@ -29,15 +29,15 @@
 - [x] Confidence scoring (HIGH / MEDIUM / LOW)
 
 ## Phase 4: Overlay UI (Sessions 8-10)
-- [ ] Shadow DOM container injected into AI tool pages
-- [ ] Warning banner component (shows what was detected)
-- [ ] Highlight detected items in prompt text
-- [ ] Redact & Send button (replaces with placeholders)
-- [ ] Edit button (returns focus to input)
-- [ ] Send Anyway button (logs acknowledgment)
-- [ ] Cancel button
-- [ ] Zero-interference: invisible when nothing detected
-- [ ] Visual design: helpful, not hostile. Grammarly-like.
+- [x] Shadow DOM container injected into AI tool pages
+- [x] Warning banner component (shows what was detected)
+- [x] Highlight detected items in prompt text
+- [x] Redact & Send button (replaces with placeholders)
+- [x] Edit button (returns focus to input)
+- [x] Send Anyway button (logs acknowledgment)
+- [x] Cancel button
+- [x] Zero-interference: invisible when nothing detected
+- [x] Visual design: helpful, not hostile. Grammarly-like.
 
 ## Phase 5: Dashboard (Sessions 11-12)
 - [x] Storage layer for anonymised stats
@@ -49,9 +49,9 @@
 - [x] AI Tool Report Cards (static info page)
 
 ## Phase 6: Integration & Polish (Sessions 13-15)
-- [ ] End-to-end flow: type prompt -> detect -> warn -> redact -> send
+- [x] End-to-end flow: type prompt -> detect -> warn -> redact -> send
 - [ ] Cross-tool testing on all three AI tools
-- [ ] Performance: < 50ms classification latency
+- [x] Performance: < 50ms classification latency
 - [ ] No host page breakage after 30 min of use
-- [ ] Chrome Web Store manifest requirements met
-- [ ] Landing page (simple HTML)
+- [x] Chrome Web Store manifest requirements met
+- [x] Landing page (simple HTML)
