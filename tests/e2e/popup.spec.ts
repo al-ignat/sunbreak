@@ -29,10 +29,10 @@ test.describe('Popup', () => {
     await expect(page.getByRole('button', { name: 'Open settings' })).toBeVisible();
   });
 
-  test('has dashboard link button', async ({ page, extensionId }) => {
+  test('has dashboard link', async ({ page, extensionId }) => {
     await page.goto(`chrome-extension://${extensionId}/popup.html`);
     await expect(page.getByText('Loading...')).toBeHidden({ timeout: 3000 });
-    await expect(page.getByRole('button', { name: 'View full dashboard' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
   });
 
   test('toggles detection category on and off', async ({ page, extensionId }) => {
