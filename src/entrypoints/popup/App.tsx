@@ -4,8 +4,10 @@ import type { AggregatedStats, FlaggedEvent, DetectionSettings } from '../../sto
 import { DEFAULT_DETECTION_SETTINGS } from '../../storage/types';
 import type { FindingType } from '../../classifier/types';
 import { getWeeklyStats, getFlaggedEvents, getDetectionSettings, setDetectionSettings } from '../../storage/dashboard';
-import { StatsCard } from '../../ui/dashboard/StatsCard';
+import { ComplianceGauge } from '../../ui/popup/ComplianceGauge';
 import { DetectionToggles } from '../../ui/dashboard/DetectionToggles';
+import { GearIcon } from '../../ui/icons/GearIcon';
+import { ArrowRightIcon } from '../../ui/icons/ArrowRightIcon';
 import { toolLabel, toolColor, actionLabel, actionColor } from '../../ui/format';
 
 export default function App(): JSX.Element {
@@ -43,56 +45,71 @@ export default function App(): JSX.Element {
     void setDetectionSettings(updated);
   }
 
-  function openDashboard(tab?: string): void {
-    const url = tab
-      ? chrome.runtime.getURL(`dashboard.html#${tab}`)
-      : chrome.runtime.getURL('dashboard.html');
+  const dashboardUrl = chrome.runtime.getURL('dashboard.html');
+  const settingsUrl = chrome.runtime.getURL('dashboard.html#settings');
+
+  function openUrl(url: string): void {
     void chrome.tabs.create({ url });
   }
 
   if (loading) {
     return (
-      <div style={containerStyle}>
-        <p style={{ color: '#888', fontSize: '13px', textAlign: 'center' }}>Loading...</p>
+      <div className="popup-container">
+        <p className="popup-loading">Loading...</p>
       </div>
     );
   }
 
+  const complianceRate = stats ? stats.complianceRate : null;
+
   return (
-    <div style={containerStyle}>
+    <div className="popup-container">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-        <h1 style={{ fontSize: '16px', margin: 0, color: '#333' }}>Secure BYOAI</h1>
+      <div className="popup-header">
+        <h1 className="popup-title">Secure BYOAI</h1>
         <button
-          onClick={(): void => openDashboard('settings')}
+          onClick={(): void => openUrl(settingsUrl)}
           title="Settings"
           aria-label="Open settings"
-          style={gearButtonStyle}
+          className="popup-gear-btn"
         >
-          &#9881;
+          <GearIcon size={16} />
         </button>
       </div>
 
       {/* Stats Summary */}
-      {stats && <StatsCard stats={stats} periodLabel="This week" />}
+      {stats && (
+        <div className="popup-stats">
+          <ComplianceGauge rate={complianceRate} />
+          <div className="popup-stats__numbers">
+            <div className="popup-stats__row">
+              <span className="popup-stats__value">{stats.totalFlagged}</span>
+              <span className="popup-stats__label">flagged</span>
+            </div>
+            <span className="popup-stats__sub">
+              {stats.totalRedacted} redacted &middot; {stats.totalSentAnyway} sent anyway
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Recent Activity */}
       {recentEvents.length > 0 && (
-        <div style={{ marginTop: '12px' }}>
-          <h2 style={sectionHeaderStyle}>Recent Activity</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div className="popup-section">
+          <h2 className="popup-section-header">Recent Activity</h2>
+          <div className="popup-events">
             {recentEvents.map((event) => (
-              <div key={event.id} style={eventRowStyle}>
-                <span style={{ fontSize: '11px', color: '#888', minWidth: '60px' }}>
+              <div key={event.id} className="popup-event-row">
+                <span className="popup-event__date">
                   {formatDate(event.timestamp)}
                 </span>
-                <span style={{ fontSize: '11px', fontWeight: 500, color: toolColor(event.tool), minWidth: '55px' }}>
+                <span className="popup-event__tool" style={{ color: toolColor(event.tool) }}>
                   {toolLabel(event.tool)}
                 </span>
-                <span style={{ fontSize: '11px', color: '#555', flex: 1 }}>
+                <span className="popup-event__categories">
                   {event.categories.join(', ')}
                 </span>
-                <span style={{ fontSize: '11px', color: actionColor(event.action), fontWeight: 500 }}>
+                <span className="popup-event__action" style={{ color: actionColor(event.action) }}>
                   {actionLabel(event.action)}
                 </span>
               </div>
@@ -102,18 +119,23 @@ export default function App(): JSX.Element {
       )}
 
       {/* Quick Settings */}
-      <div style={{ marginTop: '12px' }}>
-        <h2 style={sectionHeaderStyle}>Detection Categories</h2>
+      <div className="popup-section">
+        <h2 className="popup-section-header">Detection Categories</h2>
         <DetectionToggles settings={detectionSettings} onToggle={handleToggle} compact={true} />
       </div>
 
       {/* Dashboard Link */}
-      <button
-        onClick={(): void => openDashboard()}
-        style={dashboardLinkStyle}
+      <a
+        href={dashboardUrl}
+        onClick={(e: MouseEvent): void => {
+          e.preventDefault();
+          openUrl(dashboardUrl);
+        }}
+        className="popup-dashboard-link"
       >
-        View full dashboard
-      </button>
+        Dashboard
+        <ArrowRightIcon size={12} />
+      </a>
     </div>
   );
 }
@@ -124,51 +146,3 @@ function formatDate(iso: string): string {
   const day = d.getDate();
   return `${month}/${day}`;
 }
-
-const containerStyle: JSX.CSSProperties = {
-  padding: '16px',
-  maxHeight: '500px',
-  overflowY: 'auto',
-};
-
-const gearButtonStyle: JSX.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  fontSize: '18px',
-  cursor: 'pointer',
-  color: '#888',
-  padding: '4px',
-  borderRadius: '4px',
-};
-
-const sectionHeaderStyle: JSX.CSSProperties = {
-  fontSize: '12px',
-  fontWeight: 600,
-  color: '#888',
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px',
-  margin: '0 0 8px',
-};
-
-const eventRowStyle: JSX.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  padding: '4px 0',
-  borderBottom: '1px solid #F0F0F0',
-};
-
-const dashboardLinkStyle: JSX.CSSProperties = {
-  display: 'block',
-  width: '100%',
-  marginTop: '16px',
-  padding: '10px',
-  background: '#FF9800',
-  color: 'white',
-  border: 'none',
-  borderRadius: '6px',
-  fontSize: '13px',
-  fontWeight: 600,
-  cursor: 'pointer',
-  textAlign: 'center',
-};

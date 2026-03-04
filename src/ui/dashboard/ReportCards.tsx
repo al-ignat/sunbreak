@@ -2,15 +2,15 @@ import type { JSX } from 'preact';
 
 export function ReportCards(): JSX.Element {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <p style={{ fontSize: '12px', color: '#888', margin: 0 }}>
+    <div className="reports-layout">
+      <p className="reports-disclaimer">
         Information current as of March 2026. Check provider websites for latest policies.
       </p>
 
       <ReportCard
         name="ChatGPT"
         provider="OpenAI"
-        color="#10A37F"
+        color="var(--color-tool-chatgpt)"
         sections={[
           {
             title: 'Data Retention',
@@ -34,7 +34,7 @@ export function ReportCards(): JSX.Element {
       <ReportCard
         name="Claude"
         provider="Anthropic"
-        color="#D97706"
+        color="var(--color-tool-claude)"
         sections={[
           {
             title: 'Data Retention',
@@ -58,7 +58,7 @@ export function ReportCards(): JSX.Element {
       <ReportCard
         name="Gemini"
         provider="Google"
-        color="#4285F4"
+        color="var(--color-tool-gemini)"
         sections={[
           {
             title: 'Data Retention',
@@ -94,28 +94,16 @@ interface ReportCardProps {
 
 function ReportCard({ name, provider, color, sections }: ReportCardProps): JSX.Element {
   return (
-    <div style={{
-      background: 'white',
-      borderRadius: '8px',
-      border: '1px solid #E0E0E0',
-      borderLeft: `4px solid ${color}`,
-      overflow: 'hidden',
-    }}>
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid #F0F0F0' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#333', margin: 0 }}>
-          {name}
-        </h3>
-        <span style={{ fontSize: '12px', color: '#888' }}>by {provider}</span>
+    <div className="report-card" style={{ borderLeft: `4px solid ${color}` }}>
+      <div className="report-card__header">
+        <h3 className="report-card__name">{name}</h3>
+        <span className="report-card__provider">by {provider}</span>
       </div>
-      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      <div className="report-card__body">
         {sections.map((section) => (
           <div key={section.title}>
-            <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#555', margin: '0 0 4px' }}>
-              {section.title}
-            </h4>
-            <p style={{ fontSize: '13px', color: '#666', margin: 0, lineHeight: 1.5 }}>
-              {section.content}
-            </p>
+            <h4 className="report-card__section-title">{section.title}</h4>
+            <p className="report-card__section-text">{section.content}</p>
           </div>
         ))}
       </div>

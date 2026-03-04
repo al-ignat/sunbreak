@@ -10,16 +10,7 @@ export function ToggleButton({ active, onClick, children }: ToggleButtonProps): 
   return (
     <button
       onClick={onClick}
-      style={{
-        padding: '6px 12px',
-        fontSize: '12px',
-        fontWeight: active ? 600 : 400,
-        background: active ? '#FF9800' : 'white',
-        color: active ? 'white' : '#666',
-        border: `1px solid ${active ? '#FF9800' : '#DDD'}`,
-        borderRadius: '4px',
-        cursor: 'pointer',
-      }}
+      className={`toggle-btn ${active ? 'toggle-btn--active' : ''}`}
     >
       {children}
     </button>

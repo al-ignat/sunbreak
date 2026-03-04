@@ -98,8 +98,8 @@ Changes:
 - New: `src/entrypoints/popup/popup.css`
 - New: SVG icon components replacing Unicode characters
 
-## Open questions
+## Resolved Questions
 
-- Font loading: Google Fonts link vs self-hosted woff2? Self-hosted keeps the zero-network-requests promise
-- Dark theme scope: dashboard only, or overlay + popup too? Overlay sits on top of host pages (which may be light or dark)
-- Should the overlay respect the host page's color scheme (prefers-color-scheme)?
+- **Font loading:** Self-hosted woff2. Bundle fonts with the extension to maintain zero-network-requests promise. Adds ~100-200KB to build.
+- **Dark theme scope:** Dashboard only. Popup and overlay stay light to match host page context.
+- **Overlay color scheme:** Fixed light overlay. No prefers-color-scheme adaptation. Consistent look, simpler to implement.

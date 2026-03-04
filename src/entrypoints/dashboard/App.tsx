@@ -126,17 +126,14 @@ export default function App(): JSX.Element {
 
   return (
     <div>
-      {/* Header */}
-      <header style={headerStyle}>
-        <h1 style={{ fontSize: '20px', margin: 0, color: '#333' }}>Secure BYOAI</h1>
-        <span style={{ fontSize: '12px', color: '#888' }}>Personal Dashboard</span>
+      <header className="dash-header">
+        <h1 className="dash-header__title">Secure BYOAI</h1>
+        <span className="dash-header__subtitle">Personal Dashboard</span>
       </header>
 
-      {/* Tab Navigation */}
       <TabNav activeTab={activeTab} onTabChange={handleTabChange} />
 
-      {/* Tab Content */}
-      <main style={contentStyle}>
+      <main className="dash-content">
         <div
           id={`panel-${activeTab}`}
           role="tabpanel"
@@ -173,18 +170,3 @@ function resolveTabFromHash(): TabId {
   const valid: TabId[] = ['overview', 'activity', 'settings', 'keywords', 'reports'];
   return valid.includes(hash as TabId) ? (hash as TabId) : 'overview';
 }
-
-const headerStyle: JSX.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: '16px 24px',
-  background: 'white',
-  borderBottom: '1px solid #E0E0E0',
-};
-
-const contentStyle: JSX.CSSProperties = {
-  maxWidth: '960px',
-  margin: '24px auto',
-  padding: '0 24px',
-};

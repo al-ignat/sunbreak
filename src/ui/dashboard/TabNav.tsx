@@ -20,12 +20,7 @@ export function TabNav({ activeTab, onTabChange }: TabNavProps): JSX.Element {
     <nav
       role="tablist"
       aria-label="Dashboard sections"
-      style={{
-        display: 'flex',
-        borderBottom: '2px solid #E0E0E0',
-        background: 'white',
-        padding: '0 24px',
-      }}
+      className="tab-bar"
     >
       {TABS.map((tab) => (
         <button
@@ -34,17 +29,7 @@ export function TabNav({ activeTab, onTabChange }: TabNavProps): JSX.Element {
           aria-selected={activeTab === tab.id}
           aria-controls={`panel-${tab.id}`}
           onClick={(): void => onTabChange(tab.id)}
-          style={{
-            padding: '12px 16px',
-            border: 'none',
-            background: 'none',
-            fontSize: '14px',
-            fontWeight: activeTab === tab.id ? 600 : 400,
-            color: activeTab === tab.id ? '#FF9800' : '#666',
-            borderBottom: activeTab === tab.id ? '2px solid #FF9800' : '2px solid transparent',
-            marginBottom: '-2px',
-            cursor: 'pointer',
-          }}
+          className={`tab-btn ${activeTab === tab.id ? 'tab-btn--active' : ''}`}
         >
           {tab.label}
         </button>

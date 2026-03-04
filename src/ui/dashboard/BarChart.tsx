@@ -3,7 +3,6 @@ import { useState } from 'preact/hooks';
 import type { AggregatedStats } from '../../storage/types';
 import { StatsCard } from './StatsCard';
 import { ToggleButton } from './ToggleButton';
-import { emptyStateStyle } from './styles';
 
 export interface BarChartProps {
   readonly stats7: AggregatedStats | null;
@@ -18,7 +17,7 @@ export function BarChart({ stats7, stats30 }: BarChartProps): JSX.Element {
   const stats = period === '7d' ? stats7 : stats30;
 
   if (!stats) {
-    return <p style={{ color: '#888', textAlign: 'center' }}>Loading...</p>;
+    return <p className="chart-loading">Loading...</p>;
   }
 
   return (
@@ -28,8 +27,7 @@ export function BarChart({ stats7, stats30 }: BarChartProps): JSX.Element {
         periodLabel={period === '7d' ? 'Last 7 days' : 'Last 30 days'}
       />
 
-      {/* Period Toggle */}
-      <div style={{ display: 'flex', gap: '8px', margin: '16px 0' }}>
+      <div className="chart-period-toggle">
         <ToggleButton active={period === '7d'} onClick={(): void => setPeriod('7d')}>
           Last 7 Days
         </ToggleButton>
@@ -38,9 +36,8 @@ export function BarChart({ stats7, stats30 }: BarChartProps): JSX.Element {
         </ToggleButton>
       </div>
 
-      {/* Chart */}
       {stats.totalInteractions === 0 ? (
-        <div style={emptyStateStyle}>
+        <div className="empty-state">
           <p>No data yet. Start using AI tools and your charts will appear here.</p>
         </div>
       ) : (
@@ -48,10 +45,7 @@ export function BarChart({ stats7, stats30 }: BarChartProps): JSX.Element {
           <InteractionChart breakdown={stats.dailyBreakdown} />
 
           {/* Accessibility: hidden data table */}
-          <table
-            aria-label="Daily interaction data"
-            style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
-          >
+          <table aria-label="Daily interaction data" className="visually-hidden">
             <thead>
               <tr>
                 <th>Date</th>
@@ -97,10 +91,8 @@ function InteractionChart({ breakdown }: InteractionChartProps): JSX.Element {
   }
 
   return (
-    <div style={{ background: 'white', borderRadius: '8px', border: '1px solid #E0E0E0', padding: '16px', overflowX: 'auto' }}>
-      <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#333', margin: '0 0 12px' }}>
-        Daily Interactions
-      </h3>
+    <div className="chart-card">
+      <h3 className="chart-card__title">Daily Interactions</h3>
       <svg
         width={chartWidth}
         height={chartHeight + bottomPad}
@@ -117,15 +109,16 @@ function InteractionChart({ breakdown }: InteractionChartProps): JSX.Element {
                 y1={y}
                 x2={chartWidth}
                 y2={y}
-                stroke="#F0F0F0"
+                stroke="var(--color-border-subtle)"
                 stroke-width="1"
               />
               <text
                 x={leftPad - 6}
                 y={y + 4}
                 text-anchor="end"
-                fill="#888"
+                fill="var(--color-text-muted)"
                 font-size="10"
+                font-family="var(--font-mono)"
               >
                 {tick}
               </text>
@@ -142,32 +135,29 @@ function InteractionChart({ breakdown }: InteractionChartProps): JSX.Element {
 
           return (
             <g key={day.date}>
-              {/* Clean bar (bottom) */}
               <rect
                 x={x}
                 y={chartHeight - cleanHeight - flaggedHeight}
                 width={barWidth}
                 height={cleanHeight}
-                fill="#66BB6A"
+                fill="var(--color-safe)"
                 rx="2"
               />
-              {/* Flagged bar (top, stacked) */}
               {flaggedHeight > 0 && (
                 <rect
                   x={x}
                   y={chartHeight - flaggedHeight}
                   width={barWidth}
                   height={flaggedHeight}
-                  fill="#FF9800"
+                  fill="var(--color-warning)"
                   rx="2"
                 />
               )}
-              {/* Date label */}
               <text
                 x={x + barWidth / 2}
                 y={chartHeight + 16}
                 text-anchor="middle"
-                fill="#888"
+                fill="var(--color-text-muted)"
                 font-size="9"
                 transform={`rotate(-45 ${x + barWidth / 2} ${chartHeight + 16})`}
               >
@@ -178,18 +168,16 @@ function InteractionChart({ breakdown }: InteractionChartProps): JSX.Element {
         })}
       </svg>
 
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '11px' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ width: '10px', height: '10px', background: '#66BB6A', borderRadius: '2px', display: 'inline-block' }} />
+      <div className="chart-legend">
+        <span className="chart-legend__item">
+          <span className="chart-legend__dot chart-legend__dot--clean" />
           Clean
         </span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          <span style={{ width: '10px', height: '10px', background: '#FF9800', borderRadius: '2px', display: 'inline-block' }} />
+        <span className="chart-legend__item">
+          <span className="chart-legend__dot chart-legend__dot--flagged" />
           Flagged
         </span>
       </div>
     </div>
   );
 }
-
