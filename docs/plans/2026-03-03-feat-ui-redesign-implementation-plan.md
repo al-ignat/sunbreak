@@ -1,7 +1,7 @@
 ---
 title: "feat: UI redesign — design tokens, dark dashboard, overlay hardening, popup density"
 type: feat
-status: active
+status: completed
 date: 2026-03-03
 origin: docs/plans/2026-03-03-ui-redesign-plan.md
 ---
