@@ -7,9 +7,12 @@ const EXCLUDED_PREFIXES = ['git', 'noreply', 'no-reply'];
  * Practical email regex — catches 95%+ of real-world emails.
  * Not RFC 5322 compliant (intentionally — RFC patterns produce too many false positives).
  * Uses a global match to find all occurrences.
+ *
+ * Local part capped at 64 chars (RFC 5321 limit) to prevent O(n²)
+ * backtracking on long runs of matching characters without an '@'.
  */
 const EMAIL_PATTERN =
-  /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+  /[a-zA-Z0-9._%+-]{1,64}@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
 
 /** Detect email addresses in text */
 export function detectEmails(text: string): Finding[] {
