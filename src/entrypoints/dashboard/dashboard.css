@@ -264,6 +264,11 @@ body {
 
 .activity-table tbody tr {
   border-top: 1px solid var(--color-border-subtle);
+  transition: background var(--transition-fast);
+}
+
+.activity-table tbody tr:hover {
+  background: var(--color-bg-elevated);
 }
 
 .activity-table__empty-cell {
@@ -296,10 +301,36 @@ body {
 }
 
 .settings-checkbox {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--color-warning);
+  appearance: none;
+  -webkit-appearance: none;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--color-border);
+  position: relative;
   cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+
+.settings-checkbox::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  top: 2px;
+  left: 2px;
+  transition: transform var(--transition-fast);
+}
+
+.settings-checkbox:checked {
+  background: var(--color-safe);
+}
+
+.settings-checkbox:checked::after {
+  transform: translateX(16px);
 }
 
 .settings-label__text {
@@ -435,6 +466,10 @@ body {
   font-family: inherit;
 }
 
+.keyword-add-btn:hover:not(:disabled) {
+  background: #D97706;
+}
+
 .keyword-add-btn:disabled {
   opacity: 0.5;
   cursor: default;
@@ -468,6 +503,12 @@ body {
   color: var(--color-warning);
   border-radius: var(--radius-md);
   border: 1px solid rgba(245, 158, 11, 0.3);
+  animation: badge-in var(--transition-fast);
+}
+
+@keyframes badge-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 .keyword-badge__remove {
@@ -501,6 +542,11 @@ body {
   border-radius: var(--radius-lg);
   cursor: pointer;
   font-family: inherit;
+}
+
+.keyword-io-btn:hover:not(:disabled) {
+  background: var(--color-bg-card);
+  border-color: var(--color-text-muted);
 }
 
 .keyword-io-btn:disabled {
@@ -578,6 +624,16 @@ body {
   line-height: 1.5;
 }
 
+/* === Tab Panel Transition === */
+[role="tabpanel"] > * {
+  animation: panel-in var(--transition-normal);
+}
+
+@keyframes panel-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 /* === Visually Hidden (a11y) === */
 .visually-hidden {
   position: absolute;
@@ -585,4 +641,12 @@ body {
   width: 1px;
   height: 1px;
   overflow: hidden;
+}
+
+/* === Reduced Motion === */
+@media (prefers-reduced-motion: reduce) {
+  [role="tabpanel"] > *,
+  .keyword-badge {
+    animation: none !important;
+  }
 }
