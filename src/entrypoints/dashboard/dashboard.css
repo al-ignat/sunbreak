@@ -1,0 +1,37 @@
+@import '../../ui/tokens.css';
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
+}
+
+/* === Shared section styles (replaces styles.ts) === */
+.section {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  padding: var(--space-xl);
+}
+
+.section-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-md);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px var(--space-xl);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}

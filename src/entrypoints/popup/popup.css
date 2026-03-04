@@ -1,0 +1,7 @@
+@import '../../ui/tokens.css';
+
+body {
+  width: 400px;
+  margin: 0;
+  font-family: var(--font-body);
+}

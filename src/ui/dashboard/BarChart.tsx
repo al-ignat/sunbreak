@@ -3,7 +3,7 @@ import { useState } from 'preact/hooks';
 import type { AggregatedStats } from '../../storage/types';
 import { StatsCard } from './StatsCard';
 import { ToggleButton } from './ToggleButton';
-import { emptyStateStyle } from './styles';
+const emptyStateStyle: JSX.CSSProperties = { textAlign: 'center', padding: '40px 20px', color: '#888', fontSize: '14px', background: 'white', borderRadius: '8px', border: '1px solid #E0E0E0' };
 
 export interface BarChartProps {
   readonly stats7: AggregatedStats | null;

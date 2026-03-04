@@ -6,7 +6,8 @@ import {
   importKeywords,
   exportKeywords,
 } from '../../storage/dashboard';
-import { sectionStyle, sectionHeaderStyle } from './styles';
+const sectionStyle: JSX.CSSProperties = { background: 'white', borderRadius: '8px', border: '1px solid #E0E0E0', padding: '20px' };
+const sectionHeaderStyle: JSX.CSSProperties = { fontSize: '14px', fontWeight: 600, color: '#333', margin: '0 0 12px' };
 
 export interface KeywordManagerProps {
   readonly keywords: ReadonlyArray<string>;

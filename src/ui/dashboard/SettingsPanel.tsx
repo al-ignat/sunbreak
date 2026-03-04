@@ -3,7 +3,8 @@ import type { DetectionSettings, ExtensionSettings } from '../../storage/types';
 import type { FindingType } from '../../classifier/types';
 import { setDetectionSettings, setExtensionSettings } from '../../storage/dashboard';
 import { DetectionToggles } from './DetectionToggles';
-import { sectionStyle, sectionHeaderStyle } from './styles';
+const sectionStyle: JSX.CSSProperties = { background: 'white', borderRadius: '8px', border: '1px solid #E0E0E0', padding: '20px' };
+const sectionHeaderStyle: JSX.CSSProperties = { fontSize: '14px', fontWeight: 600, color: '#333', margin: '0 0 12px' };
 
 export interface SettingsPanelProps {
   readonly detectionSettings: DetectionSettings;

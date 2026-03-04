@@ -3,7 +3,7 @@ import { useState, useMemo } from 'preact/hooks';
 import type { FlaggedEvent } from '../../storage/types';
 import { toolLabel, toolColor, actionLabel, actionColor } from '../format';
 import { ToggleButton } from './ToggleButton';
-import { emptyStateStyle } from './styles';
+const emptyStateStyle: JSX.CSSProperties = { textAlign: 'center', padding: '40px 20px', color: '#888', fontSize: '14px', background: 'white', borderRadius: '8px', border: '1px solid #E0E0E0' };
 
 export interface ActivityLogProps {
   readonly events: ReadonlyArray<FlaggedEvent>;
