@@ -140,7 +140,7 @@ export function KeywordManager({
       <div className="section">
         <h3 className="section-header">Import / Export</h3>
         <div className="keyword-io-row">
-          <label className="keyword-io-btn" style={{ cursor: 'pointer' }}>
+          <label className="keyword-io-btn">
             Import .txt
             <input
               ref={fileInputRef}
