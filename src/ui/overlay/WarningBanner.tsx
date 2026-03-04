@@ -123,7 +123,7 @@ export default function WarningBanner({ findings, onAction }: WarningBannerProps
           Edit
         </button>
         <button
-          class="byoai-btn byoai-btn--tertiary"
+          class="byoai-btn byoai-btn--danger"
           onClick={(): void => handleAction('send-anyway')}
           type="button"
         >

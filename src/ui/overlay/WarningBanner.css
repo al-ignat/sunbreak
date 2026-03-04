@@ -1,14 +1,24 @@
 /* All styles scoped inside Shadow DOM — no leakage to host page */
 
-/* Entry animation */
-@keyframes byoai-slide-in {
+/* Cosmetic backdrop — does NOT block host page interaction */
+#byoai-overlay-wrapper::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.06);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Entry animation — scale + opacity for interception feel */
+@keyframes byoai-entrance {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateX(-50%) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(-50%) scale(1);
   }
 }
 
@@ -16,11 +26,11 @@
 @keyframes byoai-slide-out {
   from {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateX(-50%) scale(1);
   }
   to {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateX(-50%) scale(0.96);
   }
 }
 
@@ -32,14 +42,14 @@
   max-width: 600px;
   width: calc(100% - 32px);
   background: #FFF8E1;
-  border-left: 4px solid #FF9800;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid #F59E0B;
+  border-radius: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
   color: #333333;
   z-index: 2147483647;
-  animation: byoai-slide-in 200ms ease-out forwards;
+  animation: byoai-entrance 100ms ease-out forwards;
   box-sizing: border-box;
   padding: 12px 16px;
   line-height: 1.4;
@@ -58,13 +68,15 @@
 
 .byoai-banner__icon {
   font-size: 18px;
-  color: #FF9800;
+  color: #F59E0B;
   flex-shrink: 0;
 }
 
 .byoai-banner__summary {
   flex: 1;
   font-weight: 600;
+  font-size: 15px;
+  line-height: 1.3;
 }
 
 .byoai-banner__toggle {
@@ -84,7 +96,7 @@
 }
 
 .byoai-banner__toggle:focus-visible {
-  outline: 2px solid #FF9800;
+  outline: 2px solid #F59E0B;
   outline-offset: 2px;
 }
 
@@ -110,7 +122,7 @@
 }
 
 .byoai-banner__finding-value {
-  background: rgba(255, 152, 0, 0.12);
+  background: rgba(245, 158, 11, 0.12);
   padding: 1px 4px;
   border-radius: 3px;
   font-size: 12px;
@@ -124,7 +136,7 @@
 }
 
 .byoai-banner__finding-placeholder {
-  background: rgba(76, 175, 80, 0.12);
+  background: rgba(16, 185, 129, 0.12);
   padding: 1px 4px;
   border-radius: 3px;
   font-size: 12px;
@@ -140,25 +152,26 @@
 
 .byoai-btn {
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   padding: 6px 14px;
   font-family: inherit;
   line-height: 1.4;
-  transition: background 120ms ease;
+  transition: background 100ms ease-out;
 }
 
 .byoai-btn:focus-visible {
-  outline: 2px solid #FF9800;
+  outline: 2px solid #F59E0B;
   outline-offset: 2px;
 }
 
-/* Primary: Redact & Send — #E65100 on white passes WCAG AA (4.6:1) */
+/* Primary: Redact & Send — prominent safe choice */
 .byoai-btn--primary {
   background: #E65100;
   color: #FFFFFF;
+  padding: 10px 20px;
 }
 
 .byoai-btn--primary:hover {
@@ -168,15 +181,15 @@
 /* Secondary: Edit */
 .byoai-btn--secondary {
   background: transparent;
-  border: 1px solid #FF9800;
+  border: 1px solid #F59E0B;
   color: #E65100;
 }
 
 .byoai-btn--secondary:hover {
-  background: rgba(255, 152, 0, 0.08);
+  background: rgba(245, 158, 11, 0.08);
 }
 
-/* Tertiary: Send Anyway, Cancel */
+/* Tertiary: Cancel */
 .byoai-btn--tertiary {
   background: transparent;
   color: #666666;
@@ -186,4 +199,32 @@
 .byoai-btn--tertiary:hover {
   background: rgba(0, 0, 0, 0.05);
   color: #333333;
+}
+
+/* Danger: Send Anyway — must look risky */
+.byoai-btn--danger {
+  background: transparent;
+  color: #EF4444;
+  border: 1px solid transparent;
+  padding: 6px 10px;
+}
+
+.byoai-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: #EF4444;
+}
+
+.byoai-btn--danger:focus-visible {
+  outline: 2px solid #EF4444;
+  outline-offset: 2px;
+}
+
+/* Accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .byoai-banner {
+    animation: none;
+  }
+  .byoai-banner--exit {
+    animation: none;
+  }
 }
