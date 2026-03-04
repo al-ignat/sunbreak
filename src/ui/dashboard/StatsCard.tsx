@@ -15,8 +15,8 @@ export function StatsCard({ stats, periodLabel }: StatsCardProps): JSX.Element {
 
   if (stats.totalInteractions === 0) {
     return (
-      <div style={cardStyle}>
-        <p style={{ color: '#888', fontSize: '13px', margin: 0, textAlign: 'center' }}>
+      <div className="stats-card">
+        <p className="stats-card__empty">
           No activity yet. Start using AI tools and your stats will appear here.
         </p>
       </div>
@@ -24,8 +24,8 @@ export function StatsCard({ stats, periodLabel }: StatsCardProps): JSX.Element {
   }
 
   return (
-    <div style={cardStyle}>
-      <p style={{ fontSize: '13px', color: '#555', margin: '0 0 8px' }}>
+    <div className="stats-card">
+      <p className="stats-card__text">
         {periodLabel}:{' '}
         <strong>{stats.totalInteractions}</strong> AI interactions,{' '}
         <strong>{stats.flaggedCount}</strong> flagged,{' '}
@@ -33,7 +33,7 @@ export function StatsCard({ stats, periodLabel }: StatsCardProps): JSX.Element {
         Compliance rate: <strong>{compliance}</strong>
       </p>
       {Object.keys(stats.byTool).length > 0 && (
-        <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#888' }}>
+        <div className="stats-card__tools">
           {Object.entries(stats.byTool).map(([tool, count]) => (
             <span key={tool}>
               {toolLabel(tool)}: {count}
@@ -44,10 +44,3 @@ export function StatsCard({ stats, periodLabel }: StatsCardProps): JSX.Element {
     </div>
   );
 }
-
-const cardStyle: JSX.CSSProperties = {
-  padding: '12px',
-  background: '#FAFAFA',
-  borderRadius: '8px',
-  border: '1px solid #E0E0E0',
-};

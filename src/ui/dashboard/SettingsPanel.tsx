@@ -3,8 +3,6 @@ import type { DetectionSettings, ExtensionSettings } from '../../storage/types';
 import type { FindingType } from '../../classifier/types';
 import { setDetectionSettings, setExtensionSettings } from '../../storage/dashboard';
 import { DetectionToggles } from './DetectionToggles';
-const sectionStyle: JSX.CSSProperties = { background: 'white', borderRadius: '8px', border: '1px solid #E0E0E0', padding: '20px' };
-const sectionHeaderStyle: JSX.CSSProperties = { fontSize: '14px', fontWeight: 600, color: '#333', margin: '0 0 12px' };
 
 export interface SettingsPanelProps {
   readonly detectionSettings: DetectionSettings;
@@ -38,23 +36,22 @@ export function SettingsPanel({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      {/* Extension Toggle */}
-      <section style={sectionStyle}>
-        <h3 style={sectionHeaderStyle}>Extension</h3>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+    <div className="settings-layout">
+      <section className="section">
+        <h3 className="section-header">Extension</h3>
+        <label className="settings-label">
           <input
             type="checkbox"
             checked={extensionSettings.enabled}
             onChange={handleEnabledToggle}
             aria-label="Enable or disable extension"
-            style={{ width: '18px', height: '18px', accentColor: '#FF9800', cursor: 'pointer' }}
+            className="settings-checkbox"
           />
           <span>
-            <span style={{ fontSize: '14px', fontWeight: 500, color: '#333' }}>
+            <span className="settings-label__text">
               Extension {extensionSettings.enabled ? 'Enabled' : 'Disabled'}
             </span>
-            <span style={{ display: 'block', fontSize: '12px', color: '#888' }}>
+            <span className="settings-label__desc">
               {extensionSettings.enabled
                 ? 'Monitoring prompts on AI tool pages'
                 : 'Extension is paused. No prompts will be classified.'}
@@ -63,26 +60,19 @@ export function SettingsPanel({
         </label>
       </section>
 
-      {/* Intervention Mode */}
-      <section style={sectionStyle}>
-        <h3 style={sectionHeaderStyle}>Intervention Mode</h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <section className="section">
+        <h3 className="section-header">Intervention Mode</h3>
+        <div className="settings-mode-row">
           <select
             value={extensionSettings.interventionMode}
             onChange={handleModeChange}
             aria-label="Intervention mode"
-            style={{
-              padding: '8px 12px',
-              fontSize: '13px',
-              border: '1px solid #DDD',
-              borderRadius: '6px',
-              background: 'white',
-            }}
+            className="settings-select"
           >
             <option value="warn">Warn before sending</option>
             <option value="log-only">Log only (no overlay)</option>
           </select>
-          <span style={{ fontSize: '12px', color: '#888' }}>
+          <span className="settings-mode-desc">
             {extensionSettings.interventionMode === 'warn'
               ? 'Shows a warning overlay when sensitive data is detected.'
               : 'Classifies and logs events silently without interrupting your workflow.'}
@@ -90,9 +80,8 @@ export function SettingsPanel({
         </div>
       </section>
 
-      {/* Detection Categories */}
-      <section style={sectionStyle}>
-        <h3 style={sectionHeaderStyle}>Detection Categories</h3>
+      <section className="section">
+        <h3 className="section-header">Detection Categories</h3>
         <DetectionToggles
           settings={detectionSettings}
           onToggle={handleDetectionToggle}
@@ -101,4 +90,3 @@ export function SettingsPanel({
     </div>
   );
 }
-

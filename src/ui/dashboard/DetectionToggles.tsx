@@ -15,17 +15,11 @@ export function DetectionToggles({
   compact = false,
 }: DetectionTogglesProps): JSX.Element {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? '6px' : '10px' }}>
+    <div className={`detection-list ${compact ? 'detection-list--compact' : 'detection-list--full'}`}>
       {DETECTION_CATEGORIES.map((cat) => (
         <label
           key={cat.type}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            cursor: 'pointer',
-            padding: compact ? '4px 0' : '6px 0',
-          }}
+          className={`detection-item ${compact ? 'detection-item--compact' : 'detection-item--full'}`}
         >
           <input
             type="checkbox"
@@ -35,21 +29,14 @@ export function DetectionToggles({
               onToggle(cat.type, target.checked);
             }}
             aria-label={`Toggle ${cat.label} detection`}
-            style={{ width: '16px', height: '16px', accentColor: '#FF9800', cursor: 'pointer' }}
+            className="detection-checkbox"
           />
-          <span style={{ flex: 1 }}>
-            <span style={{ fontSize: compact ? '12px' : '13px', fontWeight: 500, color: '#333' }}>
+          <span className="detection-item__label">
+            <span className={`detection-item__name ${compact ? 'detection-item__name--compact' : 'detection-item__name--full'}`}>
               {cat.label}
             </span>
             {!compact && (
-              <span
-                style={{
-                  display: 'block',
-                  fontSize: '11px',
-                  color: '#888',
-                  marginTop: '1px',
-                }}
-              >
+              <span className="detection-item__desc">
                 {cat.description}
               </span>
             )}
