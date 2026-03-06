@@ -5,6 +5,7 @@ import { createOverlayController } from '../ui/overlay/overlay-controller';
 import type { OverlayContext } from '../ui/overlay/overlay-controller';
 import type { OverlayFinding } from '../ui/overlay/types';
 import { buildRedactedText } from './interceptor';
+import { clearKeywordCache } from '../classifier/keywords';
 import type { InterceptResult } from './interceptor';
 import { logFlaggedEvent, logCleanPrompt } from '../storage/events';
 import type {
@@ -22,6 +23,9 @@ import {
   getKeywords,
   toEnabledDetectors,
 } from '../storage/dashboard';
+import { createFindingsState } from './findings-state';
+import type { FindingsState } from './findings-state';
+import type { ScannerConfig } from './scanner';
 
 /**
  * Context for the orchestrator.
@@ -75,6 +79,8 @@ export function createOrchestrator(
     adapterName: SiteName,
   ) => Promise<InterceptResult>;
   onFileDetected: FileCallback;
+  findingsState: FindingsState;
+  scannerConfig: ScannerConfig;
 } {
   const overlayCtx: OverlayContext = {
     get isInvalid(): boolean {
@@ -96,6 +102,16 @@ export function createOrchestrator(
     ...DEFAULT_EXTENSION_SETTINGS,
   };
 
+  // FindingsState for the continuous scanner
+  const findingsState = createFindingsState();
+
+  // ScannerConfig: exposes cached settings to the scanner without duplication
+  const scannerConfig: ScannerConfig = {
+    getKeywords: () => cachedKeywords,
+    getDetectionSettings: () => cachedDetectionSettings,
+    getExtensionSettings: () => cachedExtensionSettings,
+  };
+
   // Fetch all cached settings initially
   void fetchAllSettings();
 
@@ -106,6 +122,7 @@ export function createOrchestrator(
         if (changes['keywords']) {
           cachedKeywords =
             (changes['keywords'].newValue as string[] | undefined) ?? [];
+          clearKeywordCache();
         }
         if (changes['detectionSettings']) {
           cachedDetectionSettings =
@@ -255,5 +272,5 @@ export function createOrchestrator(
     );
   }
 
-  return { onPromptIntercepted, onFileDetected };
+  return { onPromptIntercepted, onFileDetected, findingsState, scannerConfig };
 }
