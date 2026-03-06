@@ -342,12 +342,12 @@ Findings:    [sun-icon] Sunbreak  (3)             (red badge, slightly more opaq
 - `src/content/findings-state.ts` — `fix()` and `fixAll()` call adapter.setText() via callback
 
 **Success criteria:**
-- [ ] Panel shows all active findings with correct severity colors
-- [ ] "Fix" replaces individual finding in input text
-- [ ] "Fix All" replaces all active findings in a single batch
-- [ ] "Ignore" dismisses finding for this prompt
-- [ ] Panel keyboard accessible (Tab, Enter, Escape)
-- [ ] Badge count updates after fix/ignore
+- [x] Panel shows all active findings with correct severity colors
+- [x] "Fix" replaces individual finding in input text
+- [x] "Fix All" replaces all active findings in a single batch
+- [x] "Ignore" dismisses finding for this prompt
+- [x] Panel keyboard accessible (Tab, Enter, Escape)
+- [x] Badge count updates after fix/ignore
 
 ##### Phase 3 Research Insights
 

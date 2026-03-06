@@ -122,7 +122,7 @@ export function createOrchestrator(
     },
     onInvalidated: ctx.onInvalidated.bind(ctx),
   };
-  const widgetController = createWidgetController(findingsState, widgetCtx);
+  const widgetController = createWidgetController(findingsState, adapter, widgetCtx);
 
   // Fetch all cached settings initially
   void fetchAllSettings();

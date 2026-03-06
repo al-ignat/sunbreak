@@ -1,7 +1,10 @@
 import { render, h } from 'preact';
 import Widget from './Widget';
 import type { FindingsState } from '../../content/findings-state';
+import type { SiteAdapter } from '../../types';
+import { buildRedactedText } from '../../content/interceptor';
 import widgetStyles from './widget.css?inline';
+import panelStyles from './findings-panel.css?inline';
 
 /**
  * Context for the widget controller lifecycle.
@@ -19,6 +22,7 @@ export interface WidgetContext {
  */
 export function createWidgetController(
   findingsState: FindingsState,
+  adapter: SiteAdapter,
   ctx: WidgetContext,
 ): {
   mount(input: HTMLElement): void;
@@ -51,7 +55,7 @@ export function createWidgetController(
     const shadow = container.attachShadow({ mode: 'closed' });
 
     const styleEl = document.createElement('style');
-    styleEl.textContent = widgetStyles;
+    styleEl.textContent = widgetStyles + '\n' + panelStyles;
     shadow.appendChild(styleEl);
 
     const w = document.createElement('div');
@@ -89,16 +93,59 @@ export function createWidgetController(
     });
   }
 
+  function handleFix(id: string): void {
+    const snap = findingsState.getSnapshot();
+    const tf = snap.tracked.find((t) => t.id === id);
+    if (!tf || tf.status !== 'active') return;
+
+    const input = currentInput?.isConnected ? currentInput : adapter.findInput();
+    if (!input) return;
+
+    const text = adapter.getText(input);
+    const redacted = buildRedactedText(text, [tf.finding]);
+    adapter.setText(input, redacted);
+    findingsState.fix(id);
+  }
+
+  function handleIgnore(id: string): void {
+    findingsState.ignore(id);
+  }
+
+  function handleFixAll(): void {
+    const snap = findingsState.getSnapshot();
+    const active = snap.tracked.filter((t) => t.status === 'active');
+    if (active.length === 0) return;
+
+    const input = currentInput?.isConnected ? currentInput : adapter.findInput();
+    if (!input) return;
+
+    const text = adapter.getText(input);
+    const redacted = buildRedactedText(
+      text,
+      active.map((t) => t.finding),
+    );
+    adapter.setText(input, redacted);
+    findingsState.fixAll();
+  }
+
+  function handleClose(): void {
+    panelOpen = false;
+    renderWidget();
+  }
+
   function renderWidget(): void {
     if (!wrapper) return;
     render(
       h(Widget, {
         findingsState,
         panelOpen,
+        onFix: handleFix,
+        onIgnore: handleIgnore,
+        onFixAll: handleFixAll,
+        onClose: handleClose,
         onClick: (): void => {
           panelOpen = !panelOpen;
           renderWidget();
-          // Panel toggling will be wired in Phase 3
         },
       }),
       wrapper,
