@@ -47,6 +47,9 @@ export function createWidgetController(
   let wrapper: HTMLDivElement | null = null;
   let currentInput: HTMLElement | null = null;
   let rafId: number | null = null;
+  let positionPollId: ReturnType<typeof setInterval> | null = null;
+  let lastInputTop = 0;
+  let lastInputLeft = 0;
   let panelOpen = false;
   let toastState: ToastState | null = null;
   let overlayHandle: TextOverlayHandle | null = null;
@@ -98,6 +101,26 @@ export function createWidgetController(
 
     wrapper.style.top = `${top}px`;
     wrapper.style.left = `${left}px`;
+  }
+
+  function startPositionPolling(): void {
+    stopPositionPolling();
+    positionPollId = setInterval(() => {
+      if (!currentInput || !currentInput.isConnected) return;
+      const rect = currentInput.getBoundingClientRect();
+      if (Math.abs(rect.top - lastInputTop) > 1 || Math.abs(rect.left - lastInputLeft) > 1) {
+        lastInputTop = rect.top;
+        lastInputLeft = rect.left;
+        updatePosition();
+      }
+    }, 300);
+  }
+
+  function stopPositionPolling(): void {
+    if (positionPollId !== null) {
+      clearInterval(positionPollId);
+      positionPollId = null;
+    }
   }
 
   function onScrollOrResize(): void {
@@ -231,9 +254,13 @@ export function createWidgetController(
     if (ctx.isInvalid) return;
 
     currentInput = input;
+    const rect = input.getBoundingClientRect();
+    lastInputTop = rect.top;
+    lastInputLeft = rect.left;
     ensureContainer();
     updatePosition();
     renderWidget();
+    startPositionPolling();
 
     // Subscribe to findings state for re-renders
     const unsub = findingsState.subscribe(() => {
@@ -260,6 +287,7 @@ export function createWidgetController(
     unmountInternal();
     unmountInternal = (): void => {};
 
+    stopPositionPolling();
     window.removeEventListener('scroll', onScrollOrResize, true);
     window.removeEventListener('resize', onScrollOrResize);
 
