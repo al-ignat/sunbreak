@@ -1,0 +1,9 @@
+.sb-text-overlay {
+  pointer-events: none;
+  will-change: transform;
+}
+
+.sb-underline {
+  pointer-events: none;
+  box-sizing: border-box;
+}

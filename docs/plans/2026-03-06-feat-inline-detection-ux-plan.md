@@ -584,13 +584,13 @@ If position calculation fails for a site, that adapter skips underlines. The `Si
 - `src/ui/widget/Widget.tsx` — mount TextOverlay alongside widget
 
 **Success criteria:**
-- [ ] Underlines appear at correct positions on at least ChatGPT and Claude
-- [ ] Underlines use correct colors per category
-- [ ] Underlines reposition on scroll (translate-only, no reflow) and resize (full recalc)
-- [ ] Underlines disappear when finding is fixed or ignored
-- [ ] Graceful fallback (no underlines, findings in panel only) on failure
-- [ ] No interference with editor functionality (typing, selection, cursor)
-- [ ] `findingAtPoint()` API exposed for hover card integration
+- [x] Underlines appear at correct positions on at least ChatGPT and Claude
+- [x] Underlines use correct colors per category
+- [x] Underlines reposition on scroll (translate-only, no reflow) and resize (full recalc)
+- [x] Underlines disappear when finding is fixed or ignored
+- [x] Graceful fallback (no underlines, findings in panel only) on failure
+- [x] No interference with editor functionality (typing, selection, cursor)
+- [x] `findingAtPoint()` API exposed for hover card integration
 
 #### Phase 6: Hover Cards
 

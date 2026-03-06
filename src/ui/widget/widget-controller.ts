@@ -6,6 +6,8 @@ import { buildRedactedText } from '../../content/interceptor';
 import widgetStyles from './widget.css?inline';
 import panelStyles from './findings-panel.css?inline';
 import toastStyles from './send-toast.css?inline';
+import overlayStyles from './text-overlay.css?inline';
+import type { TextOverlayHandle } from './TextOverlay';
 
 /**
  * Context for the widget controller lifecycle.
@@ -38,6 +40,7 @@ export function createWidgetController(
   unmount(): void;
   destroy(): void;
   showToast(activeCount: number): Promise<'send-anyway' | 'timeout'>;
+  getOverlayHandle(): TextOverlayHandle | null;
 } {
   let container: HTMLDivElement | null = null;
   let shadowRoot: ShadowRoot | null = null;
@@ -46,6 +49,7 @@ export function createWidgetController(
   let rafId: number | null = null;
   let panelOpen = false;
   let toastState: ToastState | null = null;
+  let overlayHandle: TextOverlayHandle | null = null;
 
   function ensureContainer(): ShadowRoot {
     if (container && shadowRoot) {
@@ -66,7 +70,7 @@ export function createWidgetController(
     const shadow = container.attachShadow({ mode: 'closed' });
 
     const styleEl = document.createElement('style');
-    styleEl.textContent = widgetStyles + '\n' + panelStyles + '\n' + toastStyles;
+    styleEl.textContent = widgetStyles + '\n' + panelStyles + '\n' + toastStyles + '\n' + overlayStyles;
     shadow.appendChild(styleEl);
 
     const w = document.createElement('div');
@@ -180,6 +184,8 @@ export function createWidgetController(
     render(
       h(Widget, {
         findingsState,
+        editorEl: currentInput,
+        supportsOverlay: adapter.supportsOverlay !== false,
         panelOpen,
         onFix: handleFix,
         onIgnore: handleIgnore,
@@ -201,6 +207,9 @@ export function createWidgetController(
         onToastReview: handleToastReview,
         onToastSendAnyway: handleToastSendAnyway,
         onToastTimeout: handleToastTimeout,
+        onOverlayHandleReady: (handle: TextOverlayHandle | null): void => {
+          overlayHandle = handle;
+        },
       }),
       wrapper,
     );
@@ -288,5 +297,9 @@ export function createWidgetController(
     destroy();
   });
 
-  return { mount, unmount, destroy, showToast };
+  function getOverlayHandle(): TextOverlayHandle | null {
+    return overlayHandle;
+  }
+
+  return { mount, unmount, destroy, showToast, getOverlayHandle };
 }
