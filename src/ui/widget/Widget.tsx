@@ -1,11 +1,16 @@
 import type { JSX } from 'preact';
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import type { FindingsSnapshot, FindingsState } from '../../content/findings-state';
+import FindingsPanel from './FindingsPanel';
 
 export interface WidgetProps {
   findingsState: FindingsState;
   onClick: () => void;
   panelOpen: boolean;
+  onFix?: (id: string) => void;
+  onIgnore?: (id: string) => void;
+  onFixAll?: () => void;
+  onClose?: () => void;
 }
 
 type WidgetStatus = 'clean' | 'findings';
@@ -23,7 +28,7 @@ function buildAriaLabel(status: WidgetStatus, count: number): string {
   return 'Sunbreak: no issues detected';
 }
 
-export default function Widget({ findingsState, onClick, panelOpen }: WidgetProps): JSX.Element {
+export default function Widget({ findingsState, onClick, panelOpen, onFix, onIgnore, onFixAll, onClose }: WidgetProps): JSX.Element {
   const [snapshot, setSnapshot] = useState<FindingsSnapshot>(findingsState.getSnapshot());
 
   useEffect(() => {
@@ -51,29 +56,41 @@ export default function Widget({ findingsState, onClick, panelOpen }: WidgetProp
   );
 
   return (
-    <div
-      class={`sb-widget sb-widget--${status}`}
-      role="button"
-      tabIndex={0}
-      aria-label={buildAriaLabel(status, snapshot.activeCount)}
-      aria-expanded={panelOpen}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-    >
-      <span class="sb-widget__icon" aria-hidden="true">
-        <SunIcon />
-      </span>
-      <span class="sb-widget__label">Sunbreak</span>
-      <span class="sb-widget__status" role="status" aria-live="polite">
-        {status === 'findings' && (
-          <span class="sb-widget__badge">{snapshot.activeCount}</span>
-        )}
-        {status === 'clean' && (
-          <span class="sb-widget__check" aria-hidden="true">
-            <CheckIcon />
-          </span>
-        )}
-      </span>
+    <div class="sb-widget-container">
+      <div
+        class={`sb-widget sb-widget--${status}`}
+        role="button"
+        tabIndex={0}
+        aria-label={buildAriaLabel(status, snapshot.activeCount)}
+        aria-expanded={panelOpen}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+      >
+        <span class="sb-widget__icon" aria-hidden="true">
+          <SunIcon />
+        </span>
+        <span class="sb-widget__label">Sunbreak</span>
+        <span class="sb-widget__status" role="status" aria-live="polite">
+          {status === 'findings' && (
+            <span class="sb-widget__badge">{snapshot.activeCount}</span>
+          )}
+          {status === 'clean' && (
+            <span class="sb-widget__check" aria-hidden="true">
+              <CheckIcon />
+            </span>
+          )}
+        </span>
+      </div>
+      {panelOpen && onFix && onIgnore && onFixAll && onClose && (
+        <FindingsPanel
+          tracked={snapshot.tracked}
+          activeCount={snapshot.activeCount}
+          onFix={onFix}
+          onIgnore={onIgnore}
+          onFixAll={onFixAll}
+          onClose={onClose}
+        />
+      )}
     </div>
   );
 }

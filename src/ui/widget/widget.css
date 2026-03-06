@@ -1,5 +1,12 @@
 /* Corner widget — all styles scoped inside Shadow DOM */
 
+.sb-widget-container {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 @keyframes sb-widget-entrance {
   from {
     opacity: 0;
