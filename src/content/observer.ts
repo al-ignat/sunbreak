@@ -8,6 +8,7 @@ import type { InterceptCallback } from './interceptor';
 import { attachScanner } from './scanner';
 import type { ScannerConfig } from './scanner';
 import type { FindingsState } from './findings-state';
+import type { createWidgetController } from '../ui/widget/widget-controller';
 
 /** How long to wait for the editor element before giving up (ms) */
 const FIND_TIMEOUT_MS = 10_000;
@@ -117,6 +118,7 @@ export function startObserving(
     config: ScannerConfig;
     state: FindingsState;
   },
+  widgetController?: ReturnType<typeof createWidgetController>,
 ): void {
   const maybeAdapter = selectAdapter(window.location.hostname);
   if (!maybeAdapter) return; // Not on a supported site
@@ -135,6 +137,7 @@ export function startObserving(
     cleanupFileDetector = null;
     cleanupScanner?.();
     cleanupScanner = null;
+    widgetController?.unmount();
     currentInput = null;
     if (healthCheckId !== null) {
       clearInterval(healthCheckId);
@@ -175,6 +178,9 @@ export function startObserving(
       interceptorCtx,
       onFileDetected,
     );
+
+    // Mount corner widget
+    widgetController?.mount(input);
 
     // Attach continuous scanner if dependencies provided
     if (scannerDeps) {

@@ -15,12 +15,12 @@ export default defineContentScript({
     const adapter = selectAdapter(window.location.hostname);
     if (!adapter) return;
 
-    const { onPromptIntercepted, onFileDetected, findingsState, scannerConfig } =
+    const { onPromptIntercepted, onFileDetected, findingsState, scannerConfig, widgetController } =
       createOrchestrator(adapter, ctx);
 
     startObserving(ctx, onPromptIntercepted, onFileDetected, {
       config: scannerConfig,
       state: findingsState,
-    });
+    }, widgetController);
   },
 });
