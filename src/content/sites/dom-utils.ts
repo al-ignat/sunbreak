@@ -21,14 +21,15 @@ export function extractParagraphText(editor: HTMLElement): string {
 
 /** Best-effort text replacement for contenteditable editors using `<p>` wrapping. */
 export function setParagraphText(input: HTMLElement, text: string): void {
-  const escaped = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  const paragraphs = escaped
-    .split('\n')
-    .map((line) => `<p>${line || '<br>'}</p>`)
-    .join('');
-  input.innerHTML = paragraphs;
+  while (input.firstChild) input.removeChild(input.firstChild);
+  for (const line of text.split('\n')) {
+    const p = document.createElement('p');
+    if (line) {
+      p.textContent = line;
+    } else {
+      p.appendChild(document.createElement('br'));
+    }
+    input.appendChild(p);
+  }
   input.dispatchEvent(new Event('input', { bubbles: true }));
 }

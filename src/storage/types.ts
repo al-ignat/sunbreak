@@ -7,7 +7,7 @@ export interface FlaggedEvent {
   readonly tool: string;
   readonly categories: ReadonlyArray<string>;
   readonly findingCount: number;
-  readonly action: 'redacted' | 'sent-anyway' | 'cancelled' | 'edited';
+  readonly action: 'redacted' | 'sent-anyway' | 'cancelled' | 'edited' | 'fixed' | 'ignored';
 }
 
 /** Daily interaction counter */

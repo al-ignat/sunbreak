@@ -5,6 +5,9 @@ import {
   attachFileDetector,
 } from './interceptor';
 import type { InterceptCallback } from './interceptor';
+import { attachScanner } from './scanner';
+import type { ScannerConfig } from './scanner';
+import type { FindingsState } from './findings-state';
 
 /** How long to wait for the editor element before giving up (ms) */
 const FIND_TIMEOUT_MS = 10_000;
@@ -110,6 +113,10 @@ export function startObserving(
   ctx: ObserverContext,
   onPromptIntercepted: InterceptCallback,
   onFileDetected: FileCallback,
+  scannerDeps?: {
+    config: ScannerConfig;
+    state: FindingsState;
+  },
 ): void {
   const maybeAdapter = selectAdapter(window.location.hostname);
   if (!maybeAdapter) return; // Not on a supported site
@@ -118,6 +125,7 @@ export function startObserving(
   let currentInput: HTMLElement | null = null;
   let cleanupInterceptor: (() => void) | null = null;
   let cleanupFileDetector: (() => void) | null = null;
+  let cleanupScanner: (() => void) | null = null;
   let healthCheckId: number | null = null;
 
   function tearDown(): void {
@@ -125,6 +133,8 @@ export function startObserving(
     cleanupInterceptor = null;
     cleanupFileDetector?.();
     cleanupFileDetector = null;
+    cleanupScanner?.();
+    cleanupScanner = null;
     currentInput = null;
     if (healthCheckId !== null) {
       clearInterval(healthCheckId);
@@ -165,6 +175,23 @@ export function startObserving(
       interceptorCtx,
       onFileDetected,
     );
+
+    // Attach continuous scanner if dependencies provided
+    if (scannerDeps) {
+      const scannerCtx = {
+        get isInvalid(): boolean {
+          return ctx.isInvalid;
+        },
+        onInvalidated: ctx.onInvalidated.bind(ctx),
+      };
+      cleanupScanner = attachScanner(
+        input,
+        adapter,
+        scannerDeps.config,
+        scannerDeps.state,
+        scannerCtx,
+      );
+    }
 
     // Health check: verify element is still in DOM
     healthCheckId = ctx.setInterval(() => {
