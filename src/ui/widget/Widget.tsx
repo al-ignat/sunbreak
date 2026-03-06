@@ -2,6 +2,14 @@ import type { JSX } from 'preact';
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import type { FindingsSnapshot, FindingsState } from '../../content/findings-state';
 import FindingsPanel from './FindingsPanel';
+import SendToast from './SendToast';
+
+/** Toast display state passed from the widget controller */
+export interface ToastDisplayState {
+  activeCount: number;
+  paused: boolean;
+  visible: boolean;
+}
 
 export interface WidgetProps {
   findingsState: FindingsState;
@@ -11,6 +19,10 @@ export interface WidgetProps {
   onIgnore?: (id: string) => void;
   onFixAll?: () => void;
   onClose?: () => void;
+  toastState?: ToastDisplayState | null;
+  onToastReview?: () => void;
+  onToastSendAnyway?: () => void;
+  onToastTimeout?: () => void;
 }
 
 type WidgetStatus = 'clean' | 'findings';
@@ -28,7 +40,19 @@ function buildAriaLabel(status: WidgetStatus, count: number): string {
   return 'Sunbreak: no issues detected';
 }
 
-export default function Widget({ findingsState, onClick, panelOpen, onFix, onIgnore, onFixAll, onClose }: WidgetProps): JSX.Element {
+export default function Widget({
+  findingsState,
+  onClick,
+  panelOpen,
+  onFix,
+  onIgnore,
+  onFixAll,
+  onClose,
+  toastState,
+  onToastReview,
+  onToastSendAnyway,
+  onToastTimeout,
+}: WidgetProps): JSX.Element {
   const [snapshot, setSnapshot] = useState<FindingsSnapshot>(findingsState.getSnapshot());
 
   useEffect(() => {
@@ -54,6 +78,8 @@ export default function Widget({ findingsState, onClick, panelOpen, onFix, onIgn
     },
     [onClick],
   );
+
+  const showToast = toastState?.visible === true && onToastReview && onToastSendAnyway && onToastTimeout;
 
   return (
     <div class="sb-widget-container">
@@ -89,6 +115,15 @@ export default function Widget({ findingsState, onClick, panelOpen, onFix, onIgn
           onIgnore={onIgnore}
           onFixAll={onFixAll}
           onClose={onClose}
+        />
+      )}
+      {showToast && (
+        <SendToast
+          activeCount={toastState.activeCount}
+          paused={toastState.paused}
+          onReview={onToastReview}
+          onSendAnyway={onToastSendAnyway}
+          onTimeout={onToastTimeout}
         />
       )}
     </div>

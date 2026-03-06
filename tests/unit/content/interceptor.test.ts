@@ -4,7 +4,7 @@ import {
   attachFileDetector,
   buildRedactedText,
 } from '../../../src/content/interceptor';
-import type { InterceptCallback } from '../../../src/content/interceptor';
+import type { SubmitInterceptConfig } from '../../../src/content/interceptor';
 import type { SiteAdapter } from '../../../src/types';
 
 function createMockAdapter(overrides: Partial<SiteAdapter> = {}): SiteAdapter {
@@ -53,11 +53,14 @@ function createMockContext(): {
   return ctx;
 }
 
-/** Create an InterceptCallback that resolves with the given result */
-function createInterceptCallback(
-  result: 'release' | 'block' | 'redact' = 'release',
-): InterceptCallback & ReturnType<typeof vi.fn> {
-  return vi.fn().mockResolvedValue(result);
+/** Create a SubmitInterceptConfig */
+function createConfig(
+  overrides: Partial<SubmitInterceptConfig> = {},
+): SubmitInterceptConfig {
+  return {
+    shouldBlock: overrides.shouldBlock ?? ((): boolean => true),
+    onBlocked: overrides.onBlocked ?? ((): Promise<void> => Promise.resolve()),
+  };
 }
 
 describe('attachSubmissionInterceptor', () => {
@@ -70,12 +73,12 @@ describe('attachSubmissionInterceptor', () => {
     document.body.appendChild(input);
   });
 
-  it('calls intercept callback on Enter key', () => {
-    const onIntercept = createInterceptCallback('block');
+  it('calls onBlocked on Enter when shouldBlock returns true', () => {
+    const onBlocked = vi.fn().mockResolvedValue(undefined);
     const adapter = createMockAdapter({ getText: () => 'sensitive data' });
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
+    attachSubmissionInterceptor(input, adapter, ctx, createConfig({ onBlocked }));
 
     input.dispatchEvent(
       new KeyboardEvent('keydown', {
@@ -85,15 +88,38 @@ describe('attachSubmissionInterceptor', () => {
       }),
     );
 
-    expect(onIntercept).toHaveBeenCalledWith('sensitive data', 'chatgpt');
+    expect(onBlocked).toHaveBeenCalledTimes(1);
   });
 
-  it('blocks the original event (preventDefault)', () => {
-    const onIntercept = createInterceptCallback('block');
+  it('does not call onBlocked when shouldBlock returns false', () => {
+    const onBlocked = vi.fn().mockResolvedValue(undefined);
     const adapter = createMockAdapter({ getText: () => 'text' });
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
+    attachSubmissionInterceptor(
+      input,
+      adapter,
+      ctx,
+      createConfig({ shouldBlock: () => false, onBlocked }),
+    );
+
+    const event = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      bubbles: true,
+      cancelable: true,
+    });
+    input.dispatchEvent(event);
+
+    expect(onBlocked).not.toHaveBeenCalled();
+    // Should NOT be prevented — zero interception
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it('blocks the original event (preventDefault) when shouldBlock is true', () => {
+    const adapter = createMockAdapter({ getText: () => 'text' });
+    const ctx = createMockContext();
+
+    attachSubmissionInterceptor(input, adapter, ctx, createConfig());
 
     const event = new KeyboardEvent('keydown', {
       key: 'Enter',
@@ -106,11 +132,11 @@ describe('attachSubmissionInterceptor', () => {
   });
 
   it('ignores Shift+Enter', () => {
-    const onIntercept = createInterceptCallback();
+    const onBlocked = vi.fn().mockResolvedValue(undefined);
     const adapter = createMockAdapter();
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
+    attachSubmissionInterceptor(input, adapter, ctx, createConfig({ onBlocked }));
 
     input.dispatchEvent(
       new KeyboardEvent('keydown', {
@@ -120,29 +146,29 @@ describe('attachSubmissionInterceptor', () => {
       }),
     );
 
-    expect(onIntercept).not.toHaveBeenCalled();
+    expect(onBlocked).not.toHaveBeenCalled();
   });
 
   it('ignores non-Enter keys', () => {
-    const onIntercept = createInterceptCallback();
+    const onBlocked = vi.fn().mockResolvedValue(undefined);
     const adapter = createMockAdapter();
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
+    attachSubmissionInterceptor(input, adapter, ctx, createConfig({ onBlocked }));
 
     input.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'a', bubbles: true }),
     );
 
-    expect(onIntercept).not.toHaveBeenCalled();
+    expect(onBlocked).not.toHaveBeenCalled();
   });
 
   it('ignores empty text', () => {
-    const onIntercept = createInterceptCallback();
+    const onBlocked = vi.fn().mockResolvedValue(undefined);
     const adapter = createMockAdapter({ getText: () => '' });
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
+    attachSubmissionInterceptor(input, adapter, ctx, createConfig({ onBlocked }));
 
     input.dispatchEvent(
       new KeyboardEvent('keydown', {
@@ -152,15 +178,15 @@ describe('attachSubmissionInterceptor', () => {
       }),
     );
 
-    expect(onIntercept).not.toHaveBeenCalled();
+    expect(onBlocked).not.toHaveBeenCalled();
   });
 
-  it('does not call callback after context invalidation', () => {
-    const onIntercept = createInterceptCallback();
+  it('does not call onBlocked after context invalidation', () => {
+    const onBlocked = vi.fn().mockResolvedValue(undefined);
     const adapter = createMockAdapter();
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
+    attachSubmissionInterceptor(input, adapter, ctx, createConfig({ onBlocked }));
     ctx.invalidate();
 
     input.dispatchEvent(
@@ -171,11 +197,11 @@ describe('attachSubmissionInterceptor', () => {
       }),
     );
 
-    expect(onIntercept).not.toHaveBeenCalled();
+    expect(onBlocked).not.toHaveBeenCalled();
   });
 
   it('intercepts on send button click', () => {
-    const onIntercept = createInterceptCallback('block');
+    const onBlocked = vi.fn().mockResolvedValue(undefined);
     const sendBtn = document.createElement('button');
     document.body.appendChild(sendBtn);
 
@@ -185,24 +211,27 @@ describe('attachSubmissionInterceptor', () => {
     });
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
+    attachSubmissionInterceptor(input, adapter, ctx, createConfig({ onBlocked }));
 
     sendBtn.dispatchEvent(
       new MouseEvent('click', { bubbles: true, cancelable: true }),
     );
 
-    expect(onIntercept).toHaveBeenCalledWith('click capture', 'chatgpt');
+    expect(onBlocked).toHaveBeenCalledTimes(1);
   });
 
-  it('re-triggers keyboard submit on release result', async () => {
-    const onIntercept = createInterceptCallback('release');
+  it('re-triggers keyboard submit after onBlocked resolves', async () => {
     const adapter = createMockAdapter({ getText: () => 'text' });
     const ctx = createMockContext();
 
-    attachSubmissionInterceptor(input, adapter, ctx, onIntercept);
+    attachSubmissionInterceptor(
+      input,
+      adapter,
+      ctx,
+      createConfig({ onBlocked: () => Promise.resolve() }),
+    );
 
     const secondKeydownSpy = vi.fn();
-    // Listen for the re-triggered Enter event (non-capture, so it fires after interceptor)
     input.addEventListener('keydown', secondKeydownSpy);
 
     input.dispatchEvent(
@@ -213,16 +242,46 @@ describe('attachSubmissionInterceptor', () => {
       }),
     );
 
-    // Wait for the async intercept callback to resolve
     await vi.waitFor(() => {
-      // The second keydown should have been dispatched by the interceptor
-      // It's the re-triggered Enter event
       expect(secondKeydownSpy).toHaveBeenCalled();
     });
   });
 
+  it('nonce bypass lets re-triggered event pass through', async () => {
+    let blockCount = 0;
+    const adapter = createMockAdapter({ getText: () => 'text' });
+    const ctx = createMockContext();
+
+    attachSubmissionInterceptor(
+      input,
+      adapter,
+      ctx,
+      createConfig({
+        shouldBlock: () => {
+          blockCount++;
+          return true;
+        },
+        onBlocked: () => Promise.resolve(),
+      }),
+    );
+
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    await vi.waitFor(() => {
+      // shouldBlock is called once for original, then the re-triggered event
+      // has the nonce so it bypasses shouldBlock entirely
+      expect(blockCount).toBe(1);
+    });
+  });
+
   it('returns a cleanup function', () => {
-    const onIntercept = createInterceptCallback();
+    const onBlocked = vi.fn().mockResolvedValue(undefined);
     const adapter = createMockAdapter();
     const ctx = createMockContext();
 
@@ -230,7 +289,7 @@ describe('attachSubmissionInterceptor', () => {
       input,
       adapter,
       ctx,
-      onIntercept,
+      createConfig({ onBlocked }),
     );
 
     expect(typeof cleanup).toBe('function');
@@ -244,7 +303,7 @@ describe('attachSubmissionInterceptor', () => {
       }),
     );
 
-    expect(onIntercept).not.toHaveBeenCalled();
+    expect(onBlocked).not.toHaveBeenCalled();
   });
 });
 
@@ -287,7 +346,6 @@ describe('buildRedactedText', () => {
   });
 
   it('handles adjacent findings correctly', () => {
-    // Two findings right next to each other
     const result = buildRedactedText('AB', [
       { startIndex: 0, endIndex: 1, placeholder: '[X_1]' },
       { startIndex: 1, endIndex: 2, placeholder: '[Y_1]' },

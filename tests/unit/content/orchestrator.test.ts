@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createOrchestrator } from '../../../src/content/orchestrator';
 import type { SiteAdapter } from '../../../src/types';
-import type { DetectionSettings } from '../../../src/storage/types';
+import type { Finding } from '../../../src/classifier/types';
 
-// Mock the overlay controller
-vi.mock('../../../src/ui/overlay/overlay-controller', () => ({
-  createOverlayController: vi.fn(() => ({
-    show: vi.fn().mockResolvedValue('cancel'),
-    hide: vi.fn(),
+// Mock the widget controller
+vi.mock('../../../src/ui/widget/widget-controller', () => ({
+  createWidgetController: vi.fn(() => ({
+    mount: vi.fn(),
+    unmount: vi.fn(),
     destroy: vi.fn(),
-    state: { mounted: false, container: null },
+    showToast: vi.fn().mockResolvedValue('timeout'),
   })),
 }));
 
@@ -19,7 +19,7 @@ vi.mock('../../../src/storage/events', () => ({
   logCleanPrompt: vi.fn(),
 }));
 
-// Mock the dashboard storage — keep toEnabledDetectors real
+// Mock the dashboard storage
 vi.mock('../../../src/storage/dashboard', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../../src/storage/dashboard')>();
   return {
@@ -30,7 +30,7 @@ vi.mock('../../../src/storage/dashboard', async (importOriginal) => {
   };
 });
 
-import { createOverlayController } from '../../../src/ui/overlay/overlay-controller';
+import { createWidgetController } from '../../../src/ui/widget/widget-controller';
 import { logFlaggedEvent, logCleanPrompt } from '../../../src/storage/events';
 import { getExtensionSettings, getDetectionSettings } from '../../../src/storage/dashboard';
 import {
@@ -70,9 +70,21 @@ function createMockContext(): {
   };
 }
 
+function makeFinding(overrides: Partial<Finding> = {}): Finding {
+  return {
+    type: 'email',
+    value: 'john@example.com',
+    startIndex: 0,
+    endIndex: 16,
+    confidence: 'HIGH',
+    label: 'Email Address',
+    placeholder: '[EMAIL_1]',
+    ...overrides,
+  };
+}
+
 /** Flush microtasks so fetchAllSettings resolves */
 async function flushSettingsInit(): Promise<void> {
-  // fetchAllSettings uses Promise.all on 3 async calls — flush microtask queue
   await new Promise((r) => setTimeout(r, 0));
 }
 
@@ -80,7 +92,6 @@ describe('createOrchestrator', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     document.body.innerHTML = '';
-    // Reset dashboard mocks to defaults
     vi.mocked(getExtensionSettings).mockResolvedValue({ ...DEFAULT_EXTENSION_SETTINGS });
     vi.mocked(getDetectionSettings).mockResolvedValue({ ...DEFAULT_DETECTION_SETTINGS });
   });
@@ -89,143 +100,81 @@ describe('createOrchestrator', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns onPromptIntercepted and onFileDetected callbacks', () => {
+  it('returns submitConfig, onFileDetected, findingsState, scannerConfig, widgetController', () => {
     const adapter = createMockAdapter();
     const ctx = createMockContext();
-    const orchestrator = createOrchestrator(adapter, ctx);
+    const result = createOrchestrator(adapter, ctx);
 
-    expect(typeof orchestrator.onPromptIntercepted).toBe('function');
-    expect(typeof orchestrator.onFileDetected).toBe('function');
+    expect(result.submitConfig).toBeDefined();
+    expect(typeof result.submitConfig.shouldBlock).toBe('function');
+    expect(typeof result.submitConfig.onBlocked).toBe('function');
+    expect(typeof result.onFileDetected).toBe('function');
+    expect(result.findingsState).toBeDefined();
+    expect(result.scannerConfig).toBeDefined();
+    expect(result.widgetController).toBeDefined();
   });
 
-  describe('clean prompts (no findings)', () => {
-    it('returns release for clean text', async () => {
+  describe('shouldBlock', () => {
+    it('returns false when no active findings', () => {
       const adapter = createMockAdapter();
       const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
+      const { submitConfig } = createOrchestrator(adapter, ctx);
 
-      const result = await onPromptIntercepted(
-        'How do I sort an array in JavaScript?',
-        'chatgpt',
-      );
-
-      expect(result).toBe('release');
+      expect(submitConfig.shouldBlock()).toBe(false);
     });
 
-    it('logs clean prompt to stats', async () => {
+    it('logs clean prompt when no active findings', () => {
       const adapter = createMockAdapter();
       const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
+      const { submitConfig } = createOrchestrator(adapter, ctx);
 
-      await onPromptIntercepted(
-        'What is the capital of France?',
-        'chatgpt',
-      );
+      submitConfig.shouldBlock();
 
-      expect(logCleanPrompt).toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('chatgpt');
     });
 
-    it('does not show overlay for clean text', async () => {
-      const mockShow = vi.fn().mockResolvedValue('cancel');
-      vi.mocked(createOverlayController).mockReturnValue({
-        show: mockShow,
-        hide: vi.fn(),
-        destroy: vi.fn(),
-        state: { mounted: false, container: null },
+    it('returns true when active findings exist', () => {
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
+
+      findingsState.update([makeFinding()]);
+
+      expect(submitConfig.shouldBlock()).toBe(true);
+    });
+
+    it('returns false when extension is disabled', async () => {
+      vi.mocked(getExtensionSettings).mockResolvedValue({
+        enabled: false,
+        interventionMode: 'warn',
       });
 
       const adapter = createMockAdapter();
       const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
+      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
 
-      await onPromptIntercepted('Just a question', 'chatgpt');
+      findingsState.update([makeFinding()]);
 
-      expect(mockShow).not.toHaveBeenCalled();
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logCleanPrompt).not.toHaveBeenCalled();
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
     });
-  });
 
-  describe('prompts with findings', () => {
-    it('shows overlay when email is detected', async () => {
-      const mockShow = vi.fn().mockResolvedValue('cancel');
-      vi.mocked(createOverlayController).mockReturnValue({
-        show: mockShow,
-        hide: vi.fn(),
-        destroy: vi.fn(),
-        state: { mounted: false, container: null },
+    it('returns false in log-only mode but logs the event', async () => {
+      vi.mocked(getExtensionSettings).mockResolvedValue({
+        enabled: true,
+        interventionMode: 'log-only',
       });
 
       const adapter = createMockAdapter();
       const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
+      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
 
-      await onPromptIntercepted(
-        'Email john@example.com about this',
-        'chatgpt',
-      );
+      findingsState.update([makeFinding()]);
 
-      expect(mockShow).toHaveBeenCalled();
-      const findings = mockShow.mock.calls[0]?.[0];
-      expect(findings).toHaveLength(1);
-      expect(findings?.[0]?.type).toBe('email');
-    });
-
-    it('returns block when user cancels', async () => {
-      const mockShow = vi.fn().mockResolvedValue('cancel');
-      vi.mocked(createOverlayController).mockReturnValue({
-        show: mockShow,
-        hide: vi.fn(),
-        destroy: vi.fn(),
-        state: { mounted: false, container: null },
-      });
-
-      const adapter = createMockAdapter();
-      const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
-
-      const result = await onPromptIntercepted(
-        'Contact john@example.com',
-        'chatgpt',
-      );
-
-      expect(result).toBe('block');
-    });
-
-    it('returns release when user chooses send-anyway', async () => {
-      const mockShow = vi.fn().mockResolvedValue('send-anyway');
-      vi.mocked(createOverlayController).mockReturnValue({
-        show: mockShow,
-        hide: vi.fn(),
-        destroy: vi.fn(),
-        state: { mounted: false, container: null },
-      });
-
-      const adapter = createMockAdapter();
-      const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
-
-      const result = await onPromptIntercepted(
-        'Contact john@example.com',
-        'chatgpt',
-      );
-
-      expect(result).toBe('release');
-    });
-
-    it('logs flagged event on send-anyway', async () => {
-      const mockShow = vi.fn().mockResolvedValue('send-anyway');
-      vi.mocked(createOverlayController).mockReturnValue({
-        show: mockShow,
-        hide: vi.fn(),
-        destroy: vi.fn(),
-        state: { mounted: false, container: null },
-      });
-
-      const adapter = createMockAdapter();
-      const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
-
-      await onPromptIntercepted('Contact john@example.com', 'chatgpt');
-
+      expect(submitConfig.shouldBlock()).toBe(false);
       expect(logFlaggedEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           tool: 'chatgpt',
@@ -235,229 +184,67 @@ describe('createOrchestrator', () => {
       );
     });
 
-    it('performs redaction and returns redact on redact action', async () => {
-      const mockShow = vi.fn().mockResolvedValue('redact');
-      vi.mocked(createOverlayController).mockReturnValue({
-        show: mockShow,
-        hide: vi.fn(),
-        destroy: vi.fn(),
-        state: { mounted: false, container: null },
-      });
-
-      const mockSetText = vi.fn();
-      const input = document.createElement('div');
-      const adapter = createMockAdapter({
-        findInput: () => input,
-        setText: mockSetText,
-      });
-      const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
-
-      const result = await onPromptIntercepted(
-        'Contact john@example.com for help',
-        'chatgpt',
-      );
-
-      expect(result).toBe('redact');
-      expect(mockSetText).toHaveBeenCalledWith(
-        input,
-        'Contact [EMAIL_1] for help',
-      );
-    });
-
-    it('returns block on edit action and focuses input', async () => {
-      const mockShow = vi.fn().mockResolvedValue('edit');
-      vi.mocked(createOverlayController).mockReturnValue({
-        show: mockShow,
-        hide: vi.fn(),
-        destroy: vi.fn(),
-        state: { mounted: false, container: null },
-      });
-
-      const input = document.createElement('div');
-      document.body.appendChild(input);
-      const focusSpy = vi.spyOn(input, 'focus');
-      const adapter = createMockAdapter({ findInput: () => input });
-      const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
-
-      const result = await onPromptIntercepted(
-        'Contact john@example.com',
-        'chatgpt',
-      );
-
-      expect(result).toBe('block');
-      expect(focusSpy).toHaveBeenCalled();
-    });
-  });
-
-  describe('extension enabled toggle', () => {
-    it('releases without classification when extension is disabled', async () => {
-      vi.mocked(getExtensionSettings).mockResolvedValue({
-        enabled: false,
-        interventionMode: 'warn',
-      });
-
-      const mockShow = vi.fn().mockResolvedValue('cancel');
-      vi.mocked(createOverlayController).mockReturnValue({
-        show: mockShow,
-        hide: vi.fn(),
-        destroy: vi.fn(),
-        state: { mounted: false, container: null },
-      });
-
-      const adapter = createMockAdapter();
-      const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
-      await flushSettingsInit();
-
-      const result = await onPromptIntercepted(
-        'Contact john@example.com',
-        'chatgpt',
-      );
-
-      expect(result).toBe('release');
-      expect(mockShow).not.toHaveBeenCalled();
-      expect(logFlaggedEvent).not.toHaveBeenCalled();
-      expect(logCleanPrompt).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('log-only mode', () => {
-    it('logs event but does not show overlay in log-only mode', async () => {
+    it('returns false for clean prompts in log-only mode', async () => {
       vi.mocked(getExtensionSettings).mockResolvedValue({
         enabled: true,
         interventionMode: 'log-only',
       });
 
-      const mockShow = vi.fn().mockResolvedValue('cancel');
-      vi.mocked(createOverlayController).mockReturnValue({
-        show: mockShow,
-        hide: vi.fn(),
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { submitConfig } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logCleanPrompt).toHaveBeenCalled();
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onBlocked', () => {
+    it('shows toast via widget controller', async () => {
+      const mockShowToast = vi.fn().mockResolvedValue('timeout');
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
         destroy: vi.fn(),
-        state: { mounted: false, container: null },
+        showToast: mockShowToast,
       });
 
       const adapter = createMockAdapter();
       const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
-      await flushSettingsInit();
+      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
 
-      const result = await onPromptIntercepted(
-        'Contact john@example.com',
-        'chatgpt',
-      );
+      findingsState.update([makeFinding()]);
+      await submitConfig.onBlocked();
 
-      expect(result).toBe('release');
-      expect(mockShow).not.toHaveBeenCalled();
+      expect(mockShowToast).toHaveBeenCalledWith(1);
+    });
+
+    it('logs flagged event after toast resolves', async () => {
+      const mockShowToast = vi.fn().mockResolvedValue('send-anyway');
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: mockShowToast,
+      });
+
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
+
+      findingsState.update([makeFinding()]);
+      await submitConfig.onBlocked();
+
       expect(logFlaggedEvent).toHaveBeenCalledWith(
         expect.objectContaining({
+          tool: 'chatgpt',
           action: 'sent-anyway',
           categories: expect.arrayContaining(['email']),
+          findingCount: 1,
         }),
       );
-    });
-
-    it('releases clean prompts normally in log-only mode', async () => {
-      vi.mocked(getExtensionSettings).mockResolvedValue({
-        enabled: true,
-        interventionMode: 'log-only',
-      });
-
-      const adapter = createMockAdapter();
-      const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
-      await flushSettingsInit();
-
-      const result = await onPromptIntercepted(
-        'What is the meaning of life?',
-        'chatgpt',
-      );
-
-      expect(result).toBe('release');
-      expect(logCleanPrompt).toHaveBeenCalled();
-      expect(logFlaggedEvent).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('enabledDetectors passthrough', () => {
-    it('does not flag emails when email detection is disabled', async () => {
-      const disabledEmail: DetectionSettings = {
-        ...DEFAULT_DETECTION_SETTINGS,
-        email: false,
-      };
-      vi.mocked(getDetectionSettings).mockResolvedValue(disabledEmail);
-
-      const mockShow = vi.fn().mockResolvedValue('cancel');
-      vi.mocked(createOverlayController).mockReturnValue({
-        show: mockShow,
-        hide: vi.fn(),
-        destroy: vi.fn(),
-        state: { mounted: false, container: null },
-      });
-
-      const adapter = createMockAdapter();
-      const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
-      await flushSettingsInit();
-
-      const result = await onPromptIntercepted(
-        'Contact john@example.com',
-        'chatgpt',
-      );
-
-      expect(result).toBe('release');
-      expect(mockShow).not.toHaveBeenCalled();
-      expect(logCleanPrompt).toHaveBeenCalled();
-    });
-
-    it('still flags other types when only email is disabled', async () => {
-      const disabledEmail: DetectionSettings = {
-        ...DEFAULT_DETECTION_SETTINGS,
-        email: false,
-      };
-      vi.mocked(getDetectionSettings).mockResolvedValue(disabledEmail);
-
-      const mockShow = vi.fn().mockResolvedValue('cancel');
-      vi.mocked(createOverlayController).mockReturnValue({
-        show: mockShow,
-        hide: vi.fn(),
-        destroy: vi.fn(),
-        state: { mounted: false, container: null },
-      });
-
-      const adapter = createMockAdapter();
-      const ctx = createMockContext();
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
-      await flushSettingsInit();
-
-      // SSN should still be detected
-      const result = await onPromptIntercepted(
-        'My SSN is 123-45-6789',
-        'chatgpt',
-      );
-
-      expect(result).toBe('block');
-      expect(mockShow).toHaveBeenCalled();
-      const findings = mockShow.mock.calls[0]?.[0];
-      expect(findings?.some((f: { type: string }) => f.type === 'ssn')).toBe(true);
-      expect(findings?.some((f: { type: string }) => f.type === 'email')).toBe(false);
-    });
-  });
-
-  describe('context invalidation', () => {
-    it('returns release when context is invalid', async () => {
-      const adapter = createMockAdapter();
-      const ctx = createMockContext();
-      ctx.isInvalid = true;
-      const { onPromptIntercepted } = createOrchestrator(adapter, ctx);
-
-      const result = await onPromptIntercepted(
-        'Contact john@example.com',
-        'chatgpt',
-      );
-
-      expect(result).toBe('release');
     });
   });
 

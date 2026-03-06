@@ -5,6 +5,7 @@ import type { SiteAdapter } from '../../types';
 import { buildRedactedText } from '../../content/interceptor';
 import widgetStyles from './widget.css?inline';
 import panelStyles from './findings-panel.css?inline';
+import toastStyles from './send-toast.css?inline';
 
 /**
  * Context for the widget controller lifecycle.
@@ -12,6 +13,14 @@ import panelStyles from './findings-panel.css?inline';
 export interface WidgetContext {
   readonly isInvalid: boolean;
   onInvalidated(callback: () => void): void;
+}
+
+/** Toast state managed by the controller */
+interface ToastState {
+  visible: boolean;
+  paused: boolean;
+  activeCount: number;
+  resolve: (action: 'send-anyway' | 'timeout') => void;
 }
 
 /**
@@ -28,6 +37,7 @@ export function createWidgetController(
   mount(input: HTMLElement): void;
   unmount(): void;
   destroy(): void;
+  showToast(activeCount: number): Promise<'send-anyway' | 'timeout'>;
 } {
   let container: HTMLDivElement | null = null;
   let shadowRoot: ShadowRoot | null = null;
@@ -35,6 +45,7 @@ export function createWidgetController(
   let currentInput: HTMLElement | null = null;
   let rafId: number | null = null;
   let panelOpen = false;
+  let toastState: ToastState | null = null;
 
   function ensureContainer(): ShadowRoot {
     if (container && shadowRoot) {
@@ -55,7 +66,7 @@ export function createWidgetController(
     const shadow = container.attachShadow({ mode: 'closed' });
 
     const styleEl = document.createElement('style');
-    styleEl.textContent = widgetStyles + '\n' + panelStyles;
+    styleEl.textContent = widgetStyles + '\n' + panelStyles + '\n' + toastStyles;
     shadow.appendChild(styleEl);
 
     const w = document.createElement('div');
@@ -130,7 +141,38 @@ export function createWidgetController(
 
   function handleClose(): void {
     panelOpen = false;
+    // If toast was paused (opened via Review), resume it
+    if (toastState && toastState.paused) {
+      toastState.paused = false;
+      toastState.visible = true;
+    }
     renderWidget();
+  }
+
+  function handleToastReview(): void {
+    if (toastState) {
+      toastState.paused = true;
+      toastState.visible = false;
+    }
+    panelOpen = true;
+    renderWidget();
+  }
+
+  function handleToastSendAnyway(): void {
+    resolveToast('send-anyway');
+  }
+
+  function handleToastTimeout(): void {
+    resolveToast('timeout');
+  }
+
+  function resolveToast(action: 'send-anyway' | 'timeout'): void {
+    if (!toastState) return;
+    const { resolve } = toastState;
+    toastState = null;
+    panelOpen = false;
+    renderWidget();
+    resolve(action);
   }
 
   function renderWidget(): void {
@@ -145,11 +187,35 @@ export function createWidgetController(
         onClose: handleClose,
         onClick: (): void => {
           panelOpen = !panelOpen;
+          // If closing panel while toast is not active, just toggle
+          // If toast is active and panel was open via Review, closing resumes toast (handled in handleClose)
           renderWidget();
         },
+        toastState: toastState
+          ? {
+              activeCount: toastState.activeCount,
+              paused: toastState.paused,
+              visible: toastState.visible,
+            }
+          : null,
+        onToastReview: handleToastReview,
+        onToastSendAnyway: handleToastSendAnyway,
+        onToastTimeout: handleToastTimeout,
       }),
       wrapper,
     );
+  }
+
+  function showToast(activeCount: number): Promise<'send-anyway' | 'timeout'> {
+    return new Promise((resolve) => {
+      toastState = {
+        visible: true,
+        paused: false,
+        activeCount,
+        resolve,
+      };
+      renderWidget();
+    });
   }
 
   function mount(input: HTMLElement): void {
@@ -197,6 +263,13 @@ export function createWidgetController(
       render(null, wrapper);
     }
 
+    // If a toast is pending, resolve it so the promise doesn't hang
+    if (toastState) {
+      const { resolve } = toastState;
+      toastState = null;
+      resolve('timeout');
+    }
+
     currentInput = null;
     panelOpen = false;
   }
@@ -215,5 +288,5 @@ export function createWidgetController(
     destroy();
   });
 
-  return { mount, unmount, destroy };
+  return { mount, unmount, destroy, showToast };
 }
