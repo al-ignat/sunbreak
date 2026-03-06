@@ -436,15 +436,15 @@ A page script in the main world cannot read properties set by the content script
 - `src/storage/events.ts` — log new action types, update `doIncrementDailyStat` for new counters
 
 **Success criteria:**
-- [ ] Zero interception when no active findings (prompt sends instantly)
-- [ ] Toast appears when submitting with active findings
-- [ ] Toast auto-dismisses after 3 seconds, submission proceeds
-- [ ] "Review" opens findings panel
-- [ ] "Send Anyway" proceeds immediately with logging
-- [ ] Old overlay completely removed
-- [ ] Nonce-based bypass replaces boolean flag
-- [ ] Dashboard stats include fixed/ignored counts
-- [ ] All existing E2E tests updated and passing
+- [x] Zero interception when no active findings (prompt sends instantly)
+- [x] Toast appears when submitting with active findings
+- [x] Toast auto-dismisses after 3 seconds, submission proceeds
+- [x] "Review" opens findings panel
+- [x] "Send Anyway" proceeds immediately with logging
+- [x] Old overlay completely removed
+- [x] Nonce-based bypass replaces boolean flag
+- [x] Dashboard stats include fixed/ignored counts
+- [x] All existing E2E tests updated and passing
 
 ##### Phase 4 Research Insights
 

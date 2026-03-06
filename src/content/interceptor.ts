@@ -1,4 +1,4 @@
-import type { SiteAdapter, FileCallback, SiteName } from '../types';
+import type { SiteAdapter, FileCallback } from '../types';
 
 export interface InterceptorContext {
   /** Whether the context is still valid */
@@ -21,44 +21,47 @@ export interface InterceptorContext {
 }
 
 /**
- * Result of the interception callback.
- * - 'release': allow the submission to proceed (re-trigger programmatically)
- * - 'block': block the submission (overlay is handling it)
- * - 'redact': submission will happen after text replacement
+ * Configuration for the submission interceptor.
+ * - shouldBlock: synchronous check — return true to preventDefault and show toast
+ * - onBlocked: async — called after blocking, resolves when submission should proceed
  */
-export type InterceptResult = 'release' | 'block' | 'redact';
-
-/**
- * Callback invoked when a prompt submission is intercepted.
- * The submission is already blocked at this point.
- * Returns the decision for what to do next.
- */
-export type InterceptCallback = (
-  text: string,
-  adapterName: SiteName,
-) => Promise<InterceptResult>;
+export interface SubmitInterceptConfig {
+  shouldBlock: () => boolean;
+  onBlocked: () => Promise<void>;
+}
 
 /**
  * Attach submission interception listeners.
- * Phase 4: blocks submission, calls the callback, then re-triggers if needed.
+ *
+ * v0.2: checks findingsState.activeCount (via shouldBlock callback).
+ * If no active findings, submission passes through with zero delay.
+ * If findings exist, blocks submission, calls onBlocked (shows toast),
+ * then re-triggers via nonce-based bypass.
+ *
  * Returns a cleanup function.
  */
 export function attachSubmissionInterceptor(
   input: HTMLElement,
   adapter: SiteAdapter,
   ctx: InterceptorContext,
-  onIntercept: InterceptCallback,
+  config: SubmitInterceptConfig,
 ): () => void {
-  // Bypass flag: when true, the next event is a re-triggered submission
-  // and should pass through without interception
-  let bypassNext = false;
+  // Nonce-based bypass: a page script in the main world cannot read
+  // properties set by the content script's isolated world on the same
+  // event object. This eliminates the 100ms race window entirely.
+  let bypassNonce: string | null = null;
 
   /** Look up the current input element, surviving SPA navigations */
   function currentInput(): HTMLElement | null {
-    // Prefer the original reference if still connected
     if (input.isConnected) return input;
-    // Otherwise query the DOM for the current editor
     return adapter.findInput();
+  }
+
+  function generateNonce(): string {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
   }
 
   const handleKeydown = (e: KeyboardEvent): void => {
@@ -69,8 +72,7 @@ export function attachSubmissionInterceptor(
     const el = currentInput();
     if (!el) return;
 
-    // Only intercept if the keypress is related to the prompt input.
-    // Check both activeElement (reliable in browsers) and e.target (reliable in tests)
+    // Only intercept if the keypress is related to the prompt input
     const focused = document.activeElement;
     const target = e.target as HTMLElement | null;
     const isFromInput =
@@ -78,35 +80,37 @@ export function attachSubmissionInterceptor(
       (target != null && el.contains(target));
     if (!isFromInput) return;
 
-    // Let re-triggered events pass through
-    if (bypassNext) {
-      bypassNext = false;
+    // Let nonce-authenticated re-triggered events pass through
+    const bypassValue = (e as KeyboardEvent & { _sunbreakBypass?: string })._sunbreakBypass;
+    if (bypassValue != null && bypassValue === bypassNonce) {
+      bypassNonce = null;
       return;
     }
 
     const text = adapter.getText(el);
     if (text.length === 0) return;
 
+    // Zero interception when no active findings
+    if (!config.shouldBlock()) return;
+
     // Block the original submission
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
 
-    void onIntercept(text, adapter.name).then((result) => {
+    void config.onBlocked().then(() => {
       if (ctx.isInvalid) return;
-      if (result === 'release' || result === 'redact') {
-        triggerKeyboardSubmit(el);
-      }
-      // 'block' means overlay is showing — do nothing
+      triggerKeyboardSubmit(el);
     });
   };
 
   const handleClick = (e: MouseEvent): void => {
     if (ctx.isInvalid) return;
 
-    // Let re-triggered events pass through
-    if (bypassNext) {
-      bypassNext = false;
+    // Let nonce-authenticated re-triggered events pass through
+    const bypassValue = (e as MouseEvent & { _sunbreakBypass?: string })._sunbreakBypass;
+    if (bypassValue != null && bypassValue === bypassNonce) {
+      bypassNonce = null;
       return;
     }
 
@@ -123,50 +127,45 @@ export function attachSubmissionInterceptor(
     const text = adapter.getText(el);
     if (text.length === 0) return;
 
+    // Zero interception when no active findings
+    if (!config.shouldBlock()) return;
+
     // Block the original submission
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
 
-    void onIntercept(text, adapter.name).then((result) => {
+    void config.onBlocked().then(() => {
       if (ctx.isInvalid) return;
-      if (result === 'release' || result === 'redact') {
-        triggerButtonSubmit(adapter);
-      }
+      triggerButtonSubmit(adapter);
     });
   };
 
   function triggerKeyboardSubmit(target: HTMLElement): void {
-    bypassNext = true;
+    bypassNonce = generateNonce();
     const event = new KeyboardEvent('keydown', {
       key: 'Enter',
       code: 'Enter',
       bubbles: true,
       cancelable: true,
     });
+    Object.defineProperty(event, '_sunbreakBypass', { value: bypassNonce });
     target.dispatchEvent(event);
-    // Reset bypass if the event wasn't handled (safety net)
-    setTimeout(() => {
-      bypassNext = false;
-    }, 100);
   }
 
   function triggerButtonSubmit(siteAdapter: SiteAdapter): void {
     const sendButton = siteAdapter.findSendButton();
     if (sendButton) {
-      bypassNext = true;
-      sendButton.click();
-      setTimeout(() => {
-        bypassNext = false;
-      }, 100);
+      bypassNonce = generateNonce();
+      const event = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+      });
+      Object.defineProperty(event, '_sunbreakBypass', { value: bypassNonce });
+      sendButton.dispatchEvent(event);
     }
   }
 
-  // Use direct addEventListener (not ctx.addEventListener) on window/document
-  // so that cleanup actually removes the exact handler reference.
-  // ctx.addEventListener wraps the handler, causing removeEventListener to
-  // fail silently — stale listeners pile up on re-attachment.
-  //
   // window capture fires before document capture in the event chain,
   // ensuring we intercept before any framework handler (React, ProseMirror).
   const keydownListener = handleKeydown as EventListener;
@@ -180,7 +179,6 @@ export function attachSubmissionInterceptor(
     window.removeEventListener('click', clickListener, true);
   };
 
-  // Also remove on context invalidation (extension reload)
   ctx.onInvalidated(cleanup);
 
   return cleanup;

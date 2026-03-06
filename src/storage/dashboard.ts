@@ -35,6 +35,8 @@ export async function getWeeklyStats(days = 7): Promise<AggregatedStats> {
   let sentAnywayCount = 0;
   let cancelledCount = 0;
   let editedCount = 0;
+  let fixedCount = 0;
+  let ignoredCount = 0;
   const byTool: Record<string, number> = {};
   const dailyBreakdown: AggregatedStats['dailyBreakdown'][number][] = [];
 
@@ -48,6 +50,8 @@ export async function getWeeklyStats(days = 7): Promise<AggregatedStats> {
       sentAnywayCount += day.sentAnywayCount;
       cancelledCount += day.cancelledCount;
       editedCount += day.editedCount;
+      fixedCount += (day.fixedCount ?? 0);
+      ignoredCount += (day.ignoredCount ?? 0);
 
       for (const [tool, count] of Object.entries(day.byTool ?? {})) {
         byTool[tool] = (byTool[tool] ?? 0) + count;
@@ -83,6 +87,8 @@ export async function getWeeklyStats(days = 7): Promise<AggregatedStats> {
     sentAnywayCount,
     cancelledCount,
     editedCount,
+    fixedCount,
+    ignoredCount,
     byTool,
     dailyBreakdown,
     complianceRate,

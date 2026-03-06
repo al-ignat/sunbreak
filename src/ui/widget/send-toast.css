@@ -1,0 +1,107 @@
+/* Send toast — appears near widget on submit with active findings */
+
+@keyframes sb-toast-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sb-toast {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  min-width: 240px;
+  max-width: 340px;
+  background: #ffffff;
+  border: 1px solid #F97316;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.15);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  color: #333;
+  animation: sb-toast-entrance 100ms ease-out forwards;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.sb-toast__message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.sb-toast__icon {
+  display: flex;
+  align-items: center;
+  color: #F97316;
+  flex-shrink: 0;
+}
+
+.sb-toast__text {
+  flex: 1;
+  font-weight: 600;
+  color: #9A3412;
+}
+
+.sb-toast__countdown {
+  font-size: 12px;
+  font-weight: 500;
+  color: #9A3412;
+  opacity: 0.7;
+  min-width: 20px;
+  text-align: right;
+}
+
+.sb-toast__actions {
+  display: flex;
+  gap: 6px;
+  padding: 0 12px 10px;
+}
+
+.sb-toast__btn {
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 100ms ease-out;
+}
+
+.sb-toast__btn:focus-visible {
+  outline: 2px solid #F59E0B;
+  outline-offset: 2px;
+}
+
+.sb-toast__btn--review {
+  background: rgba(249, 115, 22, 0.1);
+  color: #C2410C;
+}
+
+.sb-toast__btn--review:hover {
+  background: rgba(249, 115, 22, 0.2);
+}
+
+.sb-toast__btn--send {
+  background: transparent;
+  color: #888;
+}
+
+.sb-toast__btn--send:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #555;
+}
+
+/* Accessibility: respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .sb-toast {
+    animation: none;
+  }
+}

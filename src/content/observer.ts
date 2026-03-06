@@ -4,7 +4,7 @@ import {
   attachSubmissionInterceptor,
   attachFileDetector,
 } from './interceptor';
-import type { InterceptCallback } from './interceptor';
+import type { SubmitInterceptConfig } from './interceptor';
 import { attachScanner } from './scanner';
 import type { ScannerConfig } from './scanner';
 import type { FindingsState } from './findings-state';
@@ -112,7 +112,7 @@ function recordAdapterFailure(adapterName: string): void {
  */
 export function startObserving(
   ctx: ObserverContext,
-  onPromptIntercepted: InterceptCallback,
+  submitConfig: SubmitInterceptConfig,
   onFileDetected: FileCallback,
   scannerDeps?: {
     config: ScannerConfig;
@@ -169,7 +169,7 @@ export function startObserving(
       input,
       adapter,
       interceptorCtx,
-      onPromptIntercepted,
+      submitConfig,
     );
 
     cleanupFileDetector = attachFileDetector(

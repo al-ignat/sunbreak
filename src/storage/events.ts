@@ -73,6 +73,8 @@ async function doIncrementDailyStat(
     sentAnywayCount: 0,
     cancelledCount: 0,
     editedCount: 0,
+    fixedCount: 0,
+    ignoredCount: 0,
     byTool: {},
   };
 
@@ -91,6 +93,10 @@ async function doIncrementDailyStat(
       today.cancelledCount + (action === 'cancelled' ? 1 : 0),
     editedCount:
       today.editedCount + (action === 'edited' ? 1 : 0),
+    fixedCount:
+      today.fixedCount + (action === 'fixed' ? 1 : 0),
+    ignoredCount:
+      today.ignoredCount + (action === 'ignored' ? 1 : 0),
     byTool,
   };
 

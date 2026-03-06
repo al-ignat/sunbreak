@@ -1,12 +1,7 @@
 import type { SiteAdapter, SiteName, FileCallback } from '../types';
 import type { Finding } from '../classifier/types';
-import { classify } from '../classifier/engine';
-import { createOverlayController } from '../ui/overlay/overlay-controller';
-import type { OverlayContext } from '../ui/overlay/overlay-controller';
-import type { OverlayFinding } from '../ui/overlay/types';
-import { buildRedactedText } from './interceptor';
+import type { SubmitInterceptConfig } from './interceptor';
 import { clearKeywordCache } from '../classifier/keywords';
-import type { InterceptResult } from './interceptor';
 import { logFlaggedEvent, logCleanPrompt } from '../storage/events';
 import type {
   FlaggedEvent,
@@ -21,7 +16,6 @@ import {
   getDetectionSettings,
   getExtensionSettings,
   getKeywords,
-  toEnabledDetectors,
 } from '../storage/dashboard';
 import { createFindingsState } from './findings-state';
 import type { FindingsState } from './findings-state';
@@ -43,21 +37,7 @@ function generateEventId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  // Fallback for environments without crypto.randomUUID
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-}
-
-/** Convert classifier Findings to OverlayFindings */
-function toOverlayFindings(
-  findings: ReadonlyArray<Finding>,
-): ReadonlyArray<OverlayFinding> {
-  return findings.map((f) => ({
-    type: f.type,
-    label: f.label,
-    value: f.value,
-    placeholder: f.placeholder,
-    confidence: f.confidence,
-  }));
 }
 
 /** Get unique finding type categories from findings */
@@ -68,39 +48,27 @@ function getCategories(findings: ReadonlyArray<Finding>): string[] {
 /**
  * Create the full interception orchestrator.
  *
- * Wires: interceptor → classifier → overlay → action → storage
+ * v0.2: wires scanner → findingsState → widget + toast → interceptor
  *
- * Returns callbacks for the observer to use.
+ * The scanner runs continuously, populating FindingsState.
+ * On submit, the interceptor checks activeCount and shows a toast
+ * if findings are present. Submission is never fully blocked.
  */
 export function createOrchestrator(
   adapter: SiteAdapter,
   ctx: OrchestratorContext,
 ): {
-  onPromptIntercepted: (
-    text: string,
-    adapterName: SiteName,
-  ) => Promise<InterceptResult>;
+  submitConfig: SubmitInterceptConfig;
   onFileDetected: FileCallback;
   findingsState: FindingsState;
   scannerConfig: ScannerConfig;
   widgetController: ReturnType<typeof createWidgetController>;
 } {
-  const overlayCtx: OverlayContext = {
-    get isInvalid(): boolean {
-      return ctx.isInvalid;
-    },
-    onInvalidated: ctx.onInvalidated.bind(ctx),
-  };
-
-  const overlay = createOverlayController(overlayCtx);
-
   // Cache keywords from chrome.storage.local
   let cachedKeywords: string[] = [];
-  // Cache detection settings
   let cachedDetectionSettings: DetectionSettings = {
     ...DEFAULT_DETECTION_SETTINGS,
   };
-  // Cache extension settings
   let cachedExtensionSettings: ExtensionSettings = {
     ...DEFAULT_EXTENSION_SETTINGS,
   };
@@ -169,120 +137,71 @@ export function createOrchestrator(
     }
   }
 
-  async function onPromptIntercepted(
-    text: string,
-    adapterName: SiteName,
-  ): Promise<InterceptResult> {
-    if (ctx.isInvalid) return 'release';
+  /**
+   * Synchronous check: should this submission be blocked?
+   * Also handles logging for clean prompts and log-only mode.
+   */
+  function shouldBlock(): boolean {
+    if (!cachedExtensionSettings.enabled) return false;
 
-    // Respect extension enabled toggle
-    if (!cachedExtensionSettings.enabled) {
-      return 'release';
+    const snap = findingsState.getSnapshot();
+
+    if (snap.activeCount === 0) {
+      logCleanPrompt(adapter.name);
+      return false;
     }
 
-    // Run classifier with enabled detectors
-    const enabledDetectors = toEnabledDetectors(cachedDetectionSettings);
-    const result = classify(text, {
-      keywords: cachedKeywords,
-      enabledDetectors,
-    });
-
-    // Filter to HIGH and MEDIUM confidence only
-    const visibleFindings = result.findings.filter(
-      (f) => f.confidence === 'HIGH' || f.confidence === 'MEDIUM',
-    );
-
-    // Zero-interference: if nothing to show, release immediately
-    if (visibleFindings.length === 0) {
-      logCleanPrompt(adapterName);
-      return 'release';
-    }
-
-    // In log-only mode, log the event but skip the overlay
     if (cachedExtensionSettings.interventionMode === 'log-only') {
+      const active = snap.tracked.filter((t) => t.status === 'active');
       const logOnlyEvent: FlaggedEvent = {
         id: generateEventId(),
         timestamp: new Date().toISOString(),
-        tool: adapterName,
-        categories: getCategories(visibleFindings),
-        findingCount: visibleFindings.length,
+        tool: adapter.name,
+        categories: getCategories(active.map((t) => t.finding)),
+        findingCount: snap.activeCount,
         action: 'sent-anyway',
       };
       logFlaggedEvent(logOnlyEvent);
-      return 'release';
+      return false;
     }
 
-    // Show overlay and wait for user action
-    const overlayFindings = toOverlayFindings(visibleFindings);
-    const action = await overlay.show(overlayFindings);
-
-    const eventBase = {
-      id: generateEventId(),
-      timestamp: new Date().toISOString(),
-      tool: adapterName,
-      categories: getCategories(visibleFindings),
-      findingCount: visibleFindings.length,
-    };
-
-    switch (action) {
-      case 'redact': {
-        // Replace findings with placeholders
-        const redactedText = buildRedactedText(text, visibleFindings);
-        adapter.setText(
-          adapter.findInput() as HTMLElement,
-          redactedText,
-        );
-
-        const redactEvent: FlaggedEvent = {
-          ...eventBase,
-          action: 'redacted',
-        };
-        logFlaggedEvent(redactEvent);
-
-        return 'redact';
-      }
-
-      case 'edit': {
-        const editEvent: FlaggedEvent = {
-          ...eventBase,
-          action: 'edited',
-        };
-        logFlaggedEvent(editEvent);
-
-        // Return focus to input
-        adapter.findInput()?.focus();
-        return 'block';
-      }
-
-      case 'send-anyway': {
-        const sendEvent: FlaggedEvent = {
-          ...eventBase,
-          action: 'sent-anyway',
-        };
-        logFlaggedEvent(sendEvent);
-
-        return 'release';
-      }
-
-      case 'cancel': {
-        const cancelEvent: FlaggedEvent = {
-          ...eventBase,
-          action: 'cancelled',
-        };
-        logFlaggedEvent(cancelEvent);
-
-        return 'block';
-      }
-    }
+    return true;
   }
 
+  /**
+   * Async handler: called after submission is blocked.
+   * Shows toast, waits for resolution, then logs the event.
+   */
+  async function onBlocked(): Promise<void> {
+    const snap = findingsState.getSnapshot();
+    const action = await widgetController.showToast(snap.activeCount);
+
+    const active = snap.tracked.filter((t) => t.status === 'active');
+    const event: FlaggedEvent = {
+      id: generateEventId(),
+      timestamp: new Date().toISOString(),
+      tool: adapter.name,
+      categories: getCategories(active.map((t) => t.finding)),
+      findingCount: snap.activeCount,
+      action: 'sent-anyway',
+    };
+
+    // If the user clicked "Send Anyway" explicitly, it's 'sent-anyway'
+    // Timeout also results in release — same action
+    void action; // both 'send-anyway' and 'timeout' result in 'sent-anyway'
+    logFlaggedEvent(event);
+  }
+
+  const submitConfig: SubmitInterceptConfig = {
+    shouldBlock,
+    onBlocked,
+  };
+
   function onFileDetected(filename: string, adapterName: SiteName): void {
-    // Phase 4: file detection is logged but not blocked
-    // File content analysis is out of scope for v1
     console.log(
-      `[BYOAI] File detected on ${adapterName}: ${filename}`,
+      `[Sunbreak] File detected on ${adapterName}: ${filename}`,
     );
   }
 
-  return { onPromptIntercepted, onFileDetected, findingsState, scannerConfig, widgetController };
+  return { submitConfig, onFileDetected, findingsState, scannerConfig, widgetController };
 }

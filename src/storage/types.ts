@@ -18,6 +18,8 @@ export interface DailyStats {
   readonly sentAnywayCount: number;
   readonly cancelledCount: number;
   readonly editedCount: number;
+  readonly fixedCount: number;
+  readonly ignoredCount: number;
   readonly byTool: Record<string, number>;
 }
 
@@ -80,6 +82,8 @@ export interface AggregatedStats {
   readonly sentAnywayCount: number;
   readonly cancelledCount: number;
   readonly editedCount: number;
+  readonly fixedCount: number;
+  readonly ignoredCount: number;
   readonly byTool: Record<string, number>;
   readonly dailyBreakdown: ReadonlyArray<{
     readonly date: string;
