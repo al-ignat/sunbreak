@@ -20,38 +20,78 @@ export function severityColor(type: FindingType): string {
 }
 
 /**
- * Map string offsets to a DOM Range using TreeWalker.
+ * Build a list of text segments with their cumulative offsets.
  *
- * Walks all text nodes under `root`, accumulating character offsets.
- * Returns a Range spanning [startOffset, endOffset) in the concatenated
- * text content, or null if offsets are out of bounds.
+ * For paragraph-based editors (ProseMirror, etc.) where getText() joins
+ * `<p>` elements with `\n`, we walk paragraphs and insert virtual `\n`
+ * boundaries to keep offsets aligned with the classifier output.
+ *
+ * For plain editors without `<p>` elements, walks all text nodes directly.
+ */
+function buildTextSegments(
+  root: HTMLElement,
+): Array<{ node: Text; startInText: number }> {
+  const segments: Array<{ node: Text; startInText: number }> = [];
+  const paragraphs = root.querySelectorAll('p');
+
+  if (paragraphs.length > 0) {
+    let charIndex = 0;
+    for (let pi = 0; pi < paragraphs.length; pi++) {
+      if (pi > 0) charIndex += 1; // virtual \n between paragraphs
+      const walker = document.createTreeWalker(
+        paragraphs[pi] as HTMLElement,
+        NodeFilter.SHOW_TEXT,
+      );
+      while (walker.nextNode()) {
+        const textNode = walker.currentNode as Text;
+        segments.push({ node: textNode, startInText: charIndex });
+        charIndex += textNode.textContent?.length ?? 0;
+      }
+    }
+  } else {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let charIndex = 0;
+    while (walker.nextNode()) {
+      const textNode = walker.currentNode as Text;
+      segments.push({ node: textNode, startInText: charIndex });
+      charIndex += textNode.textContent?.length ?? 0;
+    }
+  }
+
+  return segments;
+}
+
+/**
+ * Map string offsets to a DOM Range.
+ *
+ * Handles both paragraph-based editors (where getText joins `<p>` with `\n`)
+ * and plain text editors. Returns a Range spanning [startOffset, endOffset)
+ * in the extracted text, or null if offsets are out of bounds.
  */
 export function createRangeFromOffsets(
   root: HTMLElement,
   startOffset: number,
   endOffset: number,
 ): Range | null {
-  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let charIndex = 0;
+  const segments = buildTextSegments(root);
   let startNode: Text | null = null;
   let startNodeOffset = 0;
   let endNode: Text | null = null;
   let endNodeOffset = 0;
 
-  while (walker.nextNode()) {
-    const textNode = walker.currentNode as Text;
-    const nodeLen = textNode.textContent?.length ?? 0;
+  for (const seg of segments) {
+    const nodeLen = seg.node.textContent?.length ?? 0;
+    const nodeEnd = seg.startInText + nodeLen;
 
-    if (!startNode && charIndex + nodeLen > startOffset) {
-      startNode = textNode;
-      startNodeOffset = startOffset - charIndex;
+    if (!startNode && nodeEnd > startOffset) {
+      startNode = seg.node;
+      startNodeOffset = startOffset - seg.startInText;
     }
-    if (!endNode && charIndex + nodeLen >= endOffset) {
-      endNode = textNode;
-      endNodeOffset = endOffset - charIndex;
+    if (!endNode && nodeEnd >= endOffset) {
+      endNode = seg.node;
+      endNodeOffset = endOffset - seg.startInText;
       break;
     }
-    charIndex += nodeLen;
   }
 
   if (!startNode || !endNode) return null;

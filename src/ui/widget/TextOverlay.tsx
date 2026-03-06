@@ -163,9 +163,9 @@ export default function TextOverlay({
           key={`${seg.findingId}-${i}`}
           class="sb-underline"
           style={{
-            position: 'fixed',
-            top: `${seg.top}px`,
-            left: `${seg.left}px`,
+            position: 'absolute',
+            top: `${seg.top - editorRect.top}px`,
+            left: `${seg.left - editorRect.left}px`,
             width: `${seg.width}px`,
             height: '0px',
             borderBottom: `2px dotted ${seg.color}`,

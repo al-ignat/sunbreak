@@ -126,6 +126,44 @@ describe('createRangeFromOffsets', () => {
     const range = createRangeFromOffsets(div, 0, 5);
     expect(range).toBeNull();
   });
+
+  it('handles paragraph-based editors with \\n boundaries', () => {
+    const div = document.createElement('div');
+    const p1 = document.createElement('p');
+    p1.textContent = 'first line';
+    const p2 = document.createElement('p');
+    p2.textContent = 'second line';
+    div.appendChild(p1);
+    div.appendChild(p2);
+    document.body.appendChild(div);
+
+    // Extracted text: "first line\nsecond line"
+    // "second" starts at offset 11 (10 + 1 for \n)
+    const range = createRangeFromOffsets(div, 11, 17);
+    if (!range) throw new Error('Range should not be null');
+    expect(range.toString()).toBe('second');
+  });
+
+  it('handles range spanning across paragraphs', () => {
+    const div = document.createElement('div');
+    const p1 = document.createElement('p');
+    p1.textContent = 'hello';
+    const p2 = document.createElement('p');
+    p2.textContent = 'world';
+    div.appendChild(p1);
+    div.appendChild(p2);
+    document.body.appendChild(div);
+
+    // Extracted text: "hello\nworld"
+    // offset 3 = 'l' in "hello", offset 8 = 'r' in "world"
+    const range = createRangeFromOffsets(div, 3, 8);
+    if (!range) throw new Error('Range should not be null');
+    // Verify start/end positions directly (jsdom toString skips paragraph breaks)
+    expect(range.startOffset).toBe(3);
+    expect(range.endOffset).toBe(2); // offset 8 - 6 (p2 starts at 6)
+    expect(range.startContainer.textContent).toBe('hello');
+    expect(range.endContainer.textContent).toBe('world');
+  });
 });
 
 describe('findingAtPoint', () => {
