@@ -55,6 +55,8 @@ export interface FindingsState {
   ignore(id: string): void;
   /** Fix all active findings. Returns the list that were fixed. */
   fixAll(): ReadonlyArray<TrackedFinding>;
+  /** Ignore all active findings of a given type */
+  ignoreAllOfType(type: string): void;
   /** Subscribe to state changes */
   subscribe(listener: FindingsListener): () => void;
   /** Reset all state */
@@ -157,6 +159,20 @@ export function createFindingsState(): FindingsState {
     return toFix;
   }
 
+  function ignoreAllOfType(type: string): void {
+    let changed = false;
+    tracked = tracked.map((tf) => {
+      if (tf.status === 'active' && tf.finding.type === type) {
+        changed = true;
+        return { ...tf, status: 'ignored' as const };
+      }
+      return tf;
+    });
+    if (changed) {
+      notify();
+    }
+  }
+
   function subscribe(listener: FindingsListener): () => void {
     listeners.add(listener);
     return () => {
@@ -169,7 +185,7 @@ export function createFindingsState(): FindingsState {
     notify();
   }
 
-  return { update, getSnapshot, fix, ignore, fixAll, subscribe, clear };
+  return { update, getSnapshot, fix, ignore, fixAll, ignoreAllOfType, subscribe, clear };
 
   function getSnapshot(): FindingsSnapshot {
     return snapshot();

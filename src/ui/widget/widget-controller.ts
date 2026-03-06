@@ -7,6 +7,7 @@ import widgetStyles from './widget.css?inline';
 import panelStyles from './findings-panel.css?inline';
 import toastStyles from './send-toast.css?inline';
 import overlayStyles from './text-overlay.css?inline';
+import hoverCardStyles from './hover-card.css?inline';
 import type { TextOverlayHandle } from './TextOverlay';
 
 /**
@@ -73,7 +74,7 @@ export function createWidgetController(
     const shadow = container.attachShadow({ mode: 'closed' });
 
     const styleEl = document.createElement('style');
-    styleEl.textContent = widgetStyles + '\n' + panelStyles + '\n' + toastStyles + '\n' + overlayStyles;
+    styleEl.textContent = widgetStyles + '\n' + panelStyles + '\n' + toastStyles + '\n' + overlayStyles + '\n' + hoverCardStyles;
     shadow.appendChild(styleEl);
 
     const w = document.createElement('div');
@@ -166,6 +167,22 @@ export function createWidgetController(
     findingsState.fixAll();
   }
 
+  function handleIgnoreAllOfType(type: string): void {
+    findingsState.ignoreAllOfType(type);
+  }
+
+  function handleDisableType(type: string): void {
+    // Disable this detection type in storage settings
+    // This is a best-effort fire-and-forget — settings are read on next scan
+    chrome.storage.local.get('detectionSettings', (result) => {
+      const current = (result as Record<string, unknown>).detectionSettings as Record<string, boolean> | undefined;
+      const updated = { ...current, [type]: false };
+      chrome.storage.local.set({ detectionSettings: updated });
+    });
+    // Also ignore all current findings of this type immediately
+    findingsState.ignoreAllOfType(type);
+  }
+
   function handleClose(): void {
     panelOpen = false;
     // If toast was paused (opened via Review), resume it
@@ -230,6 +247,8 @@ export function createWidgetController(
         onToastReview: handleToastReview,
         onToastSendAnyway: handleToastSendAnyway,
         onToastTimeout: handleToastTimeout,
+        onIgnoreAllOfType: handleIgnoreAllOfType,
+        onDisableType: handleDisableType,
         onOverlayHandleReady: (handle: TextOverlayHandle | null): void => {
           overlayHandle = handle;
         },

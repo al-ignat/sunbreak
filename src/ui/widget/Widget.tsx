@@ -28,6 +28,8 @@ export interface WidgetProps {
   onToastSendAnyway?: () => void;
   onToastTimeout?: () => void;
   onOverlayHandleReady?: (handle: TextOverlayHandle | null) => void;
+  onIgnoreAllOfType?: (type: string) => void;
+  onDisableType?: (type: string) => void;
 }
 
 type WidgetStatus = 'clean' | 'findings';
@@ -60,6 +62,8 @@ export default function Widget({
   onToastSendAnyway,
   onToastTimeout,
   onOverlayHandleReady,
+  onIgnoreAllOfType,
+  onDisableType,
 }: WidgetProps): JSX.Element {
   const [snapshot, setSnapshot] = useState<FindingsSnapshot>(findingsState.getSnapshot());
 
@@ -139,6 +143,10 @@ export default function Widget({
           findingsState={findingsState}
           editorEl={editorEl}
           onHandleReady={onOverlayHandleReady}
+          onFix={onFix}
+          onIgnore={onIgnore}
+          onIgnoreAllOfType={onIgnoreAllOfType}
+          onDisableType={onDisableType}
         />
       )}
     </div>

@@ -637,11 +637,11 @@ Note: The masked preview uses the current v0.1 placeholder format (`[EMAIL_1]`) 
 - `src/content/findings-state.ts` — add "Ignore all [type]" and "Turn off [type]" actions
 
 **Success criteria:**
-- [ ] Hover card appears on underline hover
-- [ ] Shows correct finding type, value, and placeholder preview
-- [ ] "Fix" and "Ignore" actions work
-- [ ] Overflow menu actions work
-- [ ] Card disappears cleanly on mouse leave
+- [x] Hover card appears on underline hover
+- [x] Shows correct finding type, value, and placeholder preview
+- [x] "Fix" and "Ignore" actions work
+- [x] Overflow menu actions work
+- [x] Card disappears cleanly on mouse leave
 - [ ] Works in fallback mode (panel click) when underlines are unavailable
 
 ##### Phase 6 Research Insights
