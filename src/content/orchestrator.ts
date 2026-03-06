@@ -26,6 +26,8 @@ import {
 import { createFindingsState } from './findings-state';
 import type { FindingsState } from './findings-state';
 import type { ScannerConfig } from './scanner';
+import { createWidgetController } from '../ui/widget/widget-controller';
+import type { WidgetContext } from '../ui/widget/widget-controller';
 
 /**
  * Context for the orchestrator.
@@ -81,6 +83,7 @@ export function createOrchestrator(
   onFileDetected: FileCallback;
   findingsState: FindingsState;
   scannerConfig: ScannerConfig;
+  widgetController: ReturnType<typeof createWidgetController>;
 } {
   const overlayCtx: OverlayContext = {
     get isInvalid(): boolean {
@@ -111,6 +114,15 @@ export function createOrchestrator(
     getDetectionSettings: () => cachedDetectionSettings,
     getExtensionSettings: () => cachedExtensionSettings,
   };
+
+  // Widget controller for the corner widget UI
+  const widgetCtx: WidgetContext = {
+    get isInvalid(): boolean {
+      return ctx.isInvalid;
+    },
+    onInvalidated: ctx.onInvalidated.bind(ctx),
+  };
+  const widgetController = createWidgetController(findingsState, widgetCtx);
 
   // Fetch all cached settings initially
   void fetchAllSettings();
@@ -272,5 +284,5 @@ export function createOrchestrator(
     );
   }
 
-  return { onPromptIntercepted, onFileDetected, findingsState, scannerConfig };
+  return { onPromptIntercepted, onFileDetected, findingsState, scannerConfig, widgetController };
 }

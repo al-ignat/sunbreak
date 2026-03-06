@@ -277,12 +277,12 @@ Findings:    [sun-icon] Sunbreak  (3)             (red badge, slightly more opaq
 - `src/types/adapter.ts` — no changes needed (widget positions relative to `findInput()`)
 
 **Success criteria:**
-- [ ] Widget visible on ChatGPT, Claude, and Gemini
-- [ ] Correctly shows clean/scanning/findings states
-- [ ] Does not interfere with host page interaction
-- [ ] Semi-transparent when idle, fully opaque on hover
-- [ ] Badge count updates reactively
-- [ ] Positioning adapts to scroll, resize, and zoom
+- [x] Widget visible on ChatGPT, Claude, and Gemini
+- [x] Correctly shows clean/scanning/findings states
+- [x] Does not interfere with host page interaction
+- [x] Semi-transparent when idle, fully opaque on hover
+- [x] Badge count updates reactively
+- [x] Positioning adapts to scroll, resize, and zoom
 
 ##### Phase 2 Research Insights
 
