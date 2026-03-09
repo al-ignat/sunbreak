@@ -1,21 +1,14 @@
 import type { JSX } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
-import type { AggregatedStats, FlaggedEvent, DetectionSettings } from '../../storage/types';
-import { DEFAULT_DETECTION_SETTINGS } from '../../storage/types';
-import type { FindingType } from '../../classifier/types';
-import { getWeeklyStats, getFlaggedEvents, getDetectionSettings, setDetectionSettings } from '../../storage/dashboard';
+import { Sun, Settings, ArrowRight } from 'lucide-preact';
+import type { AggregatedStats, FlaggedEvent } from '../../storage/types';
+import { getWeeklyStats, getFlaggedEvents } from '../../storage/dashboard';
 import { ComplianceGauge } from '../../ui/popup/ComplianceGauge';
-import { DetectionToggles } from '../../ui/dashboard/DetectionToggles';
-import { GearIcon } from '../../ui/icons/GearIcon';
-import { ArrowRightIcon } from '../../ui/icons/ArrowRightIcon';
-import { toolLabel, toolColor, actionLabel, actionColor } from '../../ui/format';
+import { toolLabel, toolColor, toolBgColor, actionLabel, actionColor, categoryColor, categoryBgColor } from '../../ui/format';
 
 export default function App(): JSX.Element {
   const [stats, setStats] = useState<AggregatedStats | null>(null);
   const [recentEvents, setRecentEvents] = useState<ReadonlyArray<FlaggedEvent>>([]);
-  const [detectionSettings, setDetectionSettingsState] = useState<DetectionSettings>(
-    { ...DEFAULT_DETECTION_SETTINGS },
-  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,25 +17,17 @@ export default function App(): JSX.Element {
 
   async function loadData(): Promise<void> {
     try {
-      const [weeklyStats, events, settings] = await Promise.all([
+      const [weeklyStats, events] = await Promise.all([
         getWeeklyStats(7),
         getFlaggedEvents({ days: 30 }),
-        getDetectionSettings(),
       ]);
       setStats(weeklyStats);
-      setRecentEvents(events.slice(0, 5));
-      setDetectionSettingsState(settings);
+      setRecentEvents(events.slice(0, 3));
     } catch {
       // Storage errors should not crash the popup
     } finally {
       setLoading(false);
     }
-  }
-
-  function handleToggle(type: FindingType, enabled: boolean): void {
-    const updated = { ...detectionSettings, [type]: enabled };
-    setDetectionSettingsState(updated);
-    void setDetectionSettings(updated);
   }
 
   const dashboardUrl = chrome.runtime.getURL('dashboard.html');
@@ -66,32 +51,44 @@ export default function App(): JSX.Element {
     <div className="popup-container">
       {/* Header */}
       <div className="popup-header">
-        <h1 className="popup-title">Secure BYOAI</h1>
+        <div className="popup-brand">
+          <Sun size={20} color="var(--color-warning)" aria-hidden="true" />
+          <span className="popup-title">Sunbreak</span>
+        </div>
         <button
           onClick={(): void => openUrl(settingsUrl)}
           title="Settings"
           aria-label="Open settings"
           className="popup-gear-btn"
         >
-          <GearIcon size={16} />
+          <Settings size={18} />
         </button>
       </div>
 
       {/* Stats Summary */}
-      {stats && (
-        <div className="popup-stats">
-          <ComplianceGauge rate={complianceRate} />
-          <div className="popup-stats__numbers">
-            <div className="popup-stats__row">
-              <span className="popup-stats__value">{stats.totalFlagged}</span>
-              <span className="popup-stats__label">flagged</span>
-            </div>
-            <span className="popup-stats__sub">
-              {stats.totalRedacted} redacted &middot; {stats.totalSentAnyway} sent anyway
+      <div className="popup-stats">
+        <ComplianceGauge rate={complianceRate} size={64} />
+        <div className="popup-stats__numbers">
+          <div className="popup-stats__row">
+            <span className="popup-stats__label">Flagged</span>
+            <span className="popup-stats__value popup-stats__value--orange">
+              {stats?.flaggedCount ?? 0}
+            </span>
+          </div>
+          <div className="popup-stats__row">
+            <span className="popup-stats__label">Redacted</span>
+            <span className="popup-stats__value popup-stats__value--green">
+              {stats?.redactedCount ?? 0}
+            </span>
+          </div>
+          <div className="popup-stats__row">
+            <span className="popup-stats__label">Sent anyway</span>
+            <span className="popup-stats__value popup-stats__value--red">
+              {stats?.sentAnywayCount ?? 0}
             </span>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Recent Activity */}
       {recentEvents.length > 0 && (
@@ -101,15 +98,43 @@ export default function App(): JSX.Element {
             {recentEvents.map((event) => (
               <div key={event.id} className="popup-event-row">
                 <span className="popup-event__date">
-                  {formatDate(event.timestamp)}
+                  {formatTimeAgo(event.timestamp)}
                 </span>
-                <span className="popup-event__tool" style={{ color: toolColor(event.tool) }}>
-                  {toolLabel(event.tool)}
+                <span
+                  className="popup-event__tool-pill"
+                  style={{
+                    background: toolBgColor(event.tool),
+                  }}
+                >
+                  <span
+                    className="popup-event__dot"
+                    style={{ background: toolColor(event.tool, true) }}
+                  />
+                  <span style={{ color: toolColor(event.tool, true) }}>
+                    {toolLabel(event.tool)}
+                  </span>
                 </span>
-                <span className="popup-event__categories">
-                  {event.categories.join(', ')}
-                </span>
-                <span className="popup-event__action" style={{ color: actionColor(event.action) }}>
+                {event.categories.slice(0, 1).map((cat) => (
+                  <span
+                    key={cat}
+                    className="popup-event__cat-pill"
+                    style={{
+                      background: categoryBgColor(cat),
+                      color: categoryColor(cat, true),
+                    }}
+                  >
+                    <span
+                      className="popup-event__dot"
+                      style={{ background: categoryColor(cat, true) }}
+                    />
+                    {formatCategory(cat)}
+                  </span>
+                ))}
+                <span className="popup-event__spacer" />
+                <span
+                  className="popup-event__action"
+                  style={{ color: actionColor(event.action, true) }}
+                >
                   {actionLabel(event.action)}
                 </span>
               </div>
@@ -118,31 +143,37 @@ export default function App(): JSX.Element {
         </div>
       )}
 
-      {/* Quick Settings */}
-      <div className="popup-section">
-        <h2 className="popup-section-header">Detection Categories</h2>
-        <DetectionToggles settings={detectionSettings} onToggle={handleToggle} compact={true} />
-      </div>
-
       {/* Dashboard Link */}
-      <a
-        href={dashboardUrl}
-        onClick={(e: MouseEvent): void => {
-          e.preventDefault();
-          openUrl(dashboardUrl);
-        }}
-        className="popup-dashboard-link"
-      >
-        Dashboard
-        <ArrowRightIcon size={12} />
-      </a>
+      <div className="popup-footer">
+        <a
+          href={dashboardUrl}
+          onClick={(e: MouseEvent): void => {
+            e.preventDefault();
+            openUrl(dashboardUrl);
+          }}
+          className="popup-dashboard-link"
+        >
+          Open Dashboard
+          <ArrowRight size={14} />
+        </a>
+      </div>
     </div>
   );
 }
 
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  return `${month}/${day}`;
+function formatTimeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return 'now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function formatCategory(cat: string): string {
+  return cat
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }

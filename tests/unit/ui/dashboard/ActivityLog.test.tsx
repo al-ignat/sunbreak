@@ -54,12 +54,12 @@ describe('ActivityLog', () => {
     expect(container.textContent).toContain('Claude');
   });
 
-  it('renders category badges', () => {
+  it('renders category pill badges with formatted labels', () => {
     const events = [
-      makeEvent({ id: 'e1', categories: ['email', 'api-key'] }),
+      makeEvent({ id: 'e1', categories: ['email', 'api_key'] }),
     ];
     const { container } = render(<ActivityLog events={events} />);
-    expect(container.textContent).toContain('email');
-    expect(container.textContent).toContain('api-key');
+    expect(container.textContent).toContain('Email');
+    expect(container.textContent).toContain('API Key');
   });
 });

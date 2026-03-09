@@ -256,6 +256,48 @@ describe('FindingsState', () => {
     });
   });
 
+  describe('ignoreAllOfType', () => {
+    it('ignores all active findings of the given type', () => {
+      const state = createFindingsState();
+      state.update([
+        makeFinding({ type: 'email', value: 'a@b.com' }),
+        makeFinding({ type: 'email', value: 'c@d.com' }),
+        makeFinding({ type: 'phone', value: '+4512345678' }),
+      ]);
+
+      state.ignoreAllOfType('email');
+      const snap = state.getSnapshot();
+      expect(snap.tracked[0]?.status).toBe('ignored');
+      expect(snap.tracked[1]?.status).toBe('ignored');
+      expect(snap.tracked[2]?.status).toBe('active');
+      expect(snap.activeCount).toBe(1);
+    });
+
+    it('does not affect already fixed/ignored findings', () => {
+      const state = createFindingsState();
+      state.update([
+        makeFinding({ type: 'email', value: 'a@b.com' }),
+        makeFinding({ type: 'email', value: 'c@d.com' }),
+      ]);
+      state.fix(idAt(state.getSnapshot().tracked, 0));
+
+      state.ignoreAllOfType('email');
+      const snap = state.getSnapshot();
+      expect(snap.tracked[0]?.status).toBe('fixed');
+      expect(snap.tracked[1]?.status).toBe('ignored');
+    });
+
+    it('does not notify when no matching active findings', () => {
+      const state = createFindingsState();
+      state.update([makeFinding({ type: 'phone', value: '+4512345678' })]);
+
+      const listener = vi.fn();
+      state.subscribe(listener);
+      state.ignoreAllOfType('email');
+      expect(listener).not.toHaveBeenCalled();
+    });
+  });
+
   describe('subscribe', () => {
     it('notifies on update', () => {
       const state = createFindingsState();

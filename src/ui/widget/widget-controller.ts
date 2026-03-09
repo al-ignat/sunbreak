@@ -6,6 +6,9 @@ import { buildRedactedText } from '../../content/interceptor';
 import widgetStyles from './widget.css?inline';
 import panelStyles from './findings-panel.css?inline';
 import toastStyles from './send-toast.css?inline';
+import overlayStyles from './text-overlay.css?inline';
+import hoverCardStyles from './hover-card.css?inline';
+import type { TextOverlayHandle } from './TextOverlay';
 
 /**
  * Context for the widget controller lifecycle.
@@ -38,14 +41,19 @@ export function createWidgetController(
   unmount(): void;
   destroy(): void;
   showToast(activeCount: number): Promise<'send-anyway' | 'timeout'>;
+  getOverlayHandle(): TextOverlayHandle | null;
 } {
   let container: HTMLDivElement | null = null;
   let shadowRoot: ShadowRoot | null = null;
   let wrapper: HTMLDivElement | null = null;
   let currentInput: HTMLElement | null = null;
   let rafId: number | null = null;
+  let positionPollId: ReturnType<typeof setInterval> | null = null;
+  let lastInputTop = 0;
+  let lastInputLeft = 0;
   let panelOpen = false;
   let toastState: ToastState | null = null;
+  let overlayHandle: TextOverlayHandle | null = null;
 
   function ensureContainer(): ShadowRoot {
     if (container && shadowRoot) {
@@ -66,7 +74,7 @@ export function createWidgetController(
     const shadow = container.attachShadow({ mode: 'closed' });
 
     const styleEl = document.createElement('style');
-    styleEl.textContent = widgetStyles + '\n' + panelStyles + '\n' + toastStyles;
+    styleEl.textContent = widgetStyles + '\n' + panelStyles + '\n' + toastStyles + '\n' + overlayStyles + '\n' + hoverCardStyles;
     shadow.appendChild(styleEl);
 
     const w = document.createElement('div');
@@ -94,6 +102,26 @@ export function createWidgetController(
 
     wrapper.style.top = `${top}px`;
     wrapper.style.left = `${left}px`;
+  }
+
+  function startPositionPolling(): void {
+    stopPositionPolling();
+    positionPollId = setInterval(() => {
+      if (!currentInput || !currentInput.isConnected) return;
+      const rect = currentInput.getBoundingClientRect();
+      if (Math.abs(rect.top - lastInputTop) > 1 || Math.abs(rect.left - lastInputLeft) > 1) {
+        lastInputTop = rect.top;
+        lastInputLeft = rect.left;
+        updatePosition();
+      }
+    }, 300);
+  }
+
+  function stopPositionPolling(): void {
+    if (positionPollId !== null) {
+      clearInterval(positionPollId);
+      positionPollId = null;
+    }
   }
 
   function onScrollOrResize(): void {
@@ -139,6 +167,22 @@ export function createWidgetController(
     findingsState.fixAll();
   }
 
+  function handleIgnoreAllOfType(type: string): void {
+    findingsState.ignoreAllOfType(type);
+  }
+
+  function handleDisableType(type: string): void {
+    // Disable this detection type in storage settings
+    // This is a best-effort fire-and-forget — settings are read on next scan
+    chrome.storage.local.get('detectionSettings', (result) => {
+      const current = (result as Record<string, unknown>).detectionSettings as Record<string, boolean> | undefined;
+      const updated = { ...current, [type]: false };
+      chrome.storage.local.set({ detectionSettings: updated });
+    });
+    // Also ignore all current findings of this type immediately
+    findingsState.ignoreAllOfType(type);
+  }
+
   function handleClose(): void {
     panelOpen = false;
     // If toast was paused (opened via Review), resume it
@@ -180,6 +224,8 @@ export function createWidgetController(
     render(
       h(Widget, {
         findingsState,
+        editorEl: currentInput,
+        supportsOverlay: adapter.supportsOverlay !== false,
         panelOpen,
         onFix: handleFix,
         onIgnore: handleIgnore,
@@ -201,6 +247,11 @@ export function createWidgetController(
         onToastReview: handleToastReview,
         onToastSendAnyway: handleToastSendAnyway,
         onToastTimeout: handleToastTimeout,
+        onIgnoreAllOfType: handleIgnoreAllOfType,
+        onDisableType: handleDisableType,
+        onOverlayHandleReady: (handle: TextOverlayHandle | null): void => {
+          overlayHandle = handle;
+        },
       }),
       wrapper,
     );
@@ -222,9 +273,13 @@ export function createWidgetController(
     if (ctx.isInvalid) return;
 
     currentInput = input;
+    const rect = input.getBoundingClientRect();
+    lastInputTop = rect.top;
+    lastInputLeft = rect.left;
     ensureContainer();
     updatePosition();
     renderWidget();
+    startPositionPolling();
 
     // Subscribe to findings state for re-renders
     const unsub = findingsState.subscribe(() => {
@@ -251,6 +306,7 @@ export function createWidgetController(
     unmountInternal();
     unmountInternal = (): void => {};
 
+    stopPositionPolling();
     window.removeEventListener('scroll', onScrollOrResize, true);
     window.removeEventListener('resize', onScrollOrResize);
 
@@ -288,5 +344,9 @@ export function createWidgetController(
     destroy();
   });
 
-  return { mount, unmount, destroy, showToast };
+  function getOverlayHandle(): TextOverlayHandle | null {
+    return overlayHandle;
+  }
+
+  return { mount, unmount, destroy, showToast, getOverlayHandle };
 }

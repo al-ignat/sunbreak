@@ -1,8 +1,8 @@
 import type { JSX } from 'preact';
 import { useState } from 'preact/hooks';
+import { Shield, ShieldCheck, TriangleAlert, TrendingUp, TrendingDown } from 'lucide-preact';
 import type { AggregatedStats } from '../../storage/types';
-import { StatsCard } from './StatsCard';
-import { ToggleButton } from './ToggleButton';
+import { toolLabel } from '../format';
 
 export interface BarChartProps {
   readonly stats7: AggregatedStats | null;
@@ -10,6 +10,13 @@ export interface BarChartProps {
 }
 
 type ChartPeriod = '7d' | '30d';
+
+/** Brand dot colors for each tool */
+const TOOL_DOT: Record<string, string> = {
+  chatgpt: '#10A37F',
+  claude: '#D97706',
+  gemini: '#4285F4',
+};
 
 export function BarChart({ stats7, stats30 }: BarChartProps): JSX.Element {
   const [period, setPeriod] = useState<ChartPeriod>('7d');
@@ -20,163 +27,231 @@ export function BarChart({ stats7, stats30 }: BarChartProps): JSX.Element {
     return <p className="chart-loading">Loading...</p>;
   }
 
-  return (
-    <div>
-      <StatsCard
-        stats={stats}
-        periodLabel={period === '7d' ? 'Last 7 days' : 'Last 30 days'}
-      />
+  if (stats.totalInteractions === 0) {
+    return (
+      <div className="empty-state">
+        <p>No data yet. Start using AI tools and your charts will appear here.</p>
+      </div>
+    );
+  }
 
-      <div className="chart-period-toggle">
-        <ToggleButton active={period === '7d'} onClick={(): void => setPeriod('7d')}>
-          Last 7 Days
-        </ToggleButton>
-        <ToggleButton active={period === '30d'} onClick={(): void => setPeriod('30d')}>
-          Last 30 Days
-        </ToggleButton>
+  const fixRate =
+    stats.flaggedCount > 0
+      ? Math.round((stats.redactedCount / stats.flaggedCount) * 100)
+      : null;
+
+  return (
+    <div className="overview-layout">
+      {/* Metric cards */}
+      <div className="metrics-row">
+        <MetricCard
+          label="Total Flagged"
+          value={stats.flaggedCount}
+          icon={<Shield size={16} />}
+          iconColor="var(--color-warning)"
+          subtitle={<TrendLine stats7={stats7} stats30={stats30} field="flaggedCount" />}
+        />
+        <MetricCard
+          label="Redacted"
+          value={stats.redactedCount}
+          icon={<ShieldCheck size={16} />}
+          iconColor="var(--color-safe)"
+          subtitle={
+            fixRate !== null ? (
+              <span className="metric-card__subtitle metric-card__subtitle--muted">
+                {fixRate}% fix rate
+              </span>
+            ) : null
+          }
+        />
+        <MetricCard
+          label="Sent Anyway"
+          value={stats.sentAnywayCount}
+          icon={<TriangleAlert size={16} />}
+          iconColor="var(--color-danger)"
+          subtitle={<TrendLine stats7={stats7} stats30={stats30} field="sentAnywayCount" invert />}
+        />
       </div>
 
-      {stats.totalInteractions === 0 ? (
-        <div className="empty-state">
-          <p>No data yet. Start using AI tools and your charts will appear here.</p>
+      {/* Chart card */}
+      <div className="chart-card">
+        <div className="chart-card__header">
+          <h3 className="chart-card__title">Interactions over time</h3>
+          <div className="chart-toggle">
+            <button
+              className={`chart-toggle__btn ${period === '7d' ? 'chart-toggle__btn--active' : ''}`}
+              onClick={(): void => setPeriod('7d')}
+            >
+              7 days
+            </button>
+            <button
+              className={`chart-toggle__btn ${period === '30d' ? 'chart-toggle__btn--active' : ''}`}
+              onClick={(): void => setPeriod('30d')}
+            >
+              30 days
+            </button>
+          </div>
         </div>
-      ) : (
-        <div>
-          <InteractionChart breakdown={stats.dailyBreakdown} />
 
-          {/* Accessibility: hidden data table */}
-          <table aria-label="Daily interaction data" className="visually-hidden">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Total</th>
-                <th>Flagged</th>
-                <th>Clean</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.dailyBreakdown.map((day) => (
-                <tr key={day.date}>
-                  <td>{day.date}</td>
-                  <td>{day.total}</td>
-                  <td>{day.flagged}</td>
-                  <td>{day.clean}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <BarChartVisual breakdown={stats.dailyBreakdown} />
+
+        <div className="chart-legend">
+          <span className="chart-legend__item">
+            <span className="chart-legend__dot chart-legend__dot--clean" />
+            Clean prompts
+          </span>
+          <span className="chart-legend__item">
+            <span className="chart-legend__dot chart-legend__dot--flagged" />
+            Flagged prompts
+          </span>
         </div>
-      )}
+
+        {/* Accessibility: hidden data table */}
+        <table aria-label="Daily interaction data" className="visually-hidden">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Total</th>
+              <th>Flagged</th>
+              <th>Clean</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stats.dailyBreakdown.map((day) => (
+              <tr key={day.date}>
+                <td>{day.date}</td>
+                <td>{day.total}</td>
+                <td>{day.flagged}</td>
+                <td>{day.clean}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Tool breakdown */}
+      <div className="tool-row">
+        {Object.entries(stats.byTool).map(([tool, count]) => (
+          <div key={tool} className="tool-card">
+            <div className="tool-card__header">
+              <span
+                className="tool-card__dot"
+                style={{ background: TOOL_DOT[tool] ?? 'var(--color-text-muted)' }}
+              />
+              <span className="tool-card__name">{toolLabel(tool)}</span>
+            </div>
+            <span className="tool-card__value">{count}</span>
+            <span className="tool-card__label">interactions</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-interface InteractionChartProps {
+/* ---- Metric Card ---- */
+
+interface MetricCardProps {
+  readonly label: string;
+  readonly value: number;
+  readonly icon: JSX.Element;
+  readonly iconColor: string;
+  readonly subtitle: JSX.Element | null;
+}
+
+function MetricCard({ label, value, icon, iconColor, subtitle }: MetricCardProps): JSX.Element {
+  return (
+    <div className="metric-card">
+      <div className="metric-card__top">
+        <span className="metric-card__label">{label}</span>
+        <span style={{ color: iconColor }}>{icon}</span>
+      </div>
+      <span className="metric-card__value">{value}</span>
+      {subtitle}
+    </div>
+  );
+}
+
+/* ---- Trend Line ---- */
+
+interface TrendLineProps {
+  readonly stats7: AggregatedStats | null;
+  readonly stats30: AggregatedStats | null;
+  readonly field: 'flaggedCount' | 'sentAnywayCount';
+  readonly invert?: boolean;
+}
+
+function TrendLine({ stats7, stats30, field, invert }: TrendLineProps): JSX.Element | null {
+  if (!stats7 || !stats30 || stats30[field] === 0) return null;
+
+  // Compare 7d count against what 7 days' worth of 30d would be
+  const dailyAvg30 = stats30[field] / 30;
+  const expected7 = dailyAvg30 * 7;
+  if (expected7 === 0) return null;
+
+  const pctChange = Math.round(((stats7[field] - expected7) / expected7) * 100);
+  const isDown = pctChange < 0;
+  // For "sent anyway", going down is good
+  const isGood = invert ? isDown : !isDown;
+
+  if (pctChange === 0) return null;
+
+  return (
+    <span className={`metric-card__trend ${isGood ? 'metric-card__trend--good' : 'metric-card__trend--bad'}`}>
+      {isDown ? <TrendingDown size={12} /> : <TrendingUp size={12} />}
+      {isDown ? '' : '+'}{pctChange}% this week
+    </span>
+  );
+}
+
+/* ---- Bar Chart Visual (div-based) ---- */
+
+interface BarChartVisualProps {
   readonly breakdown: AggregatedStats['dailyBreakdown'];
 }
 
-function InteractionChart({ breakdown }: InteractionChartProps): JSX.Element {
-  const maxVal = Math.max(1, ...breakdown.map((d) => d.total));
-  const chartHeight = 200;
-  const chartWidth = Math.max(400, breakdown.length * 28);
-  const barWidth = Math.min(20, (chartWidth - 60) / breakdown.length - 4);
-  const leftPad = 40;
-  const bottomPad = 40;
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Y-axis ticks
-  const tickCount = 4;
-  const ticks: number[] = [];
-  for (let i = 0; i <= tickCount; i++) {
-    ticks.push(Math.round((maxVal / tickCount) * i));
-  }
+function formatDayLabel(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  return DAY_LABELS[d.getDay()] ?? dateStr.slice(5);
+}
+
+function BarChartVisual({ breakdown }: BarChartVisualProps): JSX.Element {
+  const maxVal = Math.max(1, ...breakdown.map((d) => d.total));
 
   return (
-    <div className="chart-card">
-      <h3 className="chart-card__title">Daily Interactions</h3>
-      <svg
-        width={chartWidth}
-        height={chartHeight + bottomPad}
-        role="img"
-        aria-label="Daily interaction bar chart"
-      >
-        {/* Y-axis ticks */}
-        {ticks.map((tick) => {
-          const y = chartHeight - (tick / maxVal) * chartHeight;
+    <div>
+      <div className="chart-bars" role="img" aria-label="Daily interaction bar chart">
+        {breakdown.map((day) => {
+          const cleanPct = (day.clean / maxVal) * 100;
+          const flaggedPct = (day.flagged / maxVal) * 100;
           return (
-            <g key={tick}>
-              <line
-                x1={leftPad}
-                y1={y}
-                x2={chartWidth}
-                y2={y}
-                stroke="var(--color-border-subtle)"
-                stroke-width="1"
-              />
-              <text
-                x={leftPad - 6}
-                y={y + 4}
-                text-anchor="end"
-                fill="var(--color-text-muted)"
-                font-size="10"
-                font-family="var(--font-mono)"
-              >
-                {tick}
-              </text>
-            </g>
+            <div key={day.date} className="chart-bar">
+              <div className="chart-bar__stack">
+                {day.flagged > 0 && (
+                  <div
+                    className="chart-bar__segment chart-bar__segment--flagged"
+                    style={{ height: `${flaggedPct}%` }}
+                  />
+                )}
+                {day.clean > 0 && (
+                  <div
+                    className="chart-bar__segment chart-bar__segment--clean"
+                    style={{ height: `${cleanPct}%` }}
+                  />
+                )}
+              </div>
+            </div>
           );
         })}
-
-        {/* Bars */}
-        {breakdown.map((day, i) => {
-          const x = leftPad + i * (barWidth + 4) + 2;
-          const cleanHeight = (day.clean / maxVal) * chartHeight;
-          const flaggedHeight = (day.flagged / maxVal) * chartHeight;
-          const dateLabel = day.date.slice(5); // MM-DD
-
-          return (
-            <g key={day.date}>
-              <rect
-                x={x}
-                y={chartHeight - cleanHeight - flaggedHeight}
-                width={barWidth}
-                height={cleanHeight}
-                fill="var(--color-safe)"
-                rx="2"
-              />
-              {flaggedHeight > 0 && (
-                <rect
-                  x={x}
-                  y={chartHeight - flaggedHeight}
-                  width={barWidth}
-                  height={flaggedHeight}
-                  fill="var(--color-warning)"
-                  rx="2"
-                />
-              )}
-              <text
-                x={x + barWidth / 2}
-                y={chartHeight + 16}
-                text-anchor="middle"
-                fill="var(--color-text-muted)"
-                font-size="9"
-                transform={`rotate(-45 ${x + barWidth / 2} ${chartHeight + 16})`}
-              >
-                {dateLabel}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-
-      <div className="chart-legend">
-        <span className="chart-legend__item">
-          <span className="chart-legend__dot chart-legend__dot--clean" />
-          Clean
-        </span>
-        <span className="chart-legend__item">
-          <span className="chart-legend__dot chart-legend__dot--flagged" />
-          Flagged
-        </span>
+      </div>
+      <div className="chart-labels">
+        {breakdown.map((day) => (
+          <span key={day.date} className="chart-labels__item">
+            {formatDayLabel(day.date)}
+          </span>
+        ))}
       </div>
     </div>
   );

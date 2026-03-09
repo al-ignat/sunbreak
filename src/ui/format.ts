@@ -12,11 +12,11 @@ const TOOL_COLORS: Record<string, string> = {
   gemini: '#4285F4',
 };
 
-/** Lighter tool colors for dark backgrounds (WCAG AA on #242938) */
+/** Lighter tool colors for dark backgrounds (WCAG AA on #1E1D21) */
 const TOOL_COLORS_DARK: Record<string, string> = {
   chatgpt: '#34D399',
-  claude: '#FBBF24',
-  gemini: '#93C5FD',
+  claude: '#F59E0B',
+  gemini: '#60A5FA',
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -33,12 +33,19 @@ const ACTION_COLORS: Record<string, string> = {
   edited: '#1565C0',
 };
 
-/** Lighter action colors for dark backgrounds (WCAG AA on #242938) */
+/** Lighter action colors for dark backgrounds (WCAG AA on #1E1D21) */
 const ACTION_COLORS_DARK: Record<string, string> = {
-  redacted: '#4ADE80',
-  'sent-anyway': '#FB923C',
-  cancelled: '#9CA3AF',
-  edited: '#93C5FD',
+  redacted: '#34D399',
+  'sent-anyway': '#F59E0B',
+  cancelled: '#6B6869',
+  edited: '#60A5FA',
+};
+
+/** Tinted background for tool pill badges */
+const TOOL_BG: Record<string, string> = {
+  chatgpt: '#0A2A1F',
+  claude: '#1A1510',
+  gemini: '#0D1528',
 };
 
 /** Per-category detection colors for badge accents */
@@ -54,17 +61,43 @@ const CATEGORY_COLORS: Record<string, string> = {
   uk_ni: '#EF4444',
 };
 
-/** Lighter category colors for dark backgrounds */
+/** Category colors for dark backgrounds (WCAG AA on #1E1D21) */
 const CATEGORY_COLORS_DARK: Record<string, string> = {
-  credit_card: '#FCA5A5',
-  ssn: '#FCA5A5',
-  email: '#FDE68A',
-  phone: '#FDE68A',
-  ip_address: '#93C5FD',
-  api_key: '#C4B5FD',
-  custom_keyword: '#D1D5DB',
-  danish_cpr: '#FCA5A5',
-  uk_ni: '#FCA5A5',
+  credit_card: '#FB923C',
+  ssn: '#FB923C',
+  email: '#FBBF24',
+  phone: '#FBBF24',
+  ip_address: '#60A5FA',
+  api_key: '#F87171',
+  custom_keyword: '#60A5FA',
+  danish_cpr: '#FB923C',
+  uk_ni: '#FB923C',
+};
+
+/** Tinted background for category pill badges */
+const CATEGORY_BG: Record<string, string> = {
+  credit_card: '#2A2010',
+  ssn: '#2A2010',
+  email: '#2A2010',
+  phone: '#2A2010',
+  ip_address: '#101828',
+  api_key: '#2A1010',
+  custom_keyword: '#101828',
+  danish_cpr: '#2A2010',
+  uk_ni: '#2A2010',
+};
+
+/** Display labels for category types */
+const CATEGORY_LABELS: Record<string, string> = {
+  credit_card: 'Credit Card',
+  ssn: 'SSN',
+  email: 'Email',
+  phone: 'Phone',
+  ip_address: 'IP Address',
+  api_key: 'API Key',
+  custom_keyword: 'Keyword',
+  danish_cpr: 'CPR',
+  uk_ni: 'NI Number',
 };
 
 export function toolLabel(tool: string): string {
@@ -73,7 +106,7 @@ export function toolLabel(tool: string): string {
 
 export function toolColor(tool: string, dark = false): string {
   const colors = dark ? TOOL_COLORS_DARK : TOOL_COLORS;
-  return colors[tool] ?? '#555';
+  return colors[tool] ?? '#6B6869';
 }
 
 export function actionLabel(action: string): string {
@@ -82,10 +115,22 @@ export function actionLabel(action: string): string {
 
 export function actionColor(action: string, dark = false): string {
   const colors = dark ? ACTION_COLORS_DARK : ACTION_COLORS;
-  return colors[action] ?? '#555';
+  return colors[action] ?? '#6B6869';
+}
+
+export function toolBgColor(tool: string): string {
+  return TOOL_BG[tool] ?? '#1E1D21';
 }
 
 export function categoryColor(category: string, dark = false): string {
   const colors = dark ? CATEGORY_COLORS_DARK : CATEGORY_COLORS;
-  return colors[category] ?? (dark ? '#9CA3AF' : '#6B7280');
+  return colors[category] ?? (dark ? '#9B9898' : '#6B7280');
+}
+
+export function categoryBgColor(category: string): string {
+  return CATEGORY_BG[category] ?? '#1E1D21';
+}
+
+export function categoryLabel(category: string): string {
+  return CATEGORY_LABELS[category] ?? category.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }

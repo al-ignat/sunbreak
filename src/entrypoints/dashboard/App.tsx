@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import { useState, useEffect, useCallback } from 'preact/hooks';
+import { Sun, Download } from 'lucide-preact';
 import { TabNav } from '../../ui/dashboard/TabNav';
 import type { TabId } from '../../ui/dashboard/TabNav';
 import { BarChart } from '../../ui/dashboard/BarChart';
@@ -127,8 +128,21 @@ export default function App(): JSX.Element {
   return (
     <div>
       <header className="dash-header">
-        <h1 className="dash-header__title">Secure BYOAI</h1>
-        <span className="dash-header__subtitle">Personal Dashboard</span>
+        <div className="dash-header__brand">
+          <div className="dash-header__title-row">
+            <Sun size={22} color="var(--color-warning)" aria-hidden="true" />
+            <h1 className="dash-header__title">Sunbreak</h1>
+          </div>
+          <span className="dash-header__subtitle">Personal Dashboard</span>
+        </div>
+        {activeTab === 'overview' && (
+          <div className="dash-header__actions">
+            <button className="dash-header__export-btn" type="button">
+              <Download size={14} />
+              Export
+            </button>
+          </div>
+        )}
       </header>
 
       <TabNav activeTab={activeTab} onTabChange={handleTabChange} />

@@ -22,6 +22,9 @@ export interface SiteAdapter {
 
   /** Find the file drop zone element, if any */
   getDropZone(): HTMLElement | null;
+
+  /** Whether this site supports inline text overlay underlines (default: true) */
+  readonly supportsOverlay?: boolean;
 }
 
 /** Callback invoked when a prompt is captured before submission */

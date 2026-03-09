@@ -3,6 +3,8 @@ import { useState, useEffect, useCallback } from 'preact/hooks';
 import type { FindingsSnapshot, FindingsState } from '../../content/findings-state';
 import FindingsPanel from './FindingsPanel';
 import SendToast from './SendToast';
+import TextOverlay from './TextOverlay';
+import type { TextOverlayHandle } from './TextOverlay';
 
 /** Toast display state passed from the widget controller */
 export interface ToastDisplayState {
@@ -13,6 +15,8 @@ export interface ToastDisplayState {
 
 export interface WidgetProps {
   findingsState: FindingsState;
+  editorEl: HTMLElement | null;
+  supportsOverlay: boolean;
   onClick: () => void;
   panelOpen: boolean;
   onFix?: (id: string) => void;
@@ -23,6 +27,9 @@ export interface WidgetProps {
   onToastReview?: () => void;
   onToastSendAnyway?: () => void;
   onToastTimeout?: () => void;
+  onOverlayHandleReady?: (handle: TextOverlayHandle | null) => void;
+  onIgnoreAllOfType?: (type: string) => void;
+  onDisableType?: (type: string) => void;
 }
 
 type WidgetStatus = 'clean' | 'findings';
@@ -42,6 +49,8 @@ function buildAriaLabel(status: WidgetStatus, count: number): string {
 
 export default function Widget({
   findingsState,
+  editorEl,
+  supportsOverlay,
   onClick,
   panelOpen,
   onFix,
@@ -52,6 +61,9 @@ export default function Widget({
   onToastReview,
   onToastSendAnyway,
   onToastTimeout,
+  onOverlayHandleReady,
+  onIgnoreAllOfType,
+  onDisableType,
 }: WidgetProps): JSX.Element {
   const [snapshot, setSnapshot] = useState<FindingsSnapshot>(findingsState.getSnapshot());
 
@@ -124,6 +136,17 @@ export default function Widget({
           onReview={onToastReview}
           onSendAnyway={onToastSendAnyway}
           onTimeout={onToastTimeout}
+        />
+      )}
+      {supportsOverlay && (
+        <TextOverlay
+          findingsState={findingsState}
+          editorEl={editorEl}
+          onHandleReady={onOverlayHandleReady}
+          onFix={onFix}
+          onIgnore={onIgnore}
+          onIgnoreAllOfType={onIgnoreAllOfType}
+          onDisableType={onDisableType}
         />
       )}
     </div>

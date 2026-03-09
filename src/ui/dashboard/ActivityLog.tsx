@@ -1,8 +1,12 @@
 import type { JSX } from 'preact';
 import { useState, useMemo } from 'preact/hooks';
+import { ChevronDown } from 'lucide-preact';
 import type { FlaggedEvent } from '../../storage/types';
-import { toolLabel, toolColor, actionLabel, actionColor, categoryColor } from '../format';
-import { ToggleButton } from './ToggleButton';
+import {
+  toolLabel, toolColor, toolBgColor,
+  actionLabel, actionColor,
+  categoryColor, categoryBgColor, categoryLabel,
+} from '../format';
 
 export interface ActivityLogProps {
   readonly events: ReadonlyArray<FlaggedEvent>;
@@ -41,89 +45,109 @@ export function ActivityLog({ events }: ActivityLogProps): JSX.Element {
   }
 
   return (
-    <div>
+    <div className="activity-layout">
+      {/* Filters row */}
       <div className="activity-filters">
-        <div className="activity-filters__group">
-          <ToggleButton active={datePreset === '7d'} onClick={(): void => setDatePreset('7d')}>
-            Last 7 days
-          </ToggleButton>
-          <ToggleButton active={datePreset === '30d'} onClick={(): void => setDatePreset('30d')}>
-            Last 30 days
-          </ToggleButton>
-          <ToggleButton active={datePreset === 'all'} onClick={(): void => setDatePreset('all')}>
-            All time
-          </ToggleButton>
+        <div className="chart-toggle">
+          <button
+            className={`chart-toggle__btn ${datePreset === '7d' ? 'chart-toggle__btn--active' : ''}`}
+            onClick={(): void => setDatePreset('7d')}
+          >
+            7 days
+          </button>
+          <button
+            className={`chart-toggle__btn ${datePreset === '30d' ? 'chart-toggle__btn--active' : ''}`}
+            onClick={(): void => setDatePreset('30d')}
+          >
+            30 days
+          </button>
+          <button
+            className={`chart-toggle__btn ${datePreset === 'all' ? 'chart-toggle__btn--active' : ''}`}
+            onClick={(): void => setDatePreset('all')}
+          >
+            All
+          </button>
         </div>
 
-        <select
-          value={toolFilter}
-          onChange={(e: Event): void => setToolFilter((e.target as HTMLSelectElement).value)}
-          aria-label="Filter by AI tool"
-          className="activity-select"
-        >
-          <option value="all">All tools</option>
-          <option value="chatgpt">ChatGPT</option>
-          <option value="claude">Claude</option>
-          <option value="gemini">Gemini</option>
-        </select>
+        <div className="activity-dropdown-wrap">
+          <select
+            value={toolFilter}
+            onChange={(e: Event): void => setToolFilter((e.target as HTMLSelectElement).value)}
+            aria-label="Filter by AI tool"
+            className="activity-dropdown"
+          >
+            <option value="all">All tools</option>
+            <option value="chatgpt">ChatGPT</option>
+            <option value="claude">Claude</option>
+            <option value="gemini">Gemini</option>
+          </select>
+          <ChevronDown size={14} className="activity-dropdown__icon" />
+        </div>
+
+        <div className="activity-filters__spacer" />
 
         <span className="activity-filters__count">
           {filteredEvents.length} event{filteredEvents.length !== 1 ? 's' : ''}
         </span>
       </div>
 
-      <div className="activity-table-wrapper">
-        <table className="activity-table">
-          <thead>
-            <tr>
-              <th>Date / Time</th>
-              <th>Tool</th>
-              <th>Categories</th>
-              <th>Findings</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredEvents.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="activity-table__empty-cell">
-                  No events match the current filters.
-                </td>
-              </tr>
-            ) : (
-              filteredEvents.map((event) => (
-                <tr key={event.id}>
-                  <td>{formatDateTime(event.timestamp)}</td>
-                  <td>
-                    <span style={{ color: toolColor(event.tool, true), fontWeight: 500 }}>
-                      {toolLabel(event.tool)}
+      {/* Table card */}
+      <div className="activity-table-card">
+        <div className="activity-thead">
+          <span className="activity-th activity-th--date">Date &amp; Time</span>
+          <span className="activity-th activity-th--tool">Tool</span>
+          <span className="activity-th activity-th--cat">Categories</span>
+          <span className="activity-th activity-th--findings">Findings</span>
+          <span className="activity-th activity-th--action">Action</span>
+        </div>
+
+        {filteredEvents.length === 0 ? (
+          <div className="activity-empty">
+            No events match the current filters.
+          </div>
+        ) : (
+          filteredEvents.map((event) => (
+            <div key={event.id} className="activity-row">
+              <span className="activity-cell activity-cell--date">
+                {formatDateTime(event.timestamp)}
+              </span>
+              <span className="activity-cell activity-cell--tool">
+                <span
+                  className="pill"
+                  style={{ background: toolBgColor(event.tool) }}
+                >
+                  <span className="pill__dot" style={{ background: toolColor(event.tool) }} />
+                  <span style={{ color: toolColor(event.tool) }}>
+                    {toolLabel(event.tool)}
+                  </span>
+                </span>
+              </span>
+              <span className="activity-cell activity-cell--cat">
+                {event.categories.map((cat) => (
+                  <span
+                    key={cat}
+                    className="pill"
+                    style={{ background: categoryBgColor(cat) }}
+                  >
+                    <span className="pill__dot" style={{ background: categoryColor(cat, true) }} />
+                    <span style={{ color: categoryColor(cat, true) }}>
+                      {categoryLabel(cat)}
                     </span>
-                  </td>
-                  <td>
-                    {event.categories.map((cat) => (
-                      <span
-                        key={cat}
-                        className="category-badge"
-                        style={{
-                          background: `${categoryColor(cat, true)}20`,
-                          color: categoryColor(cat, true),
-                        }}
-                      >
-                        {cat}
-                      </span>
-                    ))}
-                  </td>
-                  <td>{event.findingCount}</td>
-                  <td>
-                    <span style={{ color: actionColor(event.action, true), fontWeight: 500 }}>
-                      {actionLabel(event.action)}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                  </span>
+                ))}
+              </span>
+              <span className="activity-cell activity-cell--findings">
+                {event.findingCount}
+              </span>
+              <span
+                className="activity-cell activity-cell--action"
+                style={{ color: actionColor(event.action, true) }}
+              >
+                {actionLabel(event.action)}
+              </span>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
