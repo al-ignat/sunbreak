@@ -1,17 +1,17 @@
 import type { FindingType } from '../../classifier/types';
 import type { TrackedFinding } from '../../content/findings-state';
 
-/** Underline color categories */
+/** Underline color categories (tuned for visibility on dark host pages) */
 const SEVERITY_COLORS: Record<string, string> = {
-  'api-key': '#EF4444',      // Red — credentials & secrets
-  ssn: '#F97316',            // Orange — identity data
-  cpr: '#F97316',
-  'ni-number': '#F97316',
-  'credit-card': '#F97316',
+  'api-key': '#F87171',      // Red — credentials & secrets
+  ssn: '#F59E0B',            // Orange — identity data
+  cpr: '#F59E0B',
+  'ni-number': '#F59E0B',
+  'credit-card': '#F59E0B',
   email: '#F59E0B',          // Amber — contact info
   phone: '#F59E0B',
-  keyword: '#3B82F6',        // Blue — custom patterns
-  'ip-address': '#3B82F6',
+  keyword: '#60A5FA',        // Blue — custom patterns
+  'ip-address': '#60A5FA',
 };
 
 /** Map a finding type to its underline color */

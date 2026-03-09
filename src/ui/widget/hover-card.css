@@ -16,13 +16,13 @@
   z-index: 2147483647;
   min-width: 220px;
   max-width: 320px;
-  background: #ffffff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background: #1E1D21;
+  border: 1px solid #3D3C44;
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 13px;
-  color: #333;
+  color: #F0EDE8;
   animation: sb-hover-entrance 100ms ease-out forwards;
   box-sizing: border-box;
   pointer-events: auto;
@@ -36,7 +36,7 @@
   padding: 10px 12px 6px;
   font-weight: 600;
   font-size: 12px;
-  color: #555;
+  color: #9B9898;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
@@ -48,10 +48,10 @@
   flex-shrink: 0;
 }
 
-.sb-hover-card__dot--red { background: #EF4444; }
-.sb-hover-card__dot--orange { background: #F97316; }
+.sb-hover-card__dot--red { background: #F87171; }
+.sb-hover-card__dot--orange { background: #F59E0B; }
 .sb-hover-card__dot--amber { background: #F59E0B; }
-.sb-hover-card__dot--blue { background: #3B82F6; }
+.sb-hover-card__dot--blue { background: #60A5FA; }
 
 /* Value + preview section */
 .sb-hover-card__body {
@@ -59,23 +59,23 @@
 }
 
 .sb-hover-card__original {
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
   font-size: 12px;
-  color: #333;
+  color: #F0EDE8;
   word-break: break-all;
   line-height: 1.4;
 }
 
 .sb-hover-card__arrow {
-  color: #999;
+  color: #6B6869;
   font-size: 11px;
   margin: 4px 0;
 }
 
 .sb-hover-card__masked {
-  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
   font-size: 12px;
-  color: #E65100;
+  color: #F59E0B;
   word-break: break-all;
   line-height: 1.4;
 }
@@ -86,12 +86,14 @@
   align-items: center;
   gap: 4px;
   padding: 8px 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid #2E2D33;
+  background: #28272C;
+  border-radius: 0 0 14px 14px;
 }
 
 .sb-hover-card__btn {
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
   padding: 5px 12px;
@@ -106,22 +108,22 @@
 }
 
 .sb-hover-card__btn--fix {
-  background: #E65100;
-  color: #fff;
+  background: #F59E0B;
+  color: #141316;
 }
 
 .sb-hover-card__btn--fix:hover {
-  background: #BF360C;
+  background: #D97706;
 }
 
 .sb-hover-card__btn--ignore {
   background: transparent;
-  color: #888;
+  color: #6B6869;
 }
 
 .sb-hover-card__btn--ignore:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #555;
+  background: rgba(255, 255, 255, 0.06);
+  color: #9B9898;
 }
 
 /* Overflow menu trigger */
@@ -129,18 +131,18 @@
   margin-left: auto;
   background: transparent;
   border: none;
-  color: #999;
+  color: #6B6869;
   font-size: 16px;
   line-height: 1;
   padding: 4px 6px;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
   font-family: inherit;
 }
 
 .sb-hover-card__overflow:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #555;
+  background: rgba(255, 255, 255, 0.06);
+  color: #9B9898;
 }
 
 .sb-hover-card__overflow:focus-visible {
@@ -154,10 +156,10 @@
   right: 8px;
   bottom: calc(100% - 42px);
   min-width: 200px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  background: #28272C;
+  border: 1px solid #3D3C44;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   padding: 4px 0;
   z-index: 1;
 }
@@ -169,14 +171,14 @@
   background: none;
   border: none;
   font-size: 12px;
-  color: #333;
+  color: #F0EDE8;
   text-align: left;
   cursor: pointer;
   font-family: inherit;
 }
 
 .sb-hover-card__menu-item:hover {
-  background: #f5f5f5;
+  background: #32313A;
 }
 
 .sb-hover-card__menu-item:focus-visible {

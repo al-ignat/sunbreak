@@ -33,23 +33,23 @@ function makeTracked(overrides: Partial<TrackedFinding> & { id?: string } = {}):
 
 describe('severityColor', () => {
   it('returns red for api-key', () => {
-    expect(severityColor('api-key')).toBe('#EF4444');
+    expect(severityColor('api-key')).toBe('#F87171');
   });
 
   it('returns orange for ssn', () => {
-    expect(severityColor('ssn')).toBe('#F97316');
+    expect(severityColor('ssn')).toBe('#F59E0B');
   });
 
   it('returns orange for credit-card', () => {
-    expect(severityColor('credit-card')).toBe('#F97316');
+    expect(severityColor('credit-card')).toBe('#F59E0B');
   });
 
   it('returns orange for cpr', () => {
-    expect(severityColor('cpr')).toBe('#F97316');
+    expect(severityColor('cpr')).toBe('#F59E0B');
   });
 
   it('returns orange for ni-number', () => {
-    expect(severityColor('ni-number')).toBe('#F97316');
+    expect(severityColor('ni-number')).toBe('#F59E0B');
   });
 
   it('returns amber for email', () => {
@@ -61,11 +61,11 @@ describe('severityColor', () => {
   });
 
   it('returns blue for keyword', () => {
-    expect(severityColor('keyword')).toBe('#3B82F6');
+    expect(severityColor('keyword')).toBe('#60A5FA');
   });
 
   it('returns blue for ip-address', () => {
-    expect(severityColor('ip-address')).toBe('#3B82F6');
+    expect(severityColor('ip-address')).toBe('#60A5FA');
   });
 });
 
