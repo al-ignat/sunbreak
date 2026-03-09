@@ -9,40 +9,59 @@ export interface DetectionTogglesProps {
   readonly compact?: boolean;
 }
 
+/** Severity dot color per detection type */
+const SEVERITY_DOT: Record<string, string> = {
+  'api-key': '#F87171',
+  'ssn': '#FB923C',
+  'credit-card': '#FB923C',
+  'cpr': '#FB923C',
+  'ni-number': '#FB923C',
+  'email': '#FBBF24',
+  'phone': '#FBBF24',
+  'ip-address': '#FBBF24',
+  'keyword': '#60A5FA',
+};
+
 export function DetectionToggles({
   settings,
   onToggle,
   compact = false,
 }: DetectionTogglesProps): JSX.Element {
   return (
-    <div className={`detection-list ${compact ? 'detection-list--compact' : 'detection-list--full'}`}>
-      {DETECTION_CATEGORIES.map((cat) => (
-        <label
-          key={cat.type}
-          className={`detection-item ${compact ? 'detection-item--compact' : 'detection-item--full'}`}
-        >
-          <input
-            type="checkbox"
-            checked={settings[cat.type] ?? true}
-            onChange={(e: Event): void => {
-              const target = e.target as HTMLInputElement;
-              onToggle(cat.type, target.checked);
-            }}
-            aria-label={`Toggle ${cat.label} detection`}
-            className="detection-checkbox"
-          />
-          <span className="detection-item__label">
-            <span className={`detection-item__name ${compact ? 'detection-item__name--compact' : 'detection-item__name--full'}`}>
-              {cat.label}
-            </span>
-            {!compact && (
-              <span className="detection-item__desc">
-                {cat.description}
-              </span>
-            )}
-          </span>
-        </label>
-      ))}
+    <div className="detection-list">
+      {DETECTION_CATEGORIES.map((cat, i) => {
+        const isOn = settings[cat.type] ?? true;
+        const isLast = i === DETECTION_CATEGORIES.length - 1;
+        return (
+          <div
+            key={cat.type}
+            className={`detection-item ${isLast ? '' : 'detection-item--bordered'}`}
+          >
+            <div className="detection-item__info">
+              <div className="detection-item__name-row">
+                <span
+                  className="detection-item__dot"
+                  style={{ background: SEVERITY_DOT[cat.type] ?? '#FBBF24' }}
+                />
+                <span className="detection-item__name">{cat.label}</span>
+              </div>
+              {!compact && (
+                <span className="detection-item__desc">{cat.description}</span>
+              )}
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isOn}
+              aria-label={`Toggle ${cat.label} detection`}
+              className={`toggle-switch ${isOn ? 'toggle-switch--on' : ''}`}
+              onClick={(): void => onToggle(cat.type, !isOn)}
+            >
+              <span className="toggle-switch__thumb" />
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

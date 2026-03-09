@@ -11,7 +11,9 @@ function makeStats(overrides: Partial<AggregatedStats> = {}): AggregatedStats {
     sentAnywayCount: 1,
     cancelledCount: 0,
     editedCount: 0,
-    byTool: {},
+    fixedCount: 0,
+    ignoredCount: 0,
+    byTool: { chatgpt: 12, claude: 8 },
     dailyBreakdown: [
       { date: '2026-03-01', total: 10, flagged: 2, clean: 8, byTool: {} },
       { date: '2026-03-02', total: 10, flagged: 1, clean: 9, byTool: {} },
@@ -38,11 +40,22 @@ describe('BarChart', () => {
     expect(container.textContent).toContain('No data yet');
   });
 
-  it('renders SVG chart when data exists', () => {
+  it('renders metric cards with correct values', () => {
     const stats = makeStats();
     const { container } = render(<BarChart stats7={stats} stats30={stats} />);
-    const svg = container.querySelector('svg');
-    expect(svg).not.toBeNull();
+    expect(container.textContent).toContain('Total Flagged');
+    expect(container.textContent).toContain('Redacted');
+    expect(container.textContent).toContain('Sent Anyway');
+    // Values from makeStats
+    expect(container.textContent).toContain('3');
+    expect(container.textContent).toContain('2');
+  });
+
+  it('renders div-based bar chart when data exists', () => {
+    const stats = makeStats();
+    const { container } = render(<BarChart stats7={stats} stats30={stats} />);
+    const bars = container.querySelectorAll('.chart-bar');
+    expect(bars.length).toBe(2);
   });
 
   it('renders hidden accessibility table', () => {
@@ -54,17 +67,32 @@ describe('BarChart', () => {
     expect(rows.length).toBe(2);
   });
 
-  it('shows legend with Clean and Flagged labels', () => {
+  it('shows legend with Clean prompts and Flagged prompts labels', () => {
     const stats = makeStats();
     const { container } = render(<BarChart stats7={stats} stats30={stats} />);
-    expect(container.textContent).toContain('Clean');
-    expect(container.textContent).toContain('Flagged');
+    expect(container.textContent).toContain('Clean prompts');
+    expect(container.textContent).toContain('Flagged prompts');
   });
 
-  it('shows period toggle buttons', () => {
+  it('shows inline period toggle buttons', () => {
     const stats = makeStats();
     const { container } = render(<BarChart stats7={stats} stats30={stats} />);
-    expect(container.textContent).toContain('Last 7 Days');
-    expect(container.textContent).toContain('Last 30 Days');
+    expect(container.textContent).toContain('7 days');
+    expect(container.textContent).toContain('30 days');
+  });
+
+  it('renders tool breakdown cards', () => {
+    const stats = makeStats();
+    const { container } = render(<BarChart stats7={stats} stats30={stats} />);
+    expect(container.textContent).toContain('ChatGPT');
+    expect(container.textContent).toContain('Claude');
+    const toolCards = container.querySelectorAll('.tool-card');
+    expect(toolCards.length).toBe(2);
+  });
+
+  it('shows fix rate for redacted metric', () => {
+    const stats = makeStats();
+    const { container } = render(<BarChart stats7={stats} stats30={stats} />);
+    expect(container.textContent).toContain('fix rate');
   });
 });

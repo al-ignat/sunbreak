@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import { useState, useRef } from 'preact/hooks';
+import { Plus, Upload, Download } from 'lucide-preact';
 import {
   addKeyword,
   removeKeyword,
@@ -75,96 +76,98 @@ export function KeywordManager({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `byoai-keywords-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.download = `sunbreak-keywords-${new Date().toISOString().slice(0, 10)}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
   return (
-    <div className="keyword-layout">
-      <div className="section">
-        <h3 className="section-header">Add Keyword</h3>
-        <div className="keyword-input-row">
+    <div className="keyword-card">
+      {/* Header */}
+      <div className="keyword-card__header">
+        <span className="keyword-card__title">Custom Keywords</span>
+        <span className="keyword-card__desc">
+          Add custom words or phrases that should trigger a finding when detected in prompts.
+        </span>
+      </div>
+
+      {/* Input row */}
+      <div className="keyword-input-row">
+        <input
+          type="text"
+          value={inputValue}
+          onInput={(e: Event): void => {
+            setInputValue((e.target as HTMLInputElement).value);
+            setError(null);
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder="Add a keyword or phrase..."
+          aria-label="New keyword"
+          maxLength={100}
+          className="keyword-input"
+        />
+        <button
+          onClick={(): void => void handleAdd()}
+          disabled={inputValue.trim().length === 0}
+          className="keyword-add-btn"
+        >
+          <Plus size={16} />
+          Add
+        </button>
+      </div>
+      {error && <p className="keyword-error">{error}</p>}
+
+      {/* Badges */}
+      {keywords.length === 0 ? (
+        <p className="keyword-empty">
+          No custom keywords. Add words or phrases you want to monitor.
+        </p>
+      ) : (
+        <div className="keyword-badges">
+          {keywords.map((keyword) => (
+            <span key={keyword} className="keyword-badge">
+              <span className="keyword-badge__text">{keyword}</span>
+              <button
+                onClick={(): void => void handleRemove(keyword)}
+                title={`Remove "${keyword}"`}
+                aria-label={`Remove keyword ${keyword}`}
+                className="keyword-badge__remove"
+              >
+                &times;
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Divider */}
+      <div className="keyword-divider" />
+
+      {/* Import / Export */}
+      <div className="keyword-actions">
+        <label className="keyword-action-btn">
+          <Upload size={16} />
+          Import
           <input
-            type="text"
-            value={inputValue}
-            onInput={(e: Event): void => {
-              setInputValue((e.target as HTMLInputElement).value);
-              setError(null);
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter a word or phrase to monitor..."
-            aria-label="New keyword"
-            maxLength={100}
-            className="keyword-input"
+            ref={fileInputRef}
+            type="file"
+            accept=".txt,text/plain"
+            onChange={(): void => void handleImport()}
+            style={{ display: 'none' }}
           />
-          <button
-            onClick={(): void => void handleAdd()}
-            disabled={inputValue.trim().length === 0}
-            className="keyword-add-btn"
-          >
-            Add
-          </button>
-        </div>
-        {error && <p className="keyword-error">{error}</p>}
-        <p className="keyword-count">
-          {keywords.length}/500 keywords
-        </p>
+        </label>
+        <button
+          onClick={(): void => void handleExport()}
+          disabled={keywords.length === 0}
+          className="keyword-action-btn"
+        >
+          <Download size={16} />
+          Export
+        </button>
       </div>
-
-      <div className="section">
-        <h3 className="section-header">Your Keywords</h3>
-        {keywords.length === 0 ? (
-          <p className="keyword-empty">
-            No custom keywords. Add words or phrases you want to monitor.
-          </p>
-        ) : (
-          <div className="keyword-list">
-            {keywords.map((keyword) => (
-              <span key={keyword} className="keyword-badge">
-                {keyword}
-                <button
-                  onClick={(): void => void handleRemove(keyword)}
-                  title={`Remove "${keyword}"`}
-                  aria-label={`Remove keyword ${keyword}`}
-                  className="keyword-badge__remove"
-                >
-                  &times;
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="section">
-        <h3 className="section-header">Import / Export</h3>
-        <div className="keyword-io-row">
-          <label className="keyword-io-btn">
-            Import .txt
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".txt,text/plain"
-              onChange={(): void => void handleImport()}
-              style={{ display: 'none' }}
-            />
-          </label>
-          <button
-            onClick={(): void => void handleExport()}
-            disabled={keywords.length === 0}
-            className="keyword-io-btn"
-          >
-            Export .txt
-          </button>
-        </div>
-        {importStatus && (
-          <p className="keyword-io-status">{importStatus}</p>
-        )}
-        <p className="keyword-io-hint">
-          Import: one keyword per line. Duplicates are skipped. Max 100 characters each.
-        </p>
-      </div>
+      {importStatus && (
+        <p className="keyword-io-status">{importStatus}</p>
+      )}
     </div>
   );
 }

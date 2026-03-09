@@ -4,14 +4,7 @@ import { Sun, Settings, ArrowRight } from 'lucide-preact';
 import type { AggregatedStats, FlaggedEvent } from '../../storage/types';
 import { getWeeklyStats, getFlaggedEvents } from '../../storage/dashboard';
 import { ComplianceGauge } from '../../ui/popup/ComplianceGauge';
-import { toolLabel, toolColor, actionLabel, actionColor, categoryColor } from '../../ui/format';
-
-/** Tinted background for tool pill badges */
-const TOOL_BG: Record<string, string> = {
-  chatgpt: '#0A2A1F',
-  claude: '#1A1510',
-  gemini: '#0D1528',
-};
+import { toolLabel, toolColor, toolBgColor, actionLabel, actionColor, categoryColor, categoryBgColor } from '../../ui/format';
 
 export default function App(): JSX.Element {
   const [stats, setStats] = useState<AggregatedStats | null>(null);
@@ -79,19 +72,19 @@ export default function App(): JSX.Element {
           <div className="popup-stats__row">
             <span className="popup-stats__label">Flagged</span>
             <span className="popup-stats__value popup-stats__value--orange">
-              {stats?.totalFlagged ?? 0}
+              {stats?.flaggedCount ?? 0}
             </span>
           </div>
           <div className="popup-stats__row">
             <span className="popup-stats__label">Redacted</span>
             <span className="popup-stats__value popup-stats__value--green">
-              {stats?.totalRedacted ?? 0}
+              {stats?.redactedCount ?? 0}
             </span>
           </div>
           <div className="popup-stats__row">
             <span className="popup-stats__label">Sent anyway</span>
             <span className="popup-stats__value popup-stats__value--red">
-              {stats?.totalSentAnyway ?? 0}
+              {stats?.sentAnywayCount ?? 0}
             </span>
           </div>
         </div>
@@ -110,7 +103,7 @@ export default function App(): JSX.Element {
                 <span
                   className="popup-event__tool-pill"
                   style={{
-                    background: TOOL_BG[event.tool] ?? 'var(--color-bg-elevated)',
+                    background: toolBgColor(event.tool),
                   }}
                 >
                   <span
@@ -126,7 +119,7 @@ export default function App(): JSX.Element {
                     key={cat}
                     className="popup-event__cat-pill"
                     style={{
-                      background: `${categoryColor(cat, true)}20`,
+                      background: categoryBgColor(cat),
                       color: categoryColor(cat, true),
                     }}
                   >

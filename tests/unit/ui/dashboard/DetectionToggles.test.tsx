@@ -38,7 +38,7 @@ describe('DetectionToggles', () => {
     expect(container.textContent).not.toContain('Detects email addresses');
   });
 
-  it('calls onToggle when a checkbox is clicked', () => {
+  it('calls onToggle when a toggle switch is clicked', () => {
     const onToggle = vi.fn();
     const { container } = render(
       <DetectionToggles
@@ -47,22 +47,33 @@ describe('DetectionToggles', () => {
       />,
     );
 
-    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-    expect(checkboxes.length).toBe(DETECTION_CATEGORIES.length);
+    const switches = container.querySelectorAll('[role="switch"]');
+    expect(switches.length).toBe(DETECTION_CATEGORIES.length);
 
-    // Toggle the first one off
-    fireEvent.click(checkboxes[0] as HTMLInputElement);
+    // Toggle the first one off (email is currently on)
+    fireEvent.click(switches[0] as HTMLButtonElement);
     expect(onToggle).toHaveBeenCalledWith('email', false);
   });
 
-  it('reflects disabled state', () => {
+  it('reflects disabled state via aria-checked', () => {
     const settings = { ...DEFAULT_DETECTION_SETTINGS, email: false };
     const { container } = render(
       <DetectionToggles settings={settings} onToggle={vi.fn()} />,
     );
 
-    const checkboxes = container.querySelectorAll('input[type="checkbox"]');
-    expect((checkboxes[0] as HTMLInputElement).checked).toBe(false);
-    expect((checkboxes[1] as HTMLInputElement).checked).toBe(true);
+    const switches = container.querySelectorAll('[role="switch"]');
+    expect((switches[0] as HTMLButtonElement).getAttribute('aria-checked')).toBe('false');
+    expect((switches[1] as HTMLButtonElement).getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('renders severity dots for each category', () => {
+    const { container } = render(
+      <DetectionToggles
+        settings={DEFAULT_DETECTION_SETTINGS}
+        onToggle={vi.fn()}
+      />,
+    );
+    const dots = container.querySelectorAll('.detection-item__dot');
+    expect(dots.length).toBe(DETECTION_CATEGORIES.length);
   });
 });

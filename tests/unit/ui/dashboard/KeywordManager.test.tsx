@@ -42,16 +42,6 @@ describe('KeywordManager', () => {
     expect(container.textContent).toContain('confidential');
   });
 
-  it('shows keyword count', () => {
-    const { container } = render(
-      <KeywordManager
-        keywords={['alpha', 'beta']}
-        onDataChange={onDataChange}
-      />,
-    );
-    expect(container.textContent).toContain('2/500');
-  });
-
   it('calls addKeyword and refreshes on add', async () => {
     const { container } = render(
       <KeywordManager keywords={[]} onDataChange={onDataChange} />,
