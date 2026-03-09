@@ -12,6 +12,7 @@
     "test:e2e": "wxt build && playwright test"
   },
   "dependencies": {
+    "lucide-preact": "^0.577.0",
     "preact": "^10.28.4"
   },
   "devDependencies": {

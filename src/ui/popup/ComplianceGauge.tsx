@@ -2,12 +2,12 @@ import type { JSX } from 'preact';
 
 export interface ComplianceGaugeProps {
   readonly rate: number | null;
+  readonly size?: number;
 }
 
 /** Mini SVG ring gauge showing compliance percentage */
-export function ComplianceGauge({ rate }: ComplianceGaugeProps): JSX.Element {
-  const size = 40;
-  const strokeWidth = 4;
+export function ComplianceGauge({ rate, size = 64 }: ComplianceGaugeProps): JSX.Element {
+  const strokeWidth = 5;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
@@ -23,6 +23,8 @@ export function ComplianceGauge({ rate }: ComplianceGaugeProps): JSX.Element {
         ? 'var(--color-warning)'
         : 'var(--color-danger)';
 
+  const fontSize = Math.round(size * 0.25);
+
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={isNull ? 'No compliance data' : `${pct.toFixed(0)}% compliance`}>
       {/* Background ring */}
@@ -31,7 +33,7 @@ export function ComplianceGauge({ rate }: ComplianceGaugeProps): JSX.Element {
         cy={size / 2}
         r={radius}
         fill="none"
-        stroke="var(--color-border)"
+        stroke="var(--color-bg-elevated)"
         stroke-width={strokeWidth}
       />
       {/* Progress ring */}
@@ -56,9 +58,9 @@ export function ComplianceGauge({ rate }: ComplianceGaugeProps): JSX.Element {
         text-anchor="middle"
         dominant-baseline="central"
         fill={color}
-        font-size="10"
-        font-weight="600"
-        font-family="var(--font-mono)"
+        font-size={fontSize}
+        font-weight="700"
+        font-family="var(--font-body)"
       >
         {isNull ? '\u2014' : `${pct.toFixed(0)}%`}
       </text>

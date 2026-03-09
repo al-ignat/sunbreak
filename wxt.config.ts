@@ -4,7 +4,7 @@ import preact from '@preact/preset-vite';
 export default defineConfig({
   srcDir: 'src',
   manifest: {
-    name: 'Secure BYOAI',
+    name: 'Sunbreak',
     version: '1.0.0',
     description:
       'Use AI tools at work — safely. Detects sensitive data before you send it.',
