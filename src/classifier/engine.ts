@@ -7,6 +7,7 @@ import type {
   ExcludeRange,
 } from './types';
 import { DETECTOR_PRIORITY } from './types';
+import { generateDescriptiveToken, createTokenContext } from './smart-tokens';
 import {
   detectEmails,
   detectPhones,
@@ -104,29 +105,15 @@ function overlapsExcludeRange(
 }
 
 /**
- * Assign redaction placeholders to findings.
- * Same value gets same placeholder number (per D4).
- * Example: [EMAIL_1], [EMAIL_2], [PHONE_1]
+ * Assign descriptive redaction placeholders to findings.
+ * Same value gets same placeholder (per D4).
+ * Example: [John S. email], [card ending 4242], [internal IP]
  */
 function assignPlaceholders(findings: Finding[]): Finding[] {
-  // Track value → placeholder mapping per type
-  const typeCounters = new Map<FindingType, number>();
-  const valuePlaceholders = new Map<string, string>();
+  const context = createTokenContext();
 
   return findings.map((finding) => {
-    // Build a unique key: type + value
-    const key = `${finding.type}:${finding.value}`;
-
-    let placeholder = valuePlaceholders.get(key);
-    if (!placeholder) {
-      const count = (typeCounters.get(finding.type) ?? 0) + 1;
-      typeCounters.set(finding.type, count);
-
-      const typeLabel = finding.type.toUpperCase().replace(/-/g, '_');
-      placeholder = `[${typeLabel}_${count}]`;
-      valuePlaceholders.set(key, placeholder);
-    }
-
+    const placeholder = generateDescriptiveToken(finding, context);
     return { ...finding, placeholder };
   });
 }

@@ -88,28 +88,28 @@ describe('classify', () => {
   });
 
   describe('placeholder assignment', () => {
-    it('assigns placeholders per type', () => {
+    it('assigns descriptive placeholders per type', () => {
       const result = classify('Email john@a.com and jane@b.com', { keywords: [] });
       expect(result.findings).toHaveLength(2);
-      expect(result.findings[0]?.placeholder).toBe('[EMAIL_1]');
-      expect(result.findings[1]?.placeholder).toBe('[EMAIL_2]');
+      expect(result.findings[0]?.placeholder).toBe("[John's email]");
+      expect(result.findings[1]?.placeholder).toBe("[Jane's email]");
     });
 
-    it('same value gets same placeholder number', () => {
+    it('same value gets same placeholder', () => {
       const result = classify('john@a.com then john@a.com again', { keywords: [] });
       expect(result.findings).toHaveLength(2);
-      expect(result.findings[0]?.placeholder).toBe('[EMAIL_1]');
-      expect(result.findings[1]?.placeholder).toBe('[EMAIL_1]');
+      expect(result.findings[0]?.placeholder).toBe("[John's email]");
+      expect(result.findings[1]?.placeholder).toBe("[John's email]");
     });
 
-    it('different types get independent numbering', () => {
+    it('different types get descriptive tokens', () => {
       const result = classify(
         'Email john@a.com and call 555-123-4567',
         { keywords: [] },
       );
       expect(result.findings).toHaveLength(2);
-      expect(result.findings[0]?.placeholder).toBe('[EMAIL_1]');
-      expect(result.findings[1]?.placeholder).toBe('[PHONE_1]');
+      expect(result.findings[0]?.placeholder).toBe("[John's email]");
+      expect(result.findings[1]?.placeholder).toBe('[phone ending 67]');
     });
   });
 
@@ -120,7 +120,7 @@ describe('classify', () => {
       });
       expect(result.findings).toHaveLength(1);
       expect(result.findings[0]?.type).toBe('keyword');
-      expect(result.findings[0]?.placeholder).toBe('[KEYWORD_1]');
+      expect(result.findings[0]?.placeholder).toBe('[custom keyword]');
     });
 
     it('does not run keyword matcher when keywords is empty', () => {
