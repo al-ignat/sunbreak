@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
+import { TriangleAlertIcon, ClockIcon, SearchIcon } from './icons';
 
 export interface SendToastProps {
   activeCount: number;
@@ -59,12 +60,13 @@ export default function SendToast({
     >
       <div class="sb-toast__message">
         <span class="sb-toast__icon" aria-hidden="true">
-          <WarningIcon />
+          <TriangleAlertIcon size={16} />
         </span>
         <span class="sb-toast__text">
           {activeCount} unfixed finding{plural}
         </span>
         <span class="sb-toast__countdown" aria-hidden="true">
+          <ClockIcon size={12} />
           {seconds}s
         </span>
       </div>
@@ -74,6 +76,7 @@ export default function SendToast({
           type="button"
           onClick={handleReview}
         >
+          <SearchIcon size={14} />
           Review
         </button>
         <button
@@ -88,22 +91,3 @@ export default function SendToast({
   );
 }
 
-function WarningIcon(): JSX.Element {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-      <path
-        d="M7 1L13 12H1L7 1Z"
-        stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linejoin="round"
-      />
-      <path
-        d="M7 5.5V8"
-        stroke="currentColor"
-        stroke-width="1.5"
-        stroke-linecap="round"
-      />
-      <circle cx="7" cy="10" r="0.75" fill="currentColor" />
-    </svg>
-  );
-}

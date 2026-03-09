@@ -317,11 +317,11 @@ Update hover card, findings panel, and send toast with icons and improved layout
    - Actions: "Review" primary button (fill width) with search icon + "Send Anyway" ghost button
 
 **Acceptance criteria:**
-- [ ] All widget components use inline SVG icons (not text characters)
-- [ ] HoverCard footer has elevated bg with icon buttons
-- [ ] FindingsPanel rows show type label + value in two lines
-- [ ] SendToast has countdown pill with clock icon
-- [ ] All components render correctly in closed Shadow DOM
+- [x] All widget components use inline SVG icons (not text characters)
+- [x] HoverCard footer has elevated bg with icon buttons
+- [x] FindingsPanel rows show type label + value in two lines
+- [x] SendToast has countdown pill with clock icon
+- [x] All components render correctly in closed Shadow DOM
 
 ---
 

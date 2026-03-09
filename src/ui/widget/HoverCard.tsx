@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { useState, useCallback, useRef, useEffect } from 'preact/hooks';
 import type { TrackedFinding } from '../../content/findings-state';
 import type { FindingType } from '../../classifier/types';
+import { ArrowDownIcon, MoreHorizontalIcon } from './icons';
 
 type Severity = 'red' | 'orange' | 'amber' | 'blue';
 
@@ -141,7 +142,7 @@ export default function HoverCard({
 
       <div class="sb-hover-card__body">
         <div class="sb-hover-card__original">{finding.finding.value}</div>
-        <div class="sb-hover-card__arrow" aria-hidden="true">&darr;</div>
+        <div class="sb-hover-card__arrow" aria-hidden="true"><ArrowDownIcon size={12} /></div>
         <div class="sb-hover-card__masked">{finding.finding.placeholder}</div>
       </div>
 
@@ -170,7 +171,7 @@ export default function HoverCard({
           aria-haspopup="menu"
           onClick={toggleMenu}
         >
-          &hellip;
+          <MoreHorizontalIcon size={14} />
         </button>
       </div>
 

@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { useEffect, useRef, useCallback } from 'preact/hooks';
 import type { TrackedFinding } from '../../content/findings-state';
 import type { FindingType } from '../../classifier/types';
+import { ShieldCheckIcon, EyeOffIcon, InfoIcon } from './icons';
 
 export interface FindingsPanelProps {
   tracked: ReadonlyArray<TrackedFinding>;
@@ -86,6 +87,7 @@ export default function FindingsPanel({
             type="button"
             onClick={onFixAll}
           >
+            <ShieldCheckIcon size={14} />
             Fix All
           </button>
         )}
@@ -123,6 +125,7 @@ export default function FindingsPanel({
                     aria-label={`Ignore ${tf.finding.label} ${truncateValue(tf.finding.value, tf.finding.type)}`}
                     onClick={(): void => onIgnore(tf.id)}
                   >
+                    <EyeOffIcon size={12} />
                     Ignore
                   </button>
                 </span>
@@ -133,7 +136,8 @@ export default function FindingsPanel({
       )}
 
       <div class="sb-panel__footer">
-        Fix All = mask &amp; safe to send
+        <InfoIcon size={14} />
+        Fix All = mask values, safe to send
       </div>
     </div>
   );
