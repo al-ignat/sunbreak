@@ -46,12 +46,20 @@ export interface ClassificationResult {
 /** A pure detector function: text in, findings out */
 export type Detector = (text: string) => Finding[];
 
+/** A character range to exclude from classification */
+export interface ExcludeRange {
+  readonly start: number;
+  readonly end: number;
+}
+
 /** Options passed to the classify() engine */
 export interface ClassifyOptions {
   /** User-configured keywords (pre-fetched from chrome.storage.local) */
   readonly keywords: string[];
   /** Which detectors to run. If omitted, all are enabled. */
   readonly enabledDetectors?: ReadonlySet<FindingType>;
+  /** Character ranges to skip during classification (e.g. already-masked tokens) */
+  readonly excludeRanges?: ReadonlyArray<ExcludeRange>;
 }
 
 /**

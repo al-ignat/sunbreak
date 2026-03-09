@@ -4,6 +4,7 @@ import type {
   ClassificationResult,
   ClassifyOptions,
   Detector,
+  ExcludeRange,
 } from './types';
 import { DETECTOR_PRIORITY } from './types';
 import {
@@ -89,6 +90,19 @@ function deduplicate(findings: Finding[]): Finding[] {
   return result;
 }
 
+/** Check if a finding overlaps any excluded range */
+function overlapsExcludeRange(
+  finding: Finding,
+  ranges: ReadonlyArray<ExcludeRange>,
+): boolean {
+  for (const range of ranges) {
+    if (finding.startIndex < range.end && range.start < finding.endIndex) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Assign redaction placeholders to findings.
  * Same value gets same placeholder number (per D4).
@@ -147,7 +161,7 @@ export function classify(text: string, options: ClassifyOptions): Classification
     truncated = true;
   }
 
-  const { keywords, enabledDetectors } = options;
+  const { keywords, enabledDetectors, excludeRanges } = options;
   const allFindings: Finding[] = [];
 
   // Run pattern detectors
@@ -171,11 +185,16 @@ export function classify(text: string, options: ClassifyOptions): Classification
   // Deduplicate overlapping findings
   const deduped = deduplicate(allFindings);
 
+  // Filter out findings that overlap excluded ranges
+  const filtered = excludeRanges && excludeRanges.length > 0
+    ? deduped.filter((f) => !overlapsExcludeRange(f, excludeRanges))
+    : deduped;
+
   // Sort by startIndex
-  deduped.sort((a, b) => a.startIndex - b.startIndex);
+  filtered.sort((a, b) => a.startIndex - b.startIndex);
 
   // Assign placeholders
-  const withPlaceholders = assignPlaceholders(deduped);
+  const withPlaceholders = assignPlaceholders(filtered);
 
   const durationMs = performance.now() - start;
 
