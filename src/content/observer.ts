@@ -216,6 +216,9 @@ export function startObserving(
     }, HEALTH_CHECK_INTERVAL_MS);
   }
 
+  // Track path segments to detect conversation switches vs creation
+  let lastPathSegments = window.location.pathname.split('/').filter(Boolean);
+
   // Initial attach
   void attach();
 
@@ -224,7 +227,17 @@ export function startObserving(
     window,
     'wxt:locationchange' as string,
     () => {
-      maskingMap?.clear();
+      const newSegments = window.location.pathname.split('/').filter(Boolean);
+
+      // Only clear MaskingMap when navigating FROM an existing conversation
+      // (2+ path segments like /c/abc-123 or /chat/abc-123).
+      // Don't clear when a new chat creates its first URL (/ → /c/abc-123).
+      const wasInConversation = lastPathSegments.length >= 2;
+      if (wasInConversation) {
+        maskingMap?.clear();
+      }
+
+      lastPathSegments = newSegments;
       void attach();
     },
   );

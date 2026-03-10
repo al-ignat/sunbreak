@@ -57,12 +57,27 @@ describe('detectApiKeys', () => {
       expect(stripe).toHaveLength(1);
     });
 
-    it('detects OpenAI API key', () => {
+    it('detects OpenAI API key (legacy format)', () => {
       const key = 'sk-ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefgh';
       const findings = detectApiKeys(`OpenAI: ${key}`);
       const oai = findings.filter(f => f.label === 'OpenAI API Key');
       expect(oai).toHaveLength(1);
       expect(oai[0]?.confidence).toBe('HIGH');
+    });
+
+    it('detects OpenAI API key (sk-proj- format)', () => {
+      const key = 'sk-proj-abc123def456ghi789jkl012mno345pqr678';
+      const findings = detectApiKeys(`key: ${key}`);
+      const oai = findings.filter(f => f.label === 'OpenAI API Key');
+      expect(oai).toHaveLength(1);
+      expect(oai[0]?.value).toBe(key);
+    });
+
+    it('detects OpenAI API key (sk-svcacct- format)', () => {
+      const key = 'sk-svcacct-abc123def456ghi789jkl012mno345';
+      const findings = detectApiKeys(`key: ${key}`);
+      const oai = findings.filter(f => f.label === 'OpenAI API Key');
+      expect(oai).toHaveLength(1);
     });
   });
 
