@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'preact/hooks';
 import type { FindingsSnapshot, FindingsState } from '../../content/findings-state';
 import FindingsPanel from './FindingsPanel';
 import SendToast from './SendToast';
+import RestoreToast from './RestoreToast';
 import TextOverlay from './TextOverlay';
 import type { TextOverlayHandle } from './TextOverlay';
 
@@ -10,6 +11,12 @@ import type { TextOverlayHandle } from './TextOverlay';
 export interface ToastDisplayState {
   activeCount: number;
   paused: boolean;
+  visible: boolean;
+}
+
+/** Restore toast display state for clipboard token restoration */
+export interface RestoreToastDisplayState {
+  count: number;
   visible: boolean;
 }
 
@@ -30,6 +37,9 @@ export interface WidgetProps {
   onOverlayHandleReady?: (handle: TextOverlayHandle | null) => void;
   onIgnoreAllOfType?: (type: string) => void;
   onDisableType?: (type: string) => void;
+  restoreToastState?: RestoreToastDisplayState | null;
+  onRestoreAccept?: () => void;
+  onRestoreDecline?: () => void;
 }
 
 type WidgetStatus = 'clean' | 'findings';
@@ -64,6 +74,9 @@ export default function Widget({
   onOverlayHandleReady,
   onIgnoreAllOfType,
   onDisableType,
+  restoreToastState,
+  onRestoreAccept,
+  onRestoreDecline,
 }: WidgetProps): JSX.Element {
   const [snapshot, setSnapshot] = useState<FindingsSnapshot>(findingsState.getSnapshot());
 
@@ -92,6 +105,7 @@ export default function Widget({
   );
 
   const showToast = toastState?.visible === true && onToastReview && onToastSendAnyway && onToastTimeout;
+  const showRestoreToast = restoreToastState?.visible === true && onRestoreAccept && onRestoreDecline;
 
   return (
     <div class="sb-widget-container">
@@ -136,6 +150,13 @@ export default function Widget({
           onReview={onToastReview}
           onSendAnyway={onToastSendAnyway}
           onTimeout={onToastTimeout}
+        />
+      )}
+      {showRestoreToast && (
+        <RestoreToast
+          count={restoreToastState.count}
+          onAccept={onRestoreAccept}
+          onDecline={onRestoreDecline}
         />
       )}
       {supportsOverlay && (
