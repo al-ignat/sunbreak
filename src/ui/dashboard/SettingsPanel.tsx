@@ -35,6 +35,11 @@ export function SettingsPanel({
     await onDataChange();
   }
 
+  async function handleMaskingToggle(): Promise<void> {
+    await setExtensionSettings({ maskingEnabled: !extensionSettings.maskingEnabled });
+    await onDataChange();
+  }
+
   return (
     <div className="settings-layout">
       {/* Extension + Intervention Mode card */}
@@ -83,6 +88,31 @@ export function SettingsPanel({
             </select>
             <ChevronDown size={14} className="settings-dropdown__icon" />
           </div>
+        </div>
+
+        <div className="settings-divider" />
+
+        <div className="settings-row">
+          <div className="settings-row__info">
+            <span className="settings-row__title">
+              Smart Masking {extensionSettings.maskingEnabled ? 'On' : 'Off'}
+            </span>
+            <span className="settings-row__desc">
+              {extensionSettings.maskingEnabled
+                ? 'Fix replaces sensitive data with descriptive tokens. Copy AI responses to restore originals.'
+                : 'Fix removes sensitive data without reversible tokens.'}
+            </span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={extensionSettings.maskingEnabled}
+            aria-label="Enable or disable smart masking"
+            className={`toggle-switch ${extensionSettings.maskingEnabled ? 'toggle-switch--on' : ''}`}
+            onClick={handleMaskingToggle}
+          >
+            <span className="toggle-switch__thumb" />
+          </button>
         </div>
       </div>
 

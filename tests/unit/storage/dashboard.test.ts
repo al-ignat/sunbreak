@@ -220,6 +220,7 @@ describe('dashboard storage wrapper', () => {
       const settings = await getExtensionSettings();
       expect(settings.enabled).toBe(true);
       expect(settings.interventionMode).toBe('warn');
+      expect(settings.maskingEnabled).toBe(true);
     });
 
     it('partially updates settings', async () => {
@@ -227,6 +228,14 @@ describe('dashboard storage wrapper', () => {
       const settings = await getExtensionSettings();
       expect(settings.enabled).toBe(true);
       expect(settings.interventionMode).toBe('log-only');
+      expect(settings.maskingEnabled).toBe(true);
+    });
+
+    it('toggles masking setting independently', async () => {
+      await setExtensionSettings({ maskingEnabled: false });
+      const settings = await getExtensionSettings();
+      expect(settings.enabled).toBe(true);
+      expect(settings.maskingEnabled).toBe(false);
     });
   });
 
