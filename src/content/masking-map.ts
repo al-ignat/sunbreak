@@ -19,6 +19,12 @@ export interface MaskingMap {
   /** Subscribe to changes (for badge rendering). Returns unsubscribe function. */
   subscribe(listener: () => void): () => void;
 
+  /** Return all token → original value entries. */
+  entries(): ReadonlyArray<{ token: string; originalValue: string }>;
+
+  /** Timestamp (ms since epoch) when the mapping auto-expires, or null if empty. */
+  readonly expiresAt: number | null;
+
   /** Clear all mappings and cancel the expiry timer. */
   clear(): void;
 
@@ -38,6 +44,7 @@ export function createMaskingMap(options?: MaskingMapOptions): MaskingMap {
   const map = new Map<string, string>();
   const listeners = new Set<() => void>();
   let expiryTimer: ReturnType<typeof setTimeout> | null = null;
+  let expiresAtMs: number | null = null;
 
   function notify(): void {
     for (const listener of listeners) {
@@ -49,9 +56,11 @@ export function createMaskingMap(options?: MaskingMapOptions): MaskingMap {
     if (expiryTimer !== null) {
       clearTimeout(expiryTimer);
     }
+    expiresAtMs = Date.now() + ttlMs;
     expiryTimer = setTimeout(() => {
       map.clear();
       expiryTimer = null;
+      expiresAtMs = null;
       notify();
     }, ttlMs);
   }
@@ -60,6 +69,7 @@ export function createMaskingMap(options?: MaskingMapOptions): MaskingMap {
     if (expiryTimer !== null) {
       clearTimeout(expiryTimer);
       expiryTimer = null;
+      expiresAtMs = null;
     }
   }
 
@@ -103,6 +113,14 @@ export function createMaskingMap(options?: MaskingMapOptions): MaskingMap {
 
     get size(): number {
       return map.size;
+    },
+
+    entries(): ReadonlyArray<{ token: string; originalValue: string }> {
+      return Array.from(map, ([token, originalValue]) => ({ token, originalValue }));
+    },
+
+    get expiresAt(): number | null {
+      return expiresAtMs;
     },
 
     subscribe(listener: () => void): () => void {

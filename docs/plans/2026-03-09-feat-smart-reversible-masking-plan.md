@@ -335,10 +335,10 @@ Show masked value count in the existing widget pill when mappings exist.
   - Original values are truncated in display
 
 **Acceptance criteria:**
-- [ ] Widget pill shows masked count when mappings exist
-- [ ] Findings panel shows masked values section with truncated originals
-- [ ] "Clear All" destroys the mapping
-- [ ] TTL countdown displayed
+- [x] Widget pill shows masked count when mappings exist
+- [x] Findings panel shows masked values section with truncated originals
+- [x] "Clear All" destroys the mapping
+- [x] TTL countdown displayed
 
 ---
 

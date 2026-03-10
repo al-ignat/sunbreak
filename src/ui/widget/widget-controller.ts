@@ -229,6 +229,10 @@ export function createWidgetController(
     resolve(action);
   }
 
+  function handleClearMasked(): void {
+    maskingMap?.clear();
+  }
+
   function renderWidget(): void {
     if (!wrapper) return;
     render(
@@ -262,6 +266,10 @@ export function createWidgetController(
         onOverlayHandleReady: (handle: TextOverlayHandle | null): void => {
           overlayHandle = handle;
         },
+        maskedCount: maskingMap?.size ?? 0,
+        maskedEntries: maskingMap ? maskingMap.entries() : undefined,
+        maskedExpiresAt: maskingMap?.expiresAt ?? null,
+        onClearMasked: maskingMap ? handleClearMasked : undefined,
       }),
       wrapper,
     );
@@ -292,7 +300,12 @@ export function createWidgetController(
     startPositionPolling();
 
     // Subscribe to findings state for re-renders
-    const unsub = findingsState.subscribe(() => {
+    const unsubFindings = findingsState.subscribe(() => {
+      renderWidget();
+    });
+
+    // Subscribe to masking map for badge updates
+    const unsubMasking = maskingMap?.subscribe(() => {
       renderWidget();
     });
 
@@ -303,7 +316,8 @@ export function createWidgetController(
     // Cleanup subscription on next unmount
     const prevUnmount = unmountInternal;
     unmountInternal = (): void => {
-      unsub();
+      unsubFindings();
+      unsubMasking?.();
       prevUnmount();
     };
   }

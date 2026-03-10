@@ -22,6 +22,7 @@ function renderWidget(
     findings?: Finding[];
     onClick?: () => void;
     panelOpen?: boolean;
+    maskedCount?: number;
   } = {},
 ): ReturnType<typeof render> {
   const state = createFindingsState();
@@ -33,6 +34,7 @@ function renderWidget(
       findingsState={state}
       onClick={overrides.onClick ?? vi.fn()}
       panelOpen={overrides.panelOpen ?? false}
+      maskedCount={overrides.maskedCount}
     />,
   );
 }
@@ -170,6 +172,52 @@ describe('Widget', () => {
 
       const badge = container.querySelector('.sb-widget__badge');
       expect(badge?.textContent).toBe('1');
+    });
+  });
+
+  describe('masked badge', () => {
+    it('shows "N masked" when maskedCount > 0 and no findings', () => {
+      const { container } = renderWidget({ maskedCount: 2 });
+      const masked = container.querySelector('.sb-widget__masked');
+      expect(masked).toBeTruthy();
+      expect(masked?.textContent).toBe('2 masked');
+    });
+
+    it('shows both badge and masked count when findings and masked values exist', () => {
+      const { container } = renderWidget({
+        findings: [makeFinding()],
+        maskedCount: 3,
+      });
+      expect(container.querySelector('.sb-widget__badge')).toBeTruthy();
+      expect(container.querySelector('.sb-widget__masked')).toBeTruthy();
+      expect(container.querySelector('.sb-widget__sep')).toBeTruthy();
+    });
+
+    it('hides checkmark when maskedCount > 0 even with no findings', () => {
+      const { container } = renderWidget({ maskedCount: 1 });
+      expect(container.querySelector('.sb-widget__check')).toBeNull();
+    });
+
+    it('does not show masked label when maskedCount is 0', () => {
+      const { container } = renderWidget({ maskedCount: 0 });
+      expect(container.querySelector('.sb-widget__masked')).toBeNull();
+    });
+
+    it('includes masked count in aria-label', () => {
+      const { container } = renderWidget({ maskedCount: 2 });
+      const widget = container.querySelector('.sb-widget');
+      expect(widget?.getAttribute('aria-label')).toBe('Sunbreak: 2 masked');
+    });
+
+    it('includes both findings and masked in aria-label', () => {
+      const { container } = renderWidget({
+        findings: [makeFinding()],
+        maskedCount: 3,
+      });
+      const widget = container.querySelector('.sb-widget');
+      expect(widget?.getAttribute('aria-label')).toBe(
+        'Sunbreak: 1 finding detected, 3 masked',
+      );
     });
   });
 

@@ -1,8 +1,9 @@
 import type { JSX } from 'preact';
-import { useEffect, useRef, useCallback } from 'preact/hooks';
+import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
 import type { TrackedFinding } from '../../content/findings-state';
 import type { FindingType } from '../../classifier/types';
-import { ShieldCheckIcon, EyeOffIcon, InfoIcon } from './icons';
+import { ShieldCheckIcon, EyeOffIcon, InfoIcon, ClockIcon } from './icons';
+import type { MaskedEntry } from './Widget';
 
 export interface FindingsPanelProps {
   tracked: ReadonlyArray<TrackedFinding>;
@@ -11,6 +12,9 @@ export interface FindingsPanelProps {
   onIgnore: (id: string) => void;
   onFixAll: () => void;
   onClose: () => void;
+  maskedEntries?: ReadonlyArray<MaskedEntry>;
+  maskedExpiresAt?: number | null;
+  onClearMasked?: () => void;
 }
 
 type Severity = 'red' | 'orange' | 'amber' | 'blue';
@@ -38,6 +42,38 @@ function truncateValue(value: string, type: string): string {
   return `${value.slice(0, 6)}...${value.slice(-4)}`;
 }
 
+function truncateOriginal(value: string): string {
+  if (value.length <= 10) return value;
+  return `${value.slice(0, 8)}...`;
+}
+
+function formatRemainingTime(expiresAt: number): string {
+  const remaining = Math.max(0, expiresAt - Date.now());
+  const minutes = Math.ceil(remaining / 60_000);
+  if (minutes <= 0) return 'expiring';
+  return `${minutes} min`;
+}
+
+function useCountdown(expiresAt: number | null | undefined): string | null {
+  const [label, setLabel] = useState<string | null>(
+    expiresAt != null ? formatRemainingTime(expiresAt) : null,
+  );
+
+  useEffect(() => {
+    if (expiresAt == null) {
+      setLabel(null);
+      return;
+    }
+    setLabel(formatRemainingTime(expiresAt));
+    const id = setInterval(() => {
+      setLabel(formatRemainingTime(expiresAt));
+    }, 30_000); // update every 30s — minute-level precision
+    return (): void => { clearInterval(id); };
+  }, [expiresAt]);
+
+  return label;
+}
+
 export default function FindingsPanel({
   tracked,
   activeCount,
@@ -45,8 +81,13 @@ export default function FindingsPanel({
   onIgnore,
   onFixAll,
   onClose,
+  maskedEntries,
+  maskedExpiresAt,
+  onClearMasked,
 }: FindingsPanelProps): JSX.Element {
   const panelRef = useRef<HTMLDivElement>(null);
+  const hasMasked = maskedEntries != null && maskedEntries.length > 0;
+  const countdown = useCountdown(maskedExpiresAt);
 
   // Focus the panel on mount
   useEffect(() => {
@@ -133,6 +174,41 @@ export default function FindingsPanel({
             );
           })}
         </ul>
+      )}
+
+      {hasMasked && (
+        <div class="sb-panel__masked">
+          <div class="sb-panel__masked-header">
+            <span class="sb-panel__masked-title">
+              {maskedEntries.length} masked value{maskedEntries.length === 1 ? '' : 's'}
+            </span>
+            {onClearMasked && (
+              <button
+                class="sb-panel__btn sb-panel__btn--clear"
+                type="button"
+                onClick={onClearMasked}
+              >
+                Clear All
+              </button>
+            )}
+          </div>
+          <ul class="sb-panel__masked-list" role="list">
+            {maskedEntries.map((entry) => (
+              <li key={entry.token} class="sb-panel__masked-row" role="listitem">
+                <span class="sb-panel__masked-token">{entry.token}</span>
+                <span class="sb-panel__masked-original" title={entry.originalValue}>
+                  {truncateOriginal(entry.originalValue)}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {countdown != null && (
+            <div class="sb-panel__masked-ttl">
+              <ClockIcon size={12} />
+              Auto-clears in {countdown}
+            </div>
+          )}
+        </div>
       )}
 
       <div class="sb-panel__footer">

@@ -20,6 +20,12 @@ export interface RestoreToastDisplayState {
   visible: boolean;
 }
 
+/** Masked entries for display in the findings panel */
+export interface MaskedEntry {
+  readonly token: string;
+  readonly originalValue: string;
+}
+
 export interface WidgetProps {
   findingsState: FindingsState;
   editorEl: HTMLElement | null;
@@ -40,6 +46,10 @@ export interface WidgetProps {
   restoreToastState?: RestoreToastDisplayState | null;
   onRestoreAccept?: () => void;
   onRestoreDecline?: () => void;
+  maskedCount?: number;
+  maskedEntries?: ReadonlyArray<MaskedEntry>;
+  maskedExpiresAt?: number | null;
+  onClearMasked?: () => void;
 }
 
 type WidgetStatus = 'clean' | 'findings';
@@ -49,12 +59,17 @@ function deriveStatus(snapshot: FindingsSnapshot): WidgetStatus {
   return 'clean';
 }
 
-function buildAriaLabel(status: WidgetStatus, count: number): string {
+function buildAriaLabel(status: WidgetStatus, count: number, maskedCount: number): string {
+  const parts: string[] = [];
   if (status === 'findings') {
     const plural = count === 1 ? '' : 's';
-    return `Sunbreak: ${count} finding${plural} detected`;
+    parts.push(`${count} finding${plural} detected`);
   }
-  return 'Sunbreak: no issues detected';
+  if (maskedCount > 0) {
+    parts.push(`${maskedCount} masked`);
+  }
+  if (parts.length === 0) return 'Sunbreak: no issues detected';
+  return `Sunbreak: ${parts.join(', ')}`;
 }
 
 export default function Widget({
@@ -77,6 +92,10 @@ export default function Widget({
   restoreToastState,
   onRestoreAccept,
   onRestoreDecline,
+  maskedCount = 0,
+  maskedEntries,
+  maskedExpiresAt,
+  onClearMasked,
 }: WidgetProps): JSX.Element {
   const [snapshot, setSnapshot] = useState<FindingsSnapshot>(findingsState.getSnapshot());
 
@@ -113,7 +132,7 @@ export default function Widget({
         class={`sb-widget sb-widget--${status}`}
         role="button"
         tabIndex={0}
-        aria-label={buildAriaLabel(status, snapshot.activeCount)}
+        aria-label={buildAriaLabel(status, snapshot.activeCount, maskedCount)}
         aria-expanded={panelOpen}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
@@ -126,10 +145,16 @@ export default function Widget({
           {status === 'findings' && (
             <span class="sb-widget__badge">{snapshot.activeCount}</span>
           )}
-          {status === 'clean' && (
+          {status === 'clean' && maskedCount === 0 && (
             <span class="sb-widget__check" aria-hidden="true">
               <CheckIcon />
             </span>
+          )}
+          {maskedCount > 0 && (
+            <>
+              {status === 'findings' && <span class="sb-widget__sep" aria-hidden="true">|</span>}
+              <span class="sb-widget__masked">{maskedCount} masked</span>
+            </>
           )}
         </span>
       </div>
@@ -141,6 +166,9 @@ export default function Widget({
           onIgnore={onIgnore}
           onFixAll={onFixAll}
           onClose={onClose}
+          maskedEntries={maskedEntries}
+          maskedExpiresAt={maskedExpiresAt}
+          onClearMasked={onClearMasked}
         />
       )}
       {showToast && (
