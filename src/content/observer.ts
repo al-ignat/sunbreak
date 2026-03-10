@@ -156,6 +156,8 @@ export function startObserving(
 
   async function attach(): Promise<void> {
     if (ctx.isInvalid) return;
+    // Catch navigations that wxt:locationchange missed (e.g. ChatGPT "New chat")
+    clearIfNavigatedFromConversation();
     tearDown();
 
     const input = await waitForElement(adapter, ctx);
@@ -222,8 +224,30 @@ export function startObserving(
     }, HEALTH_CHECK_INTERVAL_MS);
   }
 
-  // Track path segments to detect conversation switches vs creation
-  let lastPathSegments = window.location.pathname.split('/').filter(Boolean);
+  // Track pathname to detect conversation switches vs creation.
+  // Used by both wxt:locationchange and attach() as a fallback
+  // (some SPA navigations don't fire wxt:locationchange).
+  let lastKnownPathname = window.location.pathname;
+
+  /**
+   * Clear MaskingMap and FindingsState when navigating away from a conversation.
+   * Only clears when moving FROM a path with 2+ segments (e.g. /c/abc-123).
+   * Safe to call multiple times — no-ops if pathname hasn't changed.
+   */
+  function clearIfNavigatedFromConversation(): void {
+    const currentPathname = window.location.pathname;
+    if (currentPathname === lastKnownPathname) return;
+
+    const oldSegments = lastKnownPathname.split('/').filter(Boolean);
+    const wasInConversation = oldSegments.length >= 2;
+
+    if (wasInConversation) {
+      maskingMap?.clear();
+      scannerDeps?.state.clear();
+    }
+
+    lastKnownPathname = currentPathname;
+  }
 
   // Initial attach
   void attach();
@@ -233,18 +257,7 @@ export function startObserving(
     window,
     'wxt:locationchange' as string,
     () => {
-      const newSegments = window.location.pathname.split('/').filter(Boolean);
-
-      // Only clear MaskingMap when navigating FROM an existing conversation
-      // (2+ path segments like /c/abc-123 or /chat/abc-123).
-      // Don't clear when a new chat creates its first URL (/ → /c/abc-123).
-      const wasInConversation = lastPathSegments.length >= 2;
-      if (wasInConversation) {
-        maskingMap?.clear();
-        scannerDeps?.state.clear();
-      }
-
-      lastPathSegments = newSegments;
+      clearIfNavigatedFromConversation();
       void attach();
     },
   );

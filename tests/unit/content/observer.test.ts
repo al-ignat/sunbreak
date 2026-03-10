@@ -252,4 +252,55 @@ describe('conversation-change MaskingMap clearing', () => {
     expect(findingsState.getSnapshot().tracked).toHaveLength(0);
     expect(findingsState.getSnapshot().activeCount).toBe(0);
   });
+
+  it('clears MaskingMap via health-check fallback when wxt:locationchange does not fire', async () => {
+    // This reproduces the T6.3 bug: ChatGPT "New chat" navigation doesn't
+    // fire wxt:locationchange, but the health check detects the old input
+    // element is disconnected and calls attach(), which should still clear.
+    setPathname('/c/abc-123');
+
+    let healthCheckCallback: (() => void) | null = null;
+    const ctx = {
+      ...makeCtx(),
+      setInterval: (callback: () => void): number => {
+        healthCheckCallback = callback;
+        return 1;
+      },
+    };
+
+    startObserving(
+      ctx,
+      { onSubmit: () => {} },
+      () => {},
+      undefined,
+      undefined,
+      maskingMap,
+    );
+
+    // Wait for async attach() to complete and register the health check
+    await vi.waitFor(() => {
+      if (!healthCheckCallback) throw new Error('waiting for health check');
+    });
+
+    maskingMap.set('[John S. email]', 'john@acme.com');
+    expect(maskingMap.size).toBe(1);
+
+    // Simulate what ChatGPT does: navigate to new chat without wxt:locationchange
+    setPathname('/');
+    // Remove editor from DOM so health check detects disconnection
+    document.body.innerHTML = '';
+    // Re-add editor at new page (new chat also has an input)
+    const newEditor = document.createElement('div');
+    newEditor.id = 'prompt-textarea';
+    newEditor.setAttribute('contenteditable', 'true');
+    document.body.appendChild(newEditor);
+
+    // Fire the health check — this calls attach() which should clear
+    healthCheckCallback();
+
+    // attach() is async — wait for microtasks to settle
+    await vi.waitFor(() => {
+      expect(maskingMap.size).toBe(0);
+    });
+  });
 });
