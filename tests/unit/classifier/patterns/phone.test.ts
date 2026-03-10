@@ -74,6 +74,11 @@ describe('detectPhones', () => {
       expect(findings).toHaveLength(0);
     });
 
+    it('does not match IP with larger octets as phone', () => {
+      const findings = detectPhones('Server: 192.168.50.11');
+      expect(findings).toHaveLength(0);
+    });
+
     it('does not match credit card numbers (13+ digits)', () => {
       const findings = detectPhones('Card: 1234-5678-9012-3456');
       expect(findings).toHaveLength(0);
