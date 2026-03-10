@@ -6,6 +6,7 @@ import { buildRedactedText } from '../../content/interceptor';
 import widgetStyles from './widget.css?inline';
 import panelStyles from './findings-panel.css?inline';
 import toastStyles from './send-toast.css?inline';
+import restoreToastStyles from './restore-toast.css?inline';
 import overlayStyles from './text-overlay.css?inline';
 import hoverCardStyles from './hover-card.css?inline';
 import type { TextOverlayHandle } from './TextOverlay';
@@ -76,7 +77,7 @@ export function createWidgetController(
     const shadow = container.attachShadow({ mode: 'closed' });
 
     const styleEl = document.createElement('style');
-    styleEl.textContent = widgetStyles + '\n' + panelStyles + '\n' + toastStyles + '\n' + overlayStyles + '\n' + hoverCardStyles;
+    styleEl.textContent = widgetStyles + '\n' + panelStyles + '\n' + toastStyles + '\n' + restoreToastStyles + '\n' + overlayStyles + '\n' + hoverCardStyles;
     shadow.appendChild(styleEl);
 
     const w = document.createElement('div');

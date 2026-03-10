@@ -279,10 +279,10 @@ New widget component: shows restore prompt when tokens found in clipboard.
   - Auto-dismiss after 8 seconds calls decline callback
 
 **Acceptance criteria:**
-- [ ] Toast renders in Shadow DOM with correct count
-- [ ] Restore and Keep masked buttons trigger correct callbacks
-- [ ] Auto-dismiss after 8 seconds with safe default (keep masked)
-- [ ] Renders correctly on ChatGPT, Claude, and Gemini
+- [x] Toast renders in Shadow DOM with correct count
+- [x] Restore and Keep masked buttons trigger correct callbacks
+- [x] Auto-dismiss after 8 seconds with safe default (keep masked)
+- [ ] Renders correctly on ChatGPT, Claude, and Gemini (manual E2E verification pending)
 
 ---
 
