@@ -100,7 +100,7 @@ describe('createOrchestrator', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns submitConfig, onFileDetected, findingsState, scannerConfig, widgetController', () => {
+  it('returns submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap', () => {
     const adapter = createMockAdapter();
     const ctx = createMockContext();
     const result = createOrchestrator(adapter, ctx);
@@ -112,6 +112,9 @@ describe('createOrchestrator', () => {
     expect(result.findingsState).toBeDefined();
     expect(result.scannerConfig).toBeDefined();
     expect(result.widgetController).toBeDefined();
+    expect(result.maskingMap).toBeDefined();
+    expect(typeof result.maskingMap.set).toBe('function');
+    expect(typeof result.maskingMap.restore).toBe('function');
   });
 
   describe('shouldBlock', () => {

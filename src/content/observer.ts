@@ -9,6 +9,7 @@ import { attachScanner } from './scanner';
 import type { ScannerConfig } from './scanner';
 import type { FindingsState } from './findings-state';
 import type { createWidgetController } from '../ui/widget/widget-controller';
+import type { MaskingMap } from './masking-map';
 
 /** How long to wait for the editor element before giving up (ms) */
 const FIND_TIMEOUT_MS = 10_000;
@@ -119,6 +120,7 @@ export function startObserving(
     state: FindingsState;
   },
   widgetController?: ReturnType<typeof createWidgetController>,
+  maskingMap?: MaskingMap,
 ): void {
   const maybeAdapter = selectAdapter(window.location.hostname);
   if (!maybeAdapter) return; // Not on a supported site
@@ -216,6 +218,7 @@ export function startObserving(
     window,
     'wxt:locationchange' as string,
     () => {
+      maskingMap?.clear();
       void attach();
     },
   );

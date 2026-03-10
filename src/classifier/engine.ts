@@ -4,8 +4,10 @@ import type {
   ClassificationResult,
   ClassifyOptions,
   Detector,
+  ExcludeRange,
 } from './types';
 import { DETECTOR_PRIORITY } from './types';
+import { generateDescriptiveToken, createTokenContext } from './smart-tokens';
 import {
   detectEmails,
   detectPhones,
@@ -89,30 +91,29 @@ function deduplicate(findings: Finding[]): Finding[] {
   return result;
 }
 
+/** Check if a finding overlaps any excluded range */
+function overlapsExcludeRange(
+  finding: Finding,
+  ranges: ReadonlyArray<ExcludeRange>,
+): boolean {
+  for (const range of ranges) {
+    if (finding.startIndex < range.end && range.start < finding.endIndex) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
- * Assign redaction placeholders to findings.
- * Same value gets same placeholder number (per D4).
- * Example: [EMAIL_1], [EMAIL_2], [PHONE_1]
+ * Assign descriptive redaction placeholders to findings.
+ * Same value gets same placeholder (per D4).
+ * Example: [John S. email], [card ending 4242], [internal IP]
  */
 function assignPlaceholders(findings: Finding[]): Finding[] {
-  // Track value → placeholder mapping per type
-  const typeCounters = new Map<FindingType, number>();
-  const valuePlaceholders = new Map<string, string>();
+  const context = createTokenContext();
 
   return findings.map((finding) => {
-    // Build a unique key: type + value
-    const key = `${finding.type}:${finding.value}`;
-
-    let placeholder = valuePlaceholders.get(key);
-    if (!placeholder) {
-      const count = (typeCounters.get(finding.type) ?? 0) + 1;
-      typeCounters.set(finding.type, count);
-
-      const typeLabel = finding.type.toUpperCase().replace(/-/g, '_');
-      placeholder = `[${typeLabel}_${count}]`;
-      valuePlaceholders.set(key, placeholder);
-    }
-
+    const placeholder = generateDescriptiveToken(finding, context);
     return { ...finding, placeholder };
   });
 }
@@ -147,7 +148,7 @@ export function classify(text: string, options: ClassifyOptions): Classification
     truncated = true;
   }
 
-  const { keywords, enabledDetectors } = options;
+  const { keywords, enabledDetectors, excludeRanges } = options;
   const allFindings: Finding[] = [];
 
   // Run pattern detectors
@@ -171,11 +172,16 @@ export function classify(text: string, options: ClassifyOptions): Classification
   // Deduplicate overlapping findings
   const deduped = deduplicate(allFindings);
 
+  // Filter out findings that overlap excluded ranges
+  const filtered = excludeRanges && excludeRanges.length > 0
+    ? deduped.filter((f) => !overlapsExcludeRange(f, excludeRanges))
+    : deduped;
+
   // Sort by startIndex
-  deduped.sort((a, b) => a.startIndex - b.startIndex);
+  filtered.sort((a, b) => a.startIndex - b.startIndex);
 
   // Assign placeholders
-  const withPlaceholders = assignPlaceholders(deduped);
+  const withPlaceholders = assignPlaceholders(filtered);
 
   const durationMs = performance.now() - start;
 

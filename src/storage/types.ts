@@ -27,6 +27,7 @@ export interface DailyStats {
 export interface ExtensionSettings {
   readonly enabled: boolean;
   readonly interventionMode: 'warn' | 'log-only';
+  readonly maskingEnabled: boolean;
 }
 
 /** Per-category detection toggles */
@@ -66,6 +67,7 @@ export const DEFAULT_DETECTION_SETTINGS: DetectionSettings = {
 export const DEFAULT_EXTENSION_SETTINGS: ExtensionSettings = {
   enabled: true,
   interventionMode: 'warn',
+  maskingEnabled: true,
 };
 
 /** Filter options for querying flagged events */
