@@ -29,6 +29,11 @@ function makeTracked(
   };
 }
 
+interface MaskedEntry {
+  readonly token: string;
+  readonly originalValue: string;
+}
+
 function renderPanel(
   overrides: {
     tracked?: TrackedFinding[];
@@ -37,6 +42,9 @@ function renderPanel(
     onIgnore?: (id: string) => void;
     onFixAll?: () => void;
     onClose?: () => void;
+    maskedEntries?: MaskedEntry[];
+    maskedExpiresAt?: number | null;
+    onClearMasked?: () => void;
   } = {},
 ): ReturnType<typeof render> {
   const tracked = overrides.tracked ?? [makeTracked()];
@@ -48,6 +56,9 @@ function renderPanel(
       onIgnore={overrides.onIgnore ?? vi.fn()}
       onFixAll={overrides.onFixAll ?? vi.fn()}
       onClose={overrides.onClose ?? vi.fn()}
+      maskedEntries={overrides.maskedEntries}
+      maskedExpiresAt={overrides.maskedExpiresAt}
+      onClearMasked={overrides.onClearMasked}
     />,
   );
 }
@@ -213,6 +224,78 @@ describe('FindingsPanel', () => {
       const tracked = [makeTracked({ id: 'a', status: 'fixed' })];
       renderPanel({ tracked, activeCount: 0 });
       expect(screen.getByText('No active findings')).toBeTruthy();
+    });
+  });
+
+  describe('masked values section', () => {
+    const maskedEntries: MaskedEntry[] = [
+      { token: '[John S. email]', originalValue: 'john.smith@acme.com' },
+      { token: '[phone ending 67]', originalValue: '+1-555-012-3467' },
+    ];
+
+    it('renders masked section when maskedEntries provided', () => {
+      const { container } = renderPanel({ maskedEntries });
+      expect(container.querySelector('.sb-panel__masked')).toBeTruthy();
+    });
+
+    it('does not render masked section when maskedEntries is empty', () => {
+      const { container } = renderPanel({ maskedEntries: [] });
+      expect(container.querySelector('.sb-panel__masked')).toBeNull();
+    });
+
+    it('does not render masked section when maskedEntries is undefined', () => {
+      const { container } = renderPanel();
+      expect(container.querySelector('.sb-panel__masked')).toBeNull();
+    });
+
+    it('shows masked entry count in header', () => {
+      renderPanel({ maskedEntries });
+      expect(screen.getByText('2 masked values')).toBeTruthy();
+    });
+
+    it('shows singular for one masked entry', () => {
+      renderPanel({ maskedEntries: [maskedEntries[0]!] });
+      expect(screen.getByText('1 masked value')).toBeTruthy();
+    });
+
+    it('shows token names', () => {
+      renderPanel({ maskedEntries });
+      expect(screen.getByText('[John S. email]')).toBeTruthy();
+      expect(screen.getByText('[phone ending 67]')).toBeTruthy();
+    });
+
+    it('truncates original values longer than 10 characters', () => {
+      renderPanel({ maskedEntries });
+      // 'john.smith@acme.com' (19 chars) → 'john.smi...'
+      expect(screen.getByText('john.smi...')).toBeTruthy();
+      // '+1-555-012-3467' (15 chars) → '+1-555-0...'
+      expect(screen.getByText('+1-555-0...')).toBeTruthy();
+    });
+
+    it('shows full original value for short values', () => {
+      const short: MaskedEntry[] = [
+        { token: '[IP addr]', originalValue: '10.0.0.1' },
+      ];
+      renderPanel({ maskedEntries: short });
+      expect(screen.getByText('10.0.0.1')).toBeTruthy();
+    });
+
+    it('calls onClearMasked when Clear All is clicked', () => {
+      const onClearMasked = vi.fn();
+      renderPanel({ maskedEntries, onClearMasked });
+      fireEvent.click(screen.getByText('Clear All'));
+      expect(onClearMasked).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows TTL countdown when maskedExpiresAt is provided', () => {
+      const expiresAt = Date.now() + 24 * 60_000; // 24 min from now
+      renderPanel({ maskedEntries, maskedExpiresAt: expiresAt });
+      expect(screen.getByText(/Auto-clears in 24 min/)).toBeTruthy();
+    });
+
+    it('does not show TTL countdown when maskedExpiresAt is null', () => {
+      renderPanel({ maskedEntries, maskedExpiresAt: null });
+      expect(screen.queryByText(/Auto-clears in/)).toBeNull();
     });
   });
 

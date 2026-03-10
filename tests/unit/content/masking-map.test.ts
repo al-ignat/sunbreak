@@ -228,6 +228,74 @@ describe('MaskingMap', () => {
     });
   });
 
+  describe('entries', () => {
+    it('returns all token → value pairs', () => {
+      const mm = createMaskingMap();
+      mm.set('[email]', 'john@acme.com');
+      mm.set('[phone]', '+1-555-0123');
+      const entries = mm.entries();
+      expect(entries).toHaveLength(2);
+      expect(entries).toContainEqual({ token: '[email]', originalValue: 'john@acme.com' });
+      expect(entries).toContainEqual({ token: '[phone]', originalValue: '+1-555-0123' });
+      mm.destroy();
+    });
+
+    it('returns empty array when no mappings', () => {
+      const mm = createMaskingMap();
+      expect(mm.entries()).toHaveLength(0);
+      mm.destroy();
+    });
+  });
+
+  describe('expiresAt', () => {
+    it('is null when no mappings exist', () => {
+      const mm = createMaskingMap();
+      expect(mm.expiresAt).toBeNull();
+      mm.destroy();
+    });
+
+    it('returns a future timestamp after set()', () => {
+      const mm = createMaskingMap({ ttlMs: 5000 });
+      const before = Date.now();
+      mm.set('a', '1');
+      const expiresAt = mm.expiresAt;
+      expect(expiresAt).not.toBeNull();
+      expect(expiresAt!).toBeGreaterThanOrEqual(before + 5000);
+      mm.destroy();
+    });
+
+    it('resets after set() call', () => {
+      const mm = createMaskingMap({ ttlMs: 5000 });
+      mm.set('a', '1');
+      const first = mm.expiresAt;
+
+      vi.advanceTimersByTime(2000);
+      mm.set('b', '2');
+      const second = mm.expiresAt;
+
+      expect(second).not.toBeNull();
+      expect(second!).toBeGreaterThan(first!);
+      mm.destroy();
+    });
+
+    it('is null after clear()', () => {
+      const mm = createMaskingMap();
+      mm.set('a', '1');
+      expect(mm.expiresAt).not.toBeNull();
+      mm.clear();
+      expect(mm.expiresAt).toBeNull();
+      mm.destroy();
+    });
+
+    it('is null after TTL expiry', () => {
+      const mm = createMaskingMap({ ttlMs: 5000 });
+      mm.set('a', '1');
+      vi.advanceTimersByTime(5000);
+      expect(mm.expiresAt).toBeNull();
+      mm.destroy();
+    });
+  });
+
   describe('clear', () => {
     it('removes all mappings and cancels timer', () => {
       const mm = createMaskingMap({ ttlMs: 5000 });
