@@ -1,7 +1,7 @@
 ---
 title: "feat: Smart Reversible Masking — Clipboard Restore Flow"
 type: feat
-status: active
+status: completed
 date: 2026-03-09
 origin: docs/brainstorms/2026-03-04-v02-ai-safety-companion-brainstorm.md
 depends-on: docs/plans/2026-03-09-feat-smart-masking-plan.md
@@ -380,10 +380,10 @@ wxt:locationchange (URL path change)
   - Conversation change -> mapping cleared -> copy with old token -> no toast
 
 **Acceptance criteria:**
-- [ ] Full flow works end-to-end: Fix -> copy -> restore toast -> accept -> clipboard has original values
-- [ ] Conversation change clears all mappings
-- [ ] Tab close destroys all state (content script memory freed)
-- [ ] No interference with normal copy operations (no tokens = passthrough)
+- [x] Full flow works end-to-end: Fix -> copy -> restore toast -> accept -> clipboard has original values
+- [x] Conversation change clears all mappings
+- [x] Tab close destroys all state (content script memory freed)
+- [x] No interference with normal copy operations (no tokens = passthrough)
 
 ## System-Wide Impact
 

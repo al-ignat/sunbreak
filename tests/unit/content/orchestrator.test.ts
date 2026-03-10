@@ -10,6 +10,7 @@ vi.mock('../../../src/ui/widget/widget-controller', () => ({
     unmount: vi.fn(),
     destroy: vi.fn(),
     showToast: vi.fn().mockResolvedValue('timeout'),
+    showRestoreToast: vi.fn().mockResolvedValue(false),
   })),
 }));
 
@@ -100,7 +101,7 @@ describe('createOrchestrator', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap', () => {
+  it('returns submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor', () => {
     const adapter = createMockAdapter();
     const ctx = createMockContext();
     const result = createOrchestrator(adapter, ctx);
@@ -115,6 +116,9 @@ describe('createOrchestrator', () => {
     expect(result.maskingMap).toBeDefined();
     expect(typeof result.maskingMap.set).toBe('function');
     expect(typeof result.maskingMap.restore).toBe('function');
+    expect(result.clipboardInterceptor).toBeDefined();
+    expect(typeof result.clipboardInterceptor.attach).toBe('function');
+    expect(typeof result.clipboardInterceptor.detach).toBe('function');
   });
 
   describe('shouldBlock', () => {
@@ -212,6 +216,7 @@ describe('createOrchestrator', () => {
         unmount: vi.fn(),
         destroy: vi.fn(),
         showToast: mockShowToast,
+        showRestoreToast: vi.fn().mockResolvedValue(false),
       });
 
       const adapter = createMockAdapter();
@@ -231,6 +236,7 @@ describe('createOrchestrator', () => {
         unmount: vi.fn(),
         destroy: vi.fn(),
         showToast: mockShowToast,
+        showRestoreToast: vi.fn().mockResolvedValue(false),
       });
 
       const adapter = createMockAdapter();
@@ -248,6 +254,130 @@ describe('createOrchestrator', () => {
           findingCount: 1,
         }),
       );
+    });
+  });
+
+  describe('clipboard restore integration', () => {
+    it('clipboardInterceptor calls showRestoreToast via onTokensFound', async () => {
+      const mockWriteText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: mockWriteText },
+        writable: true,
+        configurable: true,
+      });
+
+      const mockShowRestoreToast = vi.fn().mockResolvedValue(true);
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: mockShowRestoreToast,
+      });
+
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { maskingMap, clipboardInterceptor } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
+
+      // Populate MaskingMap with a token
+      maskingMap.set('[John S. email]', 'john@acme.com');
+
+      // Attach the clipboard interceptor
+      clipboardInterceptor.attach();
+
+      // Simulate a copy event with the token
+      const selection = { toString: () => 'Response: [John S. email]' };
+      vi.spyOn(window, 'getSelection').mockReturnValue(selection as unknown as Selection);
+
+      const clipboardData = {
+        setData: vi.fn(),
+      };
+      const copyEvent = new Event('copy', { bubbles: true, cancelable: true });
+      Object.defineProperty(copyEvent, 'clipboardData', { value: clipboardData });
+
+      document.dispatchEvent(copyEvent);
+
+      // onTokensFound should trigger showRestoreToast
+      await new Promise((r) => setTimeout(r, 0));
+      expect(mockShowRestoreToast).toHaveBeenCalledWith(1);
+
+      // After acceptance, clipboard should be overwritten with restored text
+      await new Promise((r) => setTimeout(r, 0));
+      expect(mockWriteText).toHaveBeenCalledWith('Response: john@acme.com');
+
+      clipboardInterceptor.detach();
+      vi.restoreAllMocks();
+    });
+
+    it('skips restore toast when maskingEnabled is false', async () => {
+      vi.mocked(getExtensionSettings).mockResolvedValue({
+        enabled: true,
+        interventionMode: 'warn',
+        maskingEnabled: false,
+      });
+
+      const mockShowRestoreToast = vi.fn().mockResolvedValue(true);
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: mockShowRestoreToast,
+      });
+
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { maskingMap, clipboardInterceptor } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
+
+      maskingMap.set('[John S. email]', 'john@acme.com');
+      clipboardInterceptor.attach();
+
+      const selection = { toString: () => 'Response: [John S. email]' };
+      vi.spyOn(window, 'getSelection').mockReturnValue(selection as unknown as Selection);
+
+      const clipboardData = { setData: vi.fn() };
+      const copyEvent = new Event('copy', { bubbles: true, cancelable: true });
+      Object.defineProperty(copyEvent, 'clipboardData', { value: clipboardData });
+
+      document.dispatchEvent(copyEvent);
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(mockShowRestoreToast).not.toHaveBeenCalled();
+
+      clipboardInterceptor.detach();
+      vi.restoreAllMocks();
+    });
+
+    it('does not show toast when copied text has no tokens', async () => {
+      const mockShowRestoreToast = vi.fn().mockResolvedValue(true);
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: mockShowRestoreToast,
+      });
+
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { clipboardInterceptor } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
+
+      clipboardInterceptor.attach();
+
+      const selection = { toString: () => 'Plain text without tokens' };
+      vi.spyOn(window, 'getSelection').mockReturnValue(selection as unknown as Selection);
+
+      const copyEvent = new Event('copy', { bubbles: true, cancelable: true });
+      document.dispatchEvent(copyEvent);
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(mockShowRestoreToast).not.toHaveBeenCalled();
+
+      clipboardInterceptor.detach();
+      vi.restoreAllMocks();
     });
   });
 

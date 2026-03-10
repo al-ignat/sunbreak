@@ -24,6 +24,8 @@ import { createWidgetController } from '../ui/widget/widget-controller';
 import type { WidgetContext } from '../ui/widget/widget-controller';
 import { createMaskingMap } from './masking-map';
 import type { MaskingMap } from './masking-map';
+import { createClipboardInterceptor } from './clipboard-interceptor';
+import type { ClipboardInterceptor } from './clipboard-interceptor';
 
 /**
  * Context for the orchestrator.
@@ -66,6 +68,7 @@ export function createOrchestrator(
   scannerConfig: ScannerConfig;
   widgetController: ReturnType<typeof createWidgetController>;
   maskingMap: MaskingMap;
+  clipboardInterceptor: ClipboardInterceptor;
 } {
   // Cache keywords from chrome.storage.local
   let cachedKeywords: string[] = [];
@@ -97,6 +100,15 @@ export function createOrchestrator(
     onInvalidated: ctx.onInvalidated.bind(ctx),
   };
   const widgetController = createWidgetController(findingsState, adapter, widgetCtx, maskingMap);
+
+  // ClipboardInterceptor: detect masking tokens in copy events, offer restore
+  const clipboardInterceptor = createClipboardInterceptor(maskingMap, {
+    onTokensFound: (count: number): Promise<boolean> => {
+      // Gate: skip restore toast when masking is disabled
+      if (!cachedExtensionSettings.maskingEnabled) return Promise.resolve(false);
+      return widgetController.showRestoreToast(count);
+    },
+  });
 
   // Fetch all cached settings initially
   void fetchAllSettings();
@@ -209,5 +221,5 @@ export function createOrchestrator(
     );
   }
 
-  return { submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap };
+  return { submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor };
 }
