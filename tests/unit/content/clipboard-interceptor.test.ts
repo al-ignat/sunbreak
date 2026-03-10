@@ -13,6 +13,16 @@ function createCopyEvent(): ClipboardEvent {
   return event;
 }
 
+/** Helper: simulate a postMessage from the same window (MAIN→ISOLATED) */
+function simulateClipboardWriteMessage(text: string): void {
+  window.dispatchEvent(
+    new MessageEvent('message', {
+      data: { type: 'sunbreak:clipboard-write', text },
+      source: window,
+    }),
+  );
+}
+
 /** Helper: mock window.getSelection to return given text */
 function mockSelection(text: string): void {
   vi.spyOn(window, 'getSelection').mockReturnValue({
@@ -177,6 +187,98 @@ describe('ClipboardInterceptor', () => {
     expect(event.defaultPrevented).toBe(false);
 
     maskingMap.destroy();
+  });
+
+  describe('postMessage (site copy button)', () => {
+    it('calls onTokensFound when postMessage contains tokens', async () => {
+      const maskingMap = createMaskingMap();
+      maskingMap.set('«email-john»', 'john@acme.com');
+
+      const onTokensFound = vi.fn().mockResolvedValue(false);
+      const interceptor = createClipboardInterceptor(maskingMap, { onTokensFound });
+      interceptor.attach();
+
+      simulateClipboardWriteMessage('Contact «email-john» for info');
+
+      await vi.waitFor(() => {
+        expect(onTokensFound).toHaveBeenCalledWith(1);
+      });
+
+      interceptor.detach();
+      maskingMap.destroy();
+    });
+
+    it('overwrites clipboard with restored text when user accepts via postMessage', async () => {
+      const maskingMap = createMaskingMap();
+      maskingMap.set('«email-john»', 'john@acme.com');
+
+      const onTokensFound = vi.fn().mockResolvedValue(true);
+      const interceptor = createClipboardInterceptor(maskingMap, { onTokensFound });
+      interceptor.attach();
+
+      simulateClipboardWriteMessage('Contact «email-john» for info');
+
+      await vi.waitFor(() => {
+        expect(writeTextMock).toHaveBeenCalledWith('Contact john@acme.com for info');
+      });
+
+      interceptor.detach();
+      maskingMap.destroy();
+    });
+
+    it('ignores postMessage with wrong type', () => {
+      const maskingMap = createMaskingMap();
+      maskingMap.set('«email-john»', 'john@acme.com');
+
+      const onTokensFound = vi.fn().mockResolvedValue(false);
+      const interceptor = createClipboardInterceptor(maskingMap, { onTokensFound });
+      interceptor.attach();
+
+      // Dispatch message with wrong type — synchronous, no await needed
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: 'other-message', text: '«email-john»' },
+          source: window,
+        }),
+      );
+
+      expect(onTokensFound).not.toHaveBeenCalled();
+
+      interceptor.detach();
+      maskingMap.destroy();
+    });
+
+    it('ignores postMessage with no tokens', () => {
+      const maskingMap = createMaskingMap();
+      maskingMap.set('«email-john»', 'john@acme.com');
+
+      const onTokensFound = vi.fn().mockResolvedValue(false);
+      const interceptor = createClipboardInterceptor(maskingMap, { onTokensFound });
+      interceptor.attach();
+
+      simulateClipboardWriteMessage('No tokens here');
+
+      expect(onTokensFound).not.toHaveBeenCalled();
+
+      interceptor.detach();
+      maskingMap.destroy();
+    });
+
+    it('detach stops listening for postMessage', () => {
+      const maskingMap = createMaskingMap();
+      maskingMap.set('«email-john»', 'john@acme.com');
+
+      const onTokensFound = vi.fn().mockResolvedValue(false);
+      const interceptor = createClipboardInterceptor(maskingMap, { onTokensFound });
+      interceptor.attach();
+      interceptor.detach();
+
+      simulateClipboardWriteMessage('«email-john»');
+
+      expect(onTokensFound).not.toHaveBeenCalled();
+
+      maskingMap.destroy();
+    });
   });
 
   it('handles navigator.clipboard.writeText failure gracefully', async () => {

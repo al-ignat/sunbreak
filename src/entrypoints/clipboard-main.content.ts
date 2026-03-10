@@ -5,8 +5,8 @@
  * Runs in the page's main world (not the extension's isolated world)
  * so it can monkey-patch the real clipboard API that site code uses.
  *
- * Communication: dispatches a CustomEvent on window that the isolated
- * world content script listens for.
+ * Communication: uses window.postMessage() which reliably crosses the
+ * MAIN→ISOLATED world boundary via structured cloning.
  */
 export default defineContentScript({
   matches: [
@@ -28,10 +28,9 @@ export default defineContentScript({
       const result = original(text);
 
       // Notify the isolated world about the write
-      window.dispatchEvent(
-        new CustomEvent('sunbreak:clipboard-write', {
-          detail: { text },
-        }),
+      window.postMessage(
+        { type: 'sunbreak:clipboard-write', text },
+        '*',
       );
 
       return result;
