@@ -136,10 +136,10 @@ function createMaskingMap(options?: { ttlMs?: number }): MaskingMap;
   - Multiple occurrences of same token in text are all restored
 
 **Acceptance criteria:**
-- [ ] MaskingMap stores and retrieves token -> value pairs
-- [ ] TTL auto-clears after 30 minutes
-- [ ] `restore()` correctly replaces all tokens in arbitrary text
-- [ ] Subscribers notified on all state changes
+- [x] MaskingMap stores and retrieves token -> value pairs
+- [x] TTL auto-clears after 30 minutes
+- [x] `restore()` correctly replaces all tokens in arbitrary text
+- [x] Subscribers notified on all state changes
 
 ---
 
@@ -166,9 +166,9 @@ Populate the mapping when the user clicks Fix or Fix All.
   - MaskingMap is cleared when observer handles conversation change
 
 **Acceptance criteria:**
-- [ ] Fix action populates MaskingMap with correct token -> value pair
-- [ ] Fix All populates MaskingMap with all active findings
-- [ ] Conversation change clears the mapping
+- [x] Fix action populates MaskingMap with correct token -> value pair
+- [x] Fix All populates MaskingMap with all active findings
+- [x] Conversation change clears the mapping
 
 ---
 

@@ -22,6 +22,8 @@ import type { FindingsState } from './findings-state';
 import type { ScannerConfig } from './scanner';
 import { createWidgetController } from '../ui/widget/widget-controller';
 import type { WidgetContext } from '../ui/widget/widget-controller';
+import { createMaskingMap } from './masking-map';
+import type { MaskingMap } from './masking-map';
 
 /**
  * Context for the orchestrator.
@@ -63,6 +65,7 @@ export function createOrchestrator(
   findingsState: FindingsState;
   scannerConfig: ScannerConfig;
   widgetController: ReturnType<typeof createWidgetController>;
+  maskingMap: MaskingMap;
 } {
   // Cache keywords from chrome.storage.local
   let cachedKeywords: string[] = [];
@@ -75,6 +78,9 @@ export function createOrchestrator(
 
   // FindingsState for the continuous scanner
   const findingsState = createFindingsState();
+
+  // MaskingMap: in-memory token→original mapping for reversible masking
+  const maskingMap = createMaskingMap();
 
   // ScannerConfig: exposes cached settings to the scanner without duplication
   const scannerConfig: ScannerConfig = {
@@ -90,7 +96,7 @@ export function createOrchestrator(
     },
     onInvalidated: ctx.onInvalidated.bind(ctx),
   };
-  const widgetController = createWidgetController(findingsState, adapter, widgetCtx);
+  const widgetController = createWidgetController(findingsState, adapter, widgetCtx, maskingMap);
 
   // Fetch all cached settings initially
   void fetchAllSettings();
@@ -203,5 +209,5 @@ export function createOrchestrator(
     );
   }
 
-  return { submitConfig, onFileDetected, findingsState, scannerConfig, widgetController };
+  return { submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap };
 }

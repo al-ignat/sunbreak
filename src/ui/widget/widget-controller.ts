@@ -9,6 +9,7 @@ import toastStyles from './send-toast.css?inline';
 import overlayStyles from './text-overlay.css?inline';
 import hoverCardStyles from './hover-card.css?inline';
 import type { TextOverlayHandle } from './TextOverlay';
+import type { MaskingMap } from '../../content/masking-map';
 
 /**
  * Context for the widget controller lifecycle.
@@ -36,6 +37,7 @@ export function createWidgetController(
   findingsState: FindingsState,
   adapter: SiteAdapter,
   ctx: WidgetContext,
+  maskingMap?: MaskingMap,
 ): {
   mount(input: HTMLElement): void;
   unmount(): void;
@@ -143,6 +145,7 @@ export function createWidgetController(
     const text = adapter.getText(input);
     const redacted = buildRedactedText(text, [tf.finding]);
     adapter.setText(input, redacted);
+    maskingMap?.set(tf.finding.placeholder, tf.finding.value);
     findingsState.fix(id);
   }
 
@@ -164,6 +167,12 @@ export function createWidgetController(
       active.map((t) => t.finding),
     );
     adapter.setText(input, redacted);
+    maskingMap?.setAll(
+      active.map((t) => ({
+        token: t.finding.placeholder,
+        originalValue: t.finding.value,
+      })),
+    );
     findingsState.fixAll();
   }
 
