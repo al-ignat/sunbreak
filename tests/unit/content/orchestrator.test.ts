@@ -11,6 +11,7 @@ vi.mock('../../../src/ui/widget/widget-controller', () => ({
     destroy: vi.fn(),
     showToast: vi.fn().mockResolvedValue('timeout'),
     showRestoreToast: vi.fn().mockResolvedValue(false),
+    setEnabled: vi.fn(),
   })),
 }));
 
@@ -217,6 +218,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: mockShowToast,
         showRestoreToast: vi.fn().mockResolvedValue(false),
+        setEnabled: vi.fn(),
       });
 
       const adapter = createMockAdapter();
@@ -237,6 +239,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: mockShowToast,
         showRestoreToast: vi.fn().mockResolvedValue(false),
+        setEnabled: vi.fn(),
       });
 
       const adapter = createMockAdapter();
@@ -273,6 +276,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: vi.fn().mockResolvedValue('timeout'),
         showRestoreToast: mockShowRestoreToast,
+        setEnabled: vi.fn(),
       });
 
       const adapter = createMockAdapter();
@@ -324,6 +328,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: vi.fn().mockResolvedValue('timeout'),
         showRestoreToast: mockShowRestoreToast,
+        setEnabled: vi.fn(),
       });
 
       const adapter = createMockAdapter();
@@ -358,6 +363,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: vi.fn().mockResolvedValue('timeout'),
         showRestoreToast: mockShowRestoreToast,
+        setEnabled: vi.fn(),
       });
 
       const adapter = createMockAdapter();
