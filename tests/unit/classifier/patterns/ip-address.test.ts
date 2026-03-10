@@ -34,6 +34,24 @@ describe('detectIpAddresses', () => {
       const findings = detectIpAddresses('From 10.0.0.1 to 10.0.0.2');
       expect(findings).toHaveLength(2);
     });
+
+    it('detects IP at end of sentence (before period)', () => {
+      const findings = detectIpAddresses('The server is at 10.0.0.42.');
+      expect(findings).toHaveLength(1);
+      expect(findings[0]?.value).toBe('10.0.0.42');
+    });
+
+    it('detects IP followed by comma', () => {
+      const findings = detectIpAddresses('Host 192.168.50.11, port 443');
+      expect(findings).toHaveLength(1);
+      expect(findings[0]?.value).toBe('192.168.50.11');
+    });
+
+    it('detects IP at end of text', () => {
+      const findings = detectIpAddresses('monitoring node at 192.168.50.11');
+      expect(findings).toHaveLength(1);
+      expect(findings[0]?.value).toBe('192.168.50.11');
+    });
   });
 
   describe('IPv4 true negatives', () => {
@@ -79,6 +97,11 @@ describe('detectIpAddresses', () => {
 
     it('rejects leading zeros in octets', () => {
       const findings = detectIpAddresses('IP: 192.168.01.1');
+      expect(findings).toHaveLength(0);
+    });
+
+    it('still rejects longer dotted sequences (5+ groups)', () => {
+      const findings = detectIpAddresses('OID: 1.2.3.4.5');
       expect(findings).toHaveLength(0);
     });
   });

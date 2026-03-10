@@ -32,6 +32,7 @@ interface ToastState {
 interface RestoreToastState {
   visible: boolean;
   count: number;
+  generation: number;
   resolve: (accepted: boolean) => void;
 }
 
@@ -258,11 +259,20 @@ export function createWidgetController(
     resolve(accepted);
   }
 
+  let restoreGeneration = 0;
+
   function showRestoreToast(count: number): Promise<boolean> {
+    // If a toast is already showing, resolve the old one as declined (safe default)
+    if (restoreToastState) {
+      restoreToastState.resolve(false);
+    }
+
+    restoreGeneration++;
     return new Promise((resolve) => {
       restoreToastState = {
         visible: true,
         count,
+        generation: restoreGeneration,
         resolve,
       };
       renderWidget();
@@ -307,7 +317,7 @@ export function createWidgetController(
         maskedExpiresAt: maskingMap?.expiresAt ?? null,
         onClearMasked: maskingMap ? handleClearMasked : undefined,
         restoreToastState: restoreToastState
-          ? { count: restoreToastState.count, visible: restoreToastState.visible }
+          ? { count: restoreToastState.count, visible: restoreToastState.visible, generation: restoreToastState.generation }
           : null,
         onRestoreAccept: handleRestoreAccept,
         onRestoreDecline: handleRestoreDecline,

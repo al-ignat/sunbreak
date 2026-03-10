@@ -29,7 +29,7 @@ const PROVIDER_PATTERNS: readonly KeyPattern[] = [
     confidence: 'HIGH',
   },
   {
-    pattern: /sk-[A-Za-z0-9]{32,}/g,
+    pattern: /sk-[A-Za-z0-9_-]{32,}/g,
     label: 'OpenAI API Key',
     confidence: 'HIGH',
   },

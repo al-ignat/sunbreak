@@ -5,7 +5,7 @@ import type { Finding } from '../types';
  * Each octet captured for 0-255 validation.
  */
 const IPV4_PATTERN =
-  /(?<!\d)(?<!\.)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?!\d)(?!\.)/g;
+  /(?<!\d)(?<!\.)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?!\d)(?!\.\d)/g;
 
 /** IPv4 addresses to skip (loopback, unspecified) */
 const IPV4_SKIP = new Set(['127.0.0.1', '0.0.0.0']);

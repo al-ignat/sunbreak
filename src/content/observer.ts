@@ -90,17 +90,21 @@ function waitForElement(
 
 /** Increment the adapter failure counter in chrome.storage.local (fire-and-forget) */
 function recordAdapterFailure(adapterName: string): void {
-  chrome.storage.local
-    .get('adapterFailures')
-    .then((data) => {
-      const failures =
-        (data['adapterFailures'] as Record<string, number>) ?? {};
-      failures[adapterName] = (failures[adapterName] ?? 0) + 1;
-      return chrome.storage.local.set({ adapterFailures: failures });
-    })
-    .catch(() => {
-      // Storage errors should not crash the observer
-    });
+  try {
+    chrome.storage.local
+      .get('adapterFailures')
+      .then((data) => {
+        const failures =
+          (data['adapterFailures'] as Record<string, number>) ?? {};
+        failures[adapterName] = (failures[adapterName] ?? 0) + 1;
+        return chrome.storage.local.set({ adapterFailures: failures });
+      })
+      .catch(() => {
+        // Extension context invalidated or storage error — ignore
+      });
+  } catch {
+    // chrome.storage may throw synchronously if context is already dead
+  }
 }
 
 /**
@@ -152,11 +156,15 @@ export function startObserving(
 
   async function attach(): Promise<void> {
     if (ctx.isInvalid) return;
+    // Catch navigations that wxt:locationchange missed (e.g. ChatGPT "New chat")
+    clearIfNavigatedFromConversation();
     tearDown();
 
     const input = await waitForElement(adapter, ctx);
     if (!input || ctx.isInvalid) {
-      recordAdapterFailure(adapter.name);
+      if (!ctx.isInvalid) {
+        recordAdapterFailure(adapter.name);
+      }
       return;
     }
 
@@ -216,6 +224,31 @@ export function startObserving(
     }, HEALTH_CHECK_INTERVAL_MS);
   }
 
+  // Track pathname to detect conversation switches vs creation.
+  // Used by both wxt:locationchange and attach() as a fallback
+  // (some SPA navigations don't fire wxt:locationchange).
+  let lastKnownPathname = window.location.pathname;
+
+  /**
+   * Clear MaskingMap and FindingsState when navigating away from a conversation.
+   * Only clears when moving FROM a path with 2+ segments (e.g. /c/abc-123).
+   * Safe to call multiple times — no-ops if pathname hasn't changed.
+   */
+  function clearIfNavigatedFromConversation(): void {
+    const currentPathname = window.location.pathname;
+    if (currentPathname === lastKnownPathname) return;
+
+    const oldSegments = lastKnownPathname.split('/').filter(Boolean);
+    const wasInConversation = oldSegments.length >= 2;
+
+    if (wasInConversation) {
+      maskingMap?.clear();
+      scannerDeps?.state.clear();
+    }
+
+    lastKnownPathname = currentPathname;
+  }
+
   // Initial attach
   void attach();
 
@@ -224,7 +257,7 @@ export function startObserving(
     window,
     'wxt:locationchange' as string,
     () => {
-      maskingMap?.clear();
+      clearIfNavigatedFromConversation();
       void attach();
     },
   );

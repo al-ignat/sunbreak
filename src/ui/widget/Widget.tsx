@@ -18,6 +18,7 @@ export interface ToastDisplayState {
 export interface RestoreToastDisplayState {
   count: number;
   visible: boolean;
+  generation: number;
 }
 
 /** Masked entries for display in the findings panel */
@@ -182,6 +183,7 @@ export default function Widget({
       )}
       {showRestoreToast && (
         <RestoreToast
+          key={restoreToastState.generation}
           count={restoreToastState.count}
           onAccept={onRestoreAccept}
           onDecline={onRestoreDecline}

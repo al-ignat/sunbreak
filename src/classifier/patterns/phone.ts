@@ -44,6 +44,9 @@ export function detectPhones(text: string): Finding[] {
     // Skip if it looks like a US SSN (XXX-XX-XXXX)
     if (/^\d{3}-\d{2}-\d{4}$/.test(value.trim())) continue;
 
+    // Skip if it looks like an IPv4 address (dotted quad)
+    if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(value.trim())) continue;
+
     findings.push({
       type: 'phone',
       value: value.trim(),
