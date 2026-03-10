@@ -90,17 +90,21 @@ function waitForElement(
 
 /** Increment the adapter failure counter in chrome.storage.local (fire-and-forget) */
 function recordAdapterFailure(adapterName: string): void {
-  chrome.storage.local
-    .get('adapterFailures')
-    .then((data) => {
-      const failures =
-        (data['adapterFailures'] as Record<string, number>) ?? {};
-      failures[adapterName] = (failures[adapterName] ?? 0) + 1;
-      return chrome.storage.local.set({ adapterFailures: failures });
-    })
-    .catch(() => {
-      // Storage errors should not crash the observer
-    });
+  try {
+    chrome.storage.local
+      .get('adapterFailures')
+      .then((data) => {
+        const failures =
+          (data['adapterFailures'] as Record<string, number>) ?? {};
+        failures[adapterName] = (failures[adapterName] ?? 0) + 1;
+        return chrome.storage.local.set({ adapterFailures: failures });
+      })
+      .catch(() => {
+        // Extension context invalidated or storage error — ignore
+      });
+  } catch {
+    // chrome.storage may throw synchronously if context is already dead
+  }
 }
 
 /**
@@ -156,7 +160,9 @@ export function startObserving(
 
     const input = await waitForElement(adapter, ctx);
     if (!input || ctx.isInvalid) {
-      recordAdapterFailure(adapter.name);
+      if (!ctx.isInvalid) {
+        recordAdapterFailure(adapter.name);
+      }
       return;
     }
 
