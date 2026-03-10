@@ -235,10 +235,10 @@ function createClipboardInterceptor(
 **Mocking strategy:** Use `Object.defineProperty` on ClipboardEvent for `clipboardData` (jsdom doesn't implement it — see `docs/solutions/integration-issues/2026-03-02-dom-observation-patterns-and-pitfalls.md`). Mock `window.getSelection()` to return test strings. Mock `navigator.clipboard.writeText()`.
 
 **Acceptance criteria:**
-- [ ] Copy events with tokens trigger the callback
-- [ ] Copy events without tokens pass through unchanged
-- [ ] Safe default: tokenized text in clipboard until explicit restore
-- [ ] `navigator.clipboard.writeText()` called only when user accepts
+- [x] Copy events with tokens trigger the callback
+- [x] Copy events without tokens pass through unchanged
+- [x] Safe default: tokenized text in clipboard until explicit restore
+- [x] `navigator.clipboard.writeText()` called only when user accepts
 
 ---
 
