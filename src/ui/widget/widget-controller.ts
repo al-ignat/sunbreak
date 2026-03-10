@@ -54,8 +54,10 @@ export function createWidgetController(
   showToast(activeCount: number): Promise<'send-anyway' | 'timeout'>;
   showRestoreToast(count: number): Promise<boolean>;
   getOverlayHandle(): TextOverlayHandle | null;
+  setEnabled(enabled: boolean): void;
 } {
   let container: HTMLDivElement | null = null;
+  let extensionEnabled = true;
   let shadowRoot: ShadowRoot | null = null;
   let wrapper: HTMLDivElement | null = null;
   let currentInput: HTMLElement | null = null;
@@ -95,6 +97,11 @@ export function createWidgetController(
     w.style.pointerEvents = 'auto';
     w.style.position = 'fixed';
     shadow.appendChild(w);
+
+    // Hide container if extension is currently disabled
+    if (!extensionEnabled) {
+      container.style.display = 'none';
+    }
 
     document.body.appendChild(container);
 
@@ -430,5 +437,12 @@ export function createWidgetController(
     return overlayHandle;
   }
 
-  return { mount, unmount, destroy, showToast, showRestoreToast, getOverlayHandle };
+  function setEnabled(enabled: boolean): void {
+    extensionEnabled = enabled;
+    if (container) {
+      container.style.display = enabled ? '' : 'none';
+    }
+  }
+
+  return { mount, unmount, destroy, showToast, showRestoreToast, getOverlayHandle, setEnabled };
 }

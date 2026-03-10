@@ -133,6 +133,7 @@ export function createOrchestrator(
             (changes['settings'].newValue as
               | ExtensionSettings
               | undefined) ?? { ...DEFAULT_EXTENSION_SETTINGS };
+          widgetController.setEnabled(cachedExtensionSettings.enabled);
         }
       },
     );
@@ -148,6 +149,7 @@ export function createOrchestrator(
       cachedKeywords = [...kw];
       cachedDetectionSettings = ds;
       cachedExtensionSettings = es;
+      widgetController.setEnabled(es.enabled);
     } catch {
       cachedKeywords = [];
       cachedDetectionSettings = { ...DEFAULT_DETECTION_SETTINGS };

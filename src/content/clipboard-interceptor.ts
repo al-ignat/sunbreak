@@ -2,6 +2,10 @@
  * ClipboardInterceptor — listens for copy events on the document,
  * scans for masking tokens, and offers to restore original values.
  *
+ * Also listens for `sunbreak:clipboard-write` custom events dispatched
+ * by the MAIN world script when site "Copy" buttons call
+ * navigator.clipboard.writeText() directly.
+ *
  * Safe default: tokenized text goes to clipboard immediately.
  * Restoration only happens on explicit user acceptance.
  */
@@ -14,7 +18,7 @@ export interface ClipboardInterceptorCallbacks {
 }
 
 export interface ClipboardInterceptor {
-  /** Start listening for copy events. */
+  /** Start listening for copy events and clipboard-write events. */
   attach(): void;
   /** Stop listening. */
   detach(): void;
@@ -45,6 +49,27 @@ export function createClipboardInterceptor(
     }
 
     // 6. Ask user via callback (async — clipboard already has safe tokenized version)
+    offerRestore(restored, count);
+  }
+
+  /**
+   * Handle programmatic clipboard writes from site "Copy" buttons.
+   * The MAIN world script dispatches this event after the original
+   * writeText() call, so the clipboard already has the text (safe default).
+   */
+  function handleClipboardWrite(event: Event): void {
+    const text = (event as CustomEvent<{ text: string }>).detail?.text;
+    if (!text || text.length === 0) return;
+
+    const { restored, count } = maskingMap.restore(text);
+    if (count === 0) return;
+
+    // Clipboard already has the tokenized text (written by site code).
+    // Offer restore — if accepted, we overwrite with originals.
+    offerRestore(restored, count);
+  }
+
+  function offerRestore(restored: string, count: number): void {
     void callbacks.onTokensFound(count).then((accepted) => {
       if (accepted) {
         // Overwrite clipboard with restored (original) values
@@ -58,10 +83,12 @@ export function createClipboardInterceptor(
   return {
     attach(): void {
       document.addEventListener('copy', handleCopy as EventListener, true);
+      window.addEventListener('sunbreak:clipboard-write', handleClipboardWrite);
     },
 
     detach(): void {
       document.removeEventListener('copy', handleCopy as EventListener, true);
+      window.removeEventListener('sunbreak:clipboard-write', handleClipboardWrite);
     },
   };
 }
