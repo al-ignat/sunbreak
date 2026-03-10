@@ -28,6 +28,13 @@ interface ToastState {
   resolve: (action: 'send-anyway' | 'timeout') => void;
 }
 
+/** Restore toast state managed by the controller */
+interface RestoreToastState {
+  visible: boolean;
+  count: number;
+  resolve: (accepted: boolean) => void;
+}
+
 /**
  * Create and manage the corner widget.
  *
@@ -44,6 +51,7 @@ export function createWidgetController(
   unmount(): void;
   destroy(): void;
   showToast(activeCount: number): Promise<'send-anyway' | 'timeout'>;
+  showRestoreToast(count: number): Promise<boolean>;
   getOverlayHandle(): TextOverlayHandle | null;
 } {
   let container: HTMLDivElement | null = null;
@@ -56,6 +64,7 @@ export function createWidgetController(
   let lastInputLeft = 0;
   let panelOpen = false;
   let toastState: ToastState | null = null;
+  let restoreToastState: RestoreToastState | null = null;
   let overlayHandle: TextOverlayHandle | null = null;
 
   function ensureContainer(): ShadowRoot {
@@ -233,6 +242,33 @@ export function createWidgetController(
     maskingMap?.clear();
   }
 
+  function handleRestoreAccept(): void {
+    resolveRestoreToast(true);
+  }
+
+  function handleRestoreDecline(): void {
+    resolveRestoreToast(false);
+  }
+
+  function resolveRestoreToast(accepted: boolean): void {
+    if (!restoreToastState) return;
+    const { resolve } = restoreToastState;
+    restoreToastState = null;
+    renderWidget();
+    resolve(accepted);
+  }
+
+  function showRestoreToast(count: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      restoreToastState = {
+        visible: true,
+        count,
+        resolve,
+      };
+      renderWidget();
+    });
+  }
+
   function renderWidget(): void {
     if (!wrapper) return;
     render(
@@ -270,6 +306,11 @@ export function createWidgetController(
         maskedEntries: maskingMap ? maskingMap.entries() : undefined,
         maskedExpiresAt: maskingMap?.expiresAt ?? null,
         onClearMasked: maskingMap ? handleClearMasked : undefined,
+        restoreToastState: restoreToastState
+          ? { count: restoreToastState.count, visible: restoreToastState.visible }
+          : null,
+        onRestoreAccept: handleRestoreAccept,
+        onRestoreDecline: handleRestoreDecline,
       }),
       wrapper,
     );
@@ -350,6 +391,13 @@ export function createWidgetController(
       resolve('timeout');
     }
 
+    // If a restore toast is pending, resolve as declined (safe default)
+    if (restoreToastState) {
+      const { resolve } = restoreToastState;
+      restoreToastState = null;
+      resolve(false);
+    }
+
     currentInput = null;
     panelOpen = false;
   }
@@ -372,5 +420,5 @@ export function createWidgetController(
     return overlayHandle;
   }
 
-  return { mount, unmount, destroy, showToast, getOverlayHandle };
+  return { mount, unmount, destroy, showToast, showRestoreToast, getOverlayHandle };
 }

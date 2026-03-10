@@ -10,6 +10,7 @@ import type { ScannerConfig } from './scanner';
 import type { FindingsState } from './findings-state';
 import type { createWidgetController } from '../ui/widget/widget-controller';
 import type { MaskingMap } from './masking-map';
+import type { ClipboardInterceptor } from './clipboard-interceptor';
 
 /** How long to wait for the editor element before giving up (ms) */
 const FIND_TIMEOUT_MS = 10_000;
@@ -121,6 +122,7 @@ export function startObserving(
   },
   widgetController?: ReturnType<typeof createWidgetController>,
   maskingMap?: MaskingMap,
+  clipboardInterceptor?: ClipboardInterceptor,
 ): void {
   const maybeAdapter = selectAdapter(window.location.hostname);
   if (!maybeAdapter) return; // Not on a supported site
@@ -139,6 +141,7 @@ export function startObserving(
     cleanupFileDetector = null;
     cleanupScanner?.();
     cleanupScanner = null;
+    clipboardInterceptor?.detach();
     widgetController?.unmount();
     currentInput = null;
     if (healthCheckId !== null) {
@@ -183,6 +186,9 @@ export function startObserving(
 
     // Mount corner widget
     widgetController?.mount(input);
+
+    // Attach clipboard interceptor for restore flow
+    clipboardInterceptor?.attach();
 
     // Attach continuous scanner if dependencies provided
     if (scannerDeps) {
