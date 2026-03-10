@@ -239,16 +239,9 @@ export function startObserving(
       // (2+ path segments like /c/abc-123 or /chat/abc-123).
       // Don't clear when a new chat creates its first URL (/ → /c/abc-123).
       const wasInConversation = lastPathSegments.length >= 2;
-      // TODO: Remove debug logging after T6.3 investigation
-      console.debug('[sunbreak] locationchange:', {
-        from: '/' + lastPathSegments.join('/'),
-        to: '/' + newSegments.join('/'),
-        wasInConversation,
-        maskingMapSize: maskingMap?.size ?? 'no map',
-        willClear: wasInConversation && !!maskingMap,
-      });
       if (wasInConversation) {
         maskingMap?.clear();
+        scannerDeps?.state.clear();
       }
 
       lastPathSegments = newSegments;

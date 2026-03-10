@@ -3,6 +3,8 @@ import { selectAdapter } from '../../../src/content/sites';
 import { startObserving } from '../../../src/content/observer';
 import { createMaskingMap } from '../../../src/content/masking-map';
 import type { MaskingMap } from '../../../src/content/masking-map';
+import { createFindingsState } from '../../../src/content/findings-state';
+import type { FindingsState } from '../../../src/content/findings-state';
 
 // Mock interceptor + scanner so startObserving doesn't need real DOM wiring
 vi.mock('../../../src/content/interceptor', () => ({
@@ -214,5 +216,40 @@ describe('conversation-change MaskingMap clearing', () => {
     locationChangeHandler();
 
     expect(maskingMap.size).toBe(0);
+  });
+
+  it('clears FindingsState alongside MaskingMap on conversation change', () => {
+    setPathname('/c/abc-123');
+
+    const findingsState: FindingsState = createFindingsState();
+    // Simulate scanner having found an email
+    findingsState.update([{
+      type: 'email',
+      value: 'john@acme.com',
+      startIndex: 0,
+      endIndex: 13,
+      confidence: 'HIGH',
+      label: 'Email Address',
+      placeholder: '[John email]',
+    }]);
+    expect(findingsState.getSnapshot().tracked).toHaveLength(1);
+
+    startObserving(
+      makeCtx(),
+      { onSubmit: () => {} },
+      () => {},
+      { config: { keywords: [], enabledDetectors: new Set() }, state: findingsState },
+      undefined,
+      maskingMap,
+    );
+
+    // Navigate away from conversation
+    setPathname('/');
+    if (!locationChangeHandler) throw new Error('locationchange handler not registered');
+    locationChangeHandler();
+
+    expect(maskingMap.size).toBe(0);
+    expect(findingsState.getSnapshot().tracked).toHaveLength(0);
+    expect(findingsState.getSnapshot().activeCount).toBe(0);
   });
 });
