@@ -87,7 +87,7 @@ export function createWidgetController(
   let restoreToastState: RestoreToastState | null = null;
   let overlayHandle: TextOverlayHandle | null = null;
 
-  const anchorConfig: AnchorConfig = { edge: 'bottom-right', offsetX: 12, offsetY: 36 };
+  const anchorConfig: AnchorConfig = { mode: 'input-box', edge: 'bottom-right', offsetX: 12, offsetY: 36 };
 
   function ensureContainer(): ShadowRoot {
     if (container && shadowRoot) {
