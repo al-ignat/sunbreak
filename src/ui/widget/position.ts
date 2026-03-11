@@ -1,5 +1,7 @@
 export interface AnchorConfig {
-  readonly edge: 'bottom-right' | 'bottom-left';
+  readonly mode: 'send-button' | 'input-box';
+  readonly edge?: 'bottom-right' | 'bottom-left';
+  readonly gapX?: number;
   readonly offsetX: number;
   readonly offsetY: number;
 }
@@ -22,15 +24,24 @@ export function computeWidgetPosition(
   let top: number;
   let left: number;
 
-  switch (config.edge) {
-    case 'bottom-right':
-      top = inputRect.bottom - config.offsetY;
-      left = inputRect.right - widgetSize.width - config.offsetX;
-      break;
-    case 'bottom-left':
-      top = inputRect.bottom - config.offsetY;
-      left = inputRect.left + config.offsetX;
-      break;
+  if (config.mode === 'send-button') {
+    // Position to the left of the send button
+    const gapX = config.gapX ?? 8;
+    top = inputRect.top + (inputRect.height - widgetSize.height) / 2;
+    left = inputRect.left - widgetSize.width - gapX;
+  } else {
+    // input-box mode: position relative to input box edge
+    const edge = config.edge ?? 'bottom-right';
+    switch (edge) {
+      case 'bottom-right':
+        top = inputRect.bottom - config.offsetY;
+        left = inputRect.right - widgetSize.width - config.offsetX;
+        break;
+      case 'bottom-left':
+        top = inputRect.bottom - config.offsetY;
+        left = inputRect.left + config.offsetX;
+        break;
+    }
   }
 
   // Clamp to viewport

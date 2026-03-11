@@ -87,7 +87,21 @@ export function createWidgetController(
   let restoreToastState: RestoreToastState | null = null;
   let overlayHandle: TextOverlayHandle | null = null;
 
-  const anchorConfig: AnchorConfig = { edge: 'bottom-right', offsetX: 12, offsetY: 36 };
+  let currentSendButton: HTMLElement | null = null;
+
+  const sendButtonConfig: AnchorConfig = {
+    mode: 'send-button',
+    gapX: adapter.widgetAnchor?.gapX ?? 8,
+    offsetX: 12,
+    offsetY: 36,
+  };
+
+  const inputFallbackConfig: AnchorConfig = {
+    mode: 'input-box',
+    edge: 'bottom-right',
+    offsetX: 12,
+    offsetY: 36,
+  };
 
   function ensureContainer(): ShadowRoot {
     if (container && shadowRoot) {
@@ -131,15 +145,32 @@ export function createWidgetController(
   function updatePosition(): void {
     if (!wrapper || !currentInput) return;
 
-    const rect = currentInput.getBoundingClientRect();
-    const pos = computeWidgetPosition(
-      rect,
-      { width: 140, height: 36 },
-      { width: window.innerWidth, height: window.innerHeight },
-      anchorConfig,
-    );
-    wrapper.style.top = `${pos.top}px`;
-    wrapper.style.left = `${pos.left}px`;
+    // Try send button as primary anchor
+    const sendBtn = adapter.findSendButton();
+    currentSendButton = sendBtn;
+
+    if (sendBtn) {
+      const rect = sendBtn.getBoundingClientRect();
+      const pos = computeWidgetPosition(
+        rect,
+        { width: 140, height: 36 },
+        { width: window.innerWidth, height: window.innerHeight },
+        sendButtonConfig,
+      );
+      wrapper.style.top = `${pos.top}px`;
+      wrapper.style.left = `${pos.left}px`;
+    } else {
+      // Fallback to input box
+      const rect = currentInput.getBoundingClientRect();
+      const pos = computeWidgetPosition(
+        rect,
+        { width: 140, height: 36 },
+        { width: window.innerWidth, height: window.innerHeight },
+        inputFallbackConfig,
+      );
+      wrapper.style.top = `${pos.top}px`;
+      wrapper.style.left = `${pos.left}px`;
+    }
   }
 
   function startObserving(): void {
@@ -151,6 +182,12 @@ export function createWidgetController(
     });
     resizeObserver.observe(currentInput);
     resizeObserver.observe(document.body);
+
+    // Also observe send button if available
+    const sendBtn = adapter.findSendButton();
+    if (sendBtn) {
+      resizeObserver.observe(sendBtn);
+    }
   }
 
   function stopObserving(): void {
