@@ -81,9 +81,7 @@ export function createWidgetController(
   let wrapper: HTMLDivElement | null = null;
   let currentInput: HTMLElement | null = null;
   let rafId: number | null = null;
-  let positionPollId: ReturnType<typeof setInterval> | null = null;
-  let lastInputTop = 0;
-  let lastInputLeft = 0;
+  let resizeObserver: ResizeObserver | null = null;
   let panelOpen = false;
   let toastState: ToastState | null = null;
   let restoreToastState: RestoreToastState | null = null;
@@ -144,23 +142,21 @@ export function createWidgetController(
     wrapper.style.left = `${pos.left}px`;
   }
 
-  function startPositionPolling(): void {
-    stopPositionPolling();
-    positionPollId = setInterval(() => {
-      if (!currentInput || !currentInput.isConnected) return;
-      const rect = currentInput.getBoundingClientRect();
-      if (Math.abs(rect.top - lastInputTop) > 1 || Math.abs(rect.left - lastInputLeft) > 1) {
-        lastInputTop = rect.top;
-        lastInputLeft = rect.left;
-        updatePosition();
-      }
-    }, 300);
+  function startObserving(): void {
+    stopObserving();
+    if (!currentInput) return;
+
+    resizeObserver = new ResizeObserver(() => {
+      onScrollOrResize();
+    });
+    resizeObserver.observe(currentInput);
+    resizeObserver.observe(document.body);
   }
 
-  function stopPositionPolling(): void {
-    if (positionPollId !== null) {
-      clearInterval(positionPollId);
-      positionPollId = null;
+  function stopObserving(): void {
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+      resizeObserver = null;
     }
   }
 
@@ -369,13 +365,10 @@ export function createWidgetController(
     if (ctx.isInvalid) return;
 
     currentInput = input;
-    const rect = input.getBoundingClientRect();
-    lastInputTop = rect.top;
-    lastInputLeft = rect.left;
     ensureContainer();
     updatePosition();
     renderWidget();
-    startPositionPolling();
+    startObserving();
 
     // Subscribe to findings state for re-renders
     const unsubFindings = findingsState.subscribe(() => {
@@ -408,7 +401,7 @@ export function createWidgetController(
     unmountInternal();
     unmountInternal = (): void => {};
 
-    stopPositionPolling();
+    stopObserving();
     window.removeEventListener('scroll', onScrollOrResize, true);
     window.removeEventListener('resize', onScrollOrResize);
 

@@ -1,3 +1,12 @@
+// ResizeObserver polyfill for jsdom test environment.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  (globalThis as unknown as Record<string, unknown>).ResizeObserver = class ResizeObserver {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  };
+}
+
 // Minimal chrome API mock for test environment.
 // Expand as needed when tests import code that uses chrome.* APIs.
 globalThis.chrome = {
