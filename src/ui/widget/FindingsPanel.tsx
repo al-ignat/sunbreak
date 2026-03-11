@@ -1,10 +1,8 @@
 import type { JSX } from 'preact';
 import { useState, useEffect, useRef, useCallback } from 'preact/hooks';
 import type { TrackedFinding } from '../../content/findings-state';
-import type { FindingType } from '../../classifier/types';
 import { ShieldCheckIcon, EyeOffIcon, InfoIcon, ClockIcon } from './icons';
 import { findingSeverity } from './severity';
-import type { SeverityLevel } from './severity';
 import type { MaskedEntry } from './Widget';
 
 export interface FindingsPanelProps {
@@ -17,18 +15,6 @@ export interface FindingsPanelProps {
   maskedEntries?: ReadonlyArray<MaskedEntry>;
   maskedExpiresAt?: number | null;
   onClearMasked?: () => void;
-}
-
-/** Map severity level to CSS dot color class name */
-const SEVERITY_DOT: Record<SeverityLevel, string> = {
-  clean: 'green',
-  warning: 'amber',
-  concern: 'orange',
-  critical: 'red',
-};
-
-function getDotClass(type: FindingType): string {
-  return SEVERITY_DOT[findingSeverity(type)];
 }
 
 function truncateValue(value: string, type: string): string {
@@ -137,11 +123,11 @@ export default function FindingsPanel({
       {activeFindings.length > 0 && (
         <ul class="sb-panel__list" role="list">
           {activeFindings.map((tf) => {
-            const dotClass = getDotClass(tf.finding.type);
             return (
               <li key={tf.id} class="sb-panel__row" role="listitem">
                 <span
-                  class={`sb-panel__dot sb-panel__dot--${dotClass}`}
+                  class="sb-panel__dot"
+                  data-severity={findingSeverity(tf.finding.type)}
                   aria-hidden="true"
                 />
                 <span class="sb-panel__value" title={tf.finding.value}>

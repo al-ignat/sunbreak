@@ -147,33 +147,33 @@ describe('FindingsPanel', () => {
   });
 
   describe('severity colors', () => {
-    it('uses red dot for api-key findings', () => {
+    it('uses critical dot for api-key findings', () => {
       const tracked = [
         makeTracked({ id: 'a', finding: { type: 'api-key' } }),
       ];
       const { container } = renderPanel({ tracked });
-      expect(container.querySelector('.sb-panel__dot--red')).toBeTruthy();
+      expect(container.querySelector('.sb-panel__dot[data-severity="critical"]')).toBeTruthy();
     });
 
-    it('uses orange dot for ssn findings', () => {
+    it('uses concern dot for ssn findings', () => {
       const tracked = [
         makeTracked({ id: 'a', finding: { type: 'ssn' } }),
       ];
       const { container } = renderPanel({ tracked });
-      expect(container.querySelector('.sb-panel__dot--orange')).toBeTruthy();
+      expect(container.querySelector('.sb-panel__dot[data-severity="concern"]')).toBeTruthy();
     });
 
-    it('uses amber dot for email findings', () => {
+    it('uses warning dot for email findings', () => {
       const { container } = renderPanel();
-      expect(container.querySelector('.sb-panel__dot--amber')).toBeTruthy();
+      expect(container.querySelector('.sb-panel__dot[data-severity="warning"]')).toBeTruthy();
     });
 
-    it('uses amber dot for keyword findings', () => {
+    it('uses warning dot for keyword findings', () => {
       const tracked = [
         makeTracked({ id: 'a', finding: { type: 'keyword' } }),
       ];
       const { container } = renderPanel({ tracked });
-      expect(container.querySelector('.sb-panel__dot--amber')).toBeTruthy();
+      expect(container.querySelector('.sb-panel__dot[data-severity="warning"]')).toBeTruthy();
     });
   });
 

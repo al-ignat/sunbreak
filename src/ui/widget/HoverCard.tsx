@@ -1,26 +1,8 @@
 import type { JSX } from 'preact';
 import { useState, useCallback, useRef, useEffect } from 'preact/hooks';
 import type { TrackedFinding } from '../../content/findings-state';
-import type { FindingType } from '../../classifier/types';
 import { ArrowDownIcon, MoreHorizontalIcon } from './icons';
-
-type Severity = 'red' | 'orange' | 'amber' | 'blue';
-
-const SEVERITY_MAP: Record<FindingType, Severity> = {
-  'api-key': 'red',
-  ssn: 'orange',
-  cpr: 'orange',
-  'ni-number': 'orange',
-  'credit-card': 'orange',
-  email: 'amber',
-  phone: 'amber',
-  keyword: 'blue',
-  'ip-address': 'blue',
-};
-
-function getSeverity(type: FindingType): Severity {
-  return SEVERITY_MAP[type] ?? 'blue';
-}
+import { findingSeverity } from './severity';
 
 export interface HoverCardProps {
   finding: TrackedFinding;
@@ -53,8 +35,6 @@ export default function HoverCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const [flipped, setFlipped] = useState(false);
-
-  const severity = getSeverity(finding.finding.type);
 
   // After first render, measure card and decide above/below
   useEffect(() => {
@@ -134,7 +114,8 @@ export default function HoverCard({
     >
       <div class="sb-hover-card__header">
         <span
-          class={`sb-hover-card__dot sb-hover-card__dot--${severity}`}
+          class="sb-hover-card__dot"
+          data-severity={findingSeverity(finding.finding.type)}
           aria-hidden="true"
         />
         {finding.finding.label}
