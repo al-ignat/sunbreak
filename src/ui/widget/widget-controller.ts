@@ -407,7 +407,6 @@ export function createWidgetController(
     currentInput = input;
     ensureContainer();
     updatePosition();
-    renderWidget();
     startObserving();
 
     // Subscribe to findings state for re-renders
