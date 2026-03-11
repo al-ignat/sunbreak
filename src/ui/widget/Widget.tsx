@@ -1,6 +1,8 @@
 import type { JSX } from 'preact';
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import type { FindingsSnapshot, FindingsState } from '../../content/findings-state';
+import { maxSeverity, MASKED_COLORS } from './severity';
+import type { SeverityLevel } from './severity';
 import FindingsPanel from './FindingsPanel';
 import SendToast from './SendToast';
 import RestoreToast from './RestoreToast';
@@ -53,18 +55,15 @@ export interface WidgetProps {
   onClearMasked?: () => void;
 }
 
-type WidgetStatus = 'clean' | 'findings';
-
-function deriveStatus(snapshot: FindingsSnapshot): WidgetStatus {
-  if (snapshot.activeCount > 0) return 'findings';
-  return 'clean';
-}
-
-function buildAriaLabel(status: WidgetStatus, count: number, maskedCount: number): string {
+function buildAriaLabel(
+  severity: SeverityLevel,
+  activeCount: number,
+  maskedCount: number,
+): string {
   const parts: string[] = [];
-  if (status === 'findings') {
-    const plural = count === 1 ? '' : 's';
-    parts.push(`${count} finding${plural} detected`);
+  if (activeCount > 0) {
+    const plural = activeCount === 1 ? '' : 's';
+    parts.push(`${activeCount} ${severity} finding${plural}`);
   }
   if (maskedCount > 0) {
     parts.push(`${maskedCount} masked`);
@@ -101,14 +100,13 @@ export default function Widget({
   const [snapshot, setSnapshot] = useState<FindingsSnapshot>(findingsState.getSnapshot());
 
   useEffect(() => {
-    // Sync initial state
     setSnapshot(findingsState.getSnapshot());
     return findingsState.subscribe((snap) => {
       setSnapshot(snap);
     });
   }, [findingsState]);
 
-  const status = deriveStatus(snapshot);
+  const severity = maxSeverity(snapshot.tracked);
 
   const handleClick = useCallback((): void => {
     onClick();
@@ -127,13 +125,17 @@ export default function Widget({
   const showToast = toastState?.visible === true && onToastReview && onToastSendAnyway && onToastTimeout;
   const showRestoreToast = restoreToastState?.visible === true && onRestoreAccept && onRestoreDecline;
 
+  const hasSeverityBadge = snapshot.activeCount > 0;
+  const hasMaskedBadge = maskedCount > 0;
+  const hasBothBadges = hasSeverityBadge && hasMaskedBadge;
+
   return (
     <div class="sb-widget-container">
       <div
-        class={`sb-widget sb-widget--${status}`}
+        class={`sb-widget sb-widget--${severity}`}
         role="button"
         tabIndex={0}
-        aria-label={buildAriaLabel(status, snapshot.activeCount, maskedCount)}
+        aria-label={buildAriaLabel(severity, snapshot.activeCount, maskedCount)}
         aria-expanded={panelOpen}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
@@ -141,21 +143,20 @@ export default function Widget({
         <span class="sb-widget__icon" aria-hidden="true">
           <SunIcon />
         </span>
-        <span class="sb-widget__label">Sunbreak</span>
-        <span class="sb-widget__status" role="status" aria-live="polite">
-          {status === 'findings' && (
-            <span class="sb-widget__badge">{snapshot.activeCount}</span>
+        <span class="sb-widget__badges" role="status" aria-live="polite">
+          {hasSeverityBadge && (
+            <span class="sb-widget__severity-badge">{snapshot.activeCount}</span>
           )}
-          {status === 'clean' && maskedCount === 0 && (
-            <span class="sb-widget__check" aria-hidden="true">
-              <CheckIcon />
+          {hasBothBadges && (
+            <span class="sb-widget__divider" aria-hidden="true" />
+          )}
+          {hasMaskedBadge && (
+            <span
+              class="sb-widget__masked-badge"
+              style={{ background: MASKED_COLORS.badge, color: MASKED_COLORS.badgeText }}
+            >
+              {maskedCount}
             </span>
-          )}
-          {maskedCount > 0 && (
-            <>
-              {status === 'findings' && <span class="sb-widget__sep" aria-hidden="true">|</span>}
-              <span class="sb-widget__masked">{maskedCount} masked</span>
-            </>
           )}
         </span>
       </div>
@@ -206,17 +207,9 @@ export default function Widget({
 
 function SunIcon(): JSX.Element {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5" />
-      <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-    </svg>
-  );
-}
-
-function CheckIcon(): JSX.Element {
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-      <path d="M3.5 7l2.5 2.5L10.5 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <circle cx="9" cy="9" r="4" stroke="currentColor" stroke-width="1.5" />
+      <path d="M9 1v2.5M9 14.5V17M1 9h2.5M14.5 9H17M3.34 3.34l1.77 1.77M12.89 12.89l1.77 1.77M3.34 14.66l1.77-1.77M12.89 5.11l1.77-1.77" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
     </svg>
   );
 }

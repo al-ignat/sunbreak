@@ -32,6 +32,8 @@ function renderWidget(
   return render(
     <Widget
       findingsState={state}
+      editorEl={null}
+      supportsOverlay={false}
       onClick={overrides.onClick ?? vi.fn()}
       panelOpen={overrides.panelOpen ?? false}
       maskedCount={overrides.maskedCount}
@@ -52,14 +54,9 @@ describe('Widget', () => {
       expect(widget?.classList.contains('sb-widget--clean')).toBe(true);
     });
 
-    it('shows checkmark icon in clean state', () => {
+    it('does not show severity badge in clean state', () => {
       const { container } = renderWidget();
-      expect(container.querySelector('.sb-widget__check')).toBeTruthy();
-    });
-
-    it('does not show badge in clean state', () => {
-      const { container } = renderWidget();
-      expect(container.querySelector('.sb-widget__badge')).toBeNull();
+      expect(container.querySelector('.sb-widget__severity-badge')).toBeNull();
     });
 
     it('has correct aria-label in clean state', () => {
@@ -71,31 +68,58 @@ describe('Widget', () => {
     });
   });
 
-  describe('findings state', () => {
-    it('shows findings status when active findings exist', () => {
+  describe('severity states', () => {
+    it('shows warning state for email findings', () => {
       const { container } = renderWidget({
         findings: [makeFinding()],
       });
       const widget = container.querySelector('.sb-widget');
-      expect(widget?.classList.contains('sb-widget--findings')).toBe(true);
+      expect(widget?.classList.contains('sb-widget--warning')).toBe(true);
     });
 
-    it('shows badge with count', () => {
+    it('shows concern state for credit-card findings', () => {
+      const { container } = renderWidget({
+        findings: [makeFinding({ type: 'credit-card', value: '4111111111111111' })],
+      });
+      const widget = container.querySelector('.sb-widget');
+      expect(widget?.classList.contains('sb-widget--concern')).toBe(true);
+    });
+
+    it('shows critical state for api-key findings', () => {
+      const { container } = renderWidget({
+        findings: [makeFinding({ type: 'api-key', value: 'sk-proj-abc123' })],
+      });
+      const widget = container.querySelector('.sb-widget');
+      expect(widget?.classList.contains('sb-widget--critical')).toBe(true);
+    });
+
+    it('shows highest severity when mixed findings', () => {
+      const { container } = renderWidget({
+        findings: [
+          makeFinding(), // email → warning
+          makeFinding({ type: 'api-key', value: 'sk-proj-abc123' }), // critical
+        ],
+      });
+      const widget = container.querySelector('.sb-widget');
+      expect(widget?.classList.contains('sb-widget--critical')).toBe(true);
+    });
+
+    it('shows severity badge with count', () => {
       const { container } = renderWidget({
         findings: [makeFinding(), makeFinding({ value: 'jane@example.com' })],
       });
-      const badge = container.querySelector('.sb-widget__badge');
+      const badge = container.querySelector('.sb-widget__severity-badge');
       expect(badge).toBeTruthy();
       expect(badge?.textContent).toBe('2');
     });
 
-    it('has correct aria-label with count', () => {
+    it('has correct aria-label with severity and count', () => {
       const { container } = renderWidget({
         findings: [makeFinding()],
       });
       const widget = container.querySelector('.sb-widget');
       expect(widget?.getAttribute('aria-label')).toBe(
-        'Sunbreak: 1 finding detected',
+        'Sunbreak: 1 warning finding',
       );
     });
 
@@ -105,7 +129,7 @@ describe('Widget', () => {
       });
       const widget = container.querySelector('.sb-widget');
       expect(widget?.getAttribute('aria-label')).toBe(
-        'Sunbreak: 2 findings detected',
+        'Sunbreak: 2 warning findings',
       );
     });
   });
@@ -114,18 +138,18 @@ describe('Widget', () => {
     it('updates badge when findings state changes', () => {
       const state = createFindingsState();
       const { container } = render(
-        <Widget findingsState={state} onClick={vi.fn()} panelOpen={false} />,
+        <Widget findingsState={state} editorEl={null} supportsOverlay={false} onClick={vi.fn()} panelOpen={false} />,
       );
 
       // Initially clean
-      expect(container.querySelector('.sb-widget__badge')).toBeNull();
+      expect(container.querySelector('.sb-widget__severity-badge')).toBeNull();
 
       // Add a finding
       act(() => {
         state.update([makeFinding()]);
       });
 
-      const badge = container.querySelector('.sb-widget__badge');
+      const badge = container.querySelector('.sb-widget__severity-badge');
       expect(badge).toBeTruthy();
       expect(badge?.textContent).toBe('1');
     });
@@ -135,16 +159,16 @@ describe('Widget', () => {
       state.update([makeFinding()]);
 
       const { container } = render(
-        <Widget findingsState={state} onClick={vi.fn()} panelOpen={false} />,
+        <Widget findingsState={state} editorEl={null} supportsOverlay={false} onClick={vi.fn()} panelOpen={false} />,
       );
 
-      expect(container.querySelector('.sb-widget__badge')).toBeTruthy();
+      expect(container.querySelector('.sb-widget__severity-badge')).toBeTruthy();
 
       act(() => {
         state.clear();
       });
 
-      expect(container.querySelector('.sb-widget__badge')).toBeNull();
+      expect(container.querySelector('.sb-widget__severity-badge')).toBeNull();
       expect(
         container.querySelector('.sb-widget--clean'),
       ).toBeTruthy();
@@ -158,7 +182,7 @@ describe('Widget', () => {
       ]);
 
       const { container } = render(
-        <Widget findingsState={state} onClick={vi.fn()} panelOpen={false} />,
+        <Widget findingsState={state} editorEl={null} supportsOverlay={false} onClick={vi.fn()} panelOpen={false} />,
       );
 
       // Fix one finding
@@ -170,37 +194,37 @@ describe('Widget', () => {
         state.fix(firstId.id);
       });
 
-      const badge = container.querySelector('.sb-widget__badge');
+      const badge = container.querySelector('.sb-widget__severity-badge');
       expect(badge?.textContent).toBe('1');
     });
   });
 
   describe('masked badge', () => {
-    it('shows "N masked" when maskedCount > 0 and no findings', () => {
+    it('shows masked badge when maskedCount > 0 and no findings', () => {
       const { container } = renderWidget({ maskedCount: 2 });
-      const masked = container.querySelector('.sb-widget__masked');
+      const masked = container.querySelector('.sb-widget__masked-badge');
       expect(masked).toBeTruthy();
-      expect(masked?.textContent).toBe('2 masked');
+      expect(masked?.textContent).toBe('2');
     });
 
-    it('shows both badge and masked count when findings and masked values exist', () => {
+    it('shows both severity and masked badges when findings and masked values exist', () => {
       const { container } = renderWidget({
         findings: [makeFinding()],
         maskedCount: 3,
       });
-      expect(container.querySelector('.sb-widget__badge')).toBeTruthy();
-      expect(container.querySelector('.sb-widget__masked')).toBeTruthy();
-      expect(container.querySelector('.sb-widget__sep')).toBeTruthy();
+      expect(container.querySelector('.sb-widget__severity-badge')).toBeTruthy();
+      expect(container.querySelector('.sb-widget__masked-badge')).toBeTruthy();
+      expect(container.querySelector('.sb-widget__divider')).toBeTruthy();
     });
 
-    it('hides checkmark when maskedCount > 0 even with no findings', () => {
+    it('does not show divider when only masked badge (no severity badge)', () => {
       const { container } = renderWidget({ maskedCount: 1 });
-      expect(container.querySelector('.sb-widget__check')).toBeNull();
+      expect(container.querySelector('.sb-widget__divider')).toBeNull();
     });
 
-    it('does not show masked label when maskedCount is 0', () => {
+    it('does not show masked badge when maskedCount is 0', () => {
       const { container } = renderWidget({ maskedCount: 0 });
-      expect(container.querySelector('.sb-widget__masked')).toBeNull();
+      expect(container.querySelector('.sb-widget__masked-badge')).toBeNull();
     });
 
     it('includes masked count in aria-label', () => {
@@ -216,7 +240,7 @@ describe('Widget', () => {
       });
       const widget = container.querySelector('.sb-widget');
       expect(widget?.getAttribute('aria-label')).toBe(
-        'Sunbreak: 1 finding detected, 3 masked',
+        'Sunbreak: 1 warning finding, 3 masked',
       );
     });
   });
@@ -274,16 +298,11 @@ describe('Widget', () => {
       expect(widget?.getAttribute('aria-expanded')).toBe('true');
     });
 
-    it('has role="status" with aria-live on status area', () => {
+    it('has role="status" with aria-live on badges area', () => {
       const { container } = renderWidget();
       const status = container.querySelector('[role="status"]');
       expect(status).toBeTruthy();
       expect(status?.getAttribute('aria-live')).toBe('polite');
-    });
-
-    it('shows Sunbreak label text', () => {
-      renderWidget();
-      expect(screen.getByText('Sunbreak')).toBeTruthy();
     });
   });
 });
