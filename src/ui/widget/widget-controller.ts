@@ -86,6 +86,7 @@ export function createWidgetController(
   let toastState: ToastState | null = null;
   let restoreToastState: RestoreToastState | null = null;
   let overlayHandle: TextOverlayHandle | null = null;
+  let anchorReady = false;
 
   const sendButtonConfig: AnchorConfig = {
     mode: 'send-button',
@@ -167,6 +168,11 @@ export function createWidgetController(
       );
       wrapper.style.top = `${pos.top}px`;
       wrapper.style.left = `${pos.left}px`;
+    }
+
+    if (!anchorReady) {
+      anchorReady = true;
+      renderWidget();
     }
   }
 
@@ -337,7 +343,7 @@ export function createWidgetController(
   }
 
   function renderWidget(): void {
-    if (!wrapper) return;
+    if (!wrapper || !anchorReady) return;
     render(
       h(Widget, {
         findingsState,
@@ -463,6 +469,7 @@ export function createWidgetController(
     }
 
     currentInput = null;
+    anchorReady = false;
     panelOpen = false;
   }
 
