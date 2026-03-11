@@ -292,7 +292,6 @@ export default function TextOverlay({
               left: `${seg.left - editorRect.left}px`,
               width: `${seg.width}px`,
               height: '0px',
-              borderBottom: '2px dotted currentColor',
               pointerEvents: 'none',
             }}
           />
