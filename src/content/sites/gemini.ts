@@ -46,6 +46,4 @@ export const geminiAdapter: SiteAdapter = {
     const input = this.findInput();
     return input?.closest('form') ?? input?.parentElement ?? null;
   },
-
-  widgetAnchor: { gapX: 8 },
 };

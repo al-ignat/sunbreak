@@ -39,6 +39,4 @@ export const claudeAdapter: SiteAdapter = {
     const input = this.findInput();
     return input?.closest('fieldset') ?? input?.closest('form') ?? null;
   },
-
-  widgetAnchor: { gapX: 8 },
 };
