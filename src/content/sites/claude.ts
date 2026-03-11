@@ -13,6 +13,7 @@ const SEND_BUTTON_SELECTORS = [
 
 export const claudeAdapter: SiteAdapter = {
   name: 'claude',
+  widgetAnchor: { gapX: 8 },
 
   matches(hostname: string): boolean {
     return hostname === 'claude.ai';
