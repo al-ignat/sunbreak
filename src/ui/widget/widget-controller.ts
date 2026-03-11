@@ -3,6 +3,7 @@ import Widget from './Widget';
 import type { FindingsState } from '../../content/findings-state';
 import type { SiteAdapter } from '../../types';
 import { buildRedactedText } from '../../content/interceptor';
+import tokenStyles from './widget-tokens.css?inline';
 import widgetStyles from './widget.css?inline';
 import panelStyles from './findings-panel.css?inline';
 import toastStyles from './send-toast.css?inline';
@@ -11,6 +12,22 @@ import overlayStyles from './text-overlay.css?inline';
 import hoverCardStyles from './hover-card.css?inline';
 import type { TextOverlayHandle } from './TextOverlay';
 import type { MaskingMap } from '../../content/masking-map';
+
+function createSheet(css: string): CSSStyleSheet {
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(css);
+  return sheet;
+}
+
+const sheets = [
+  createSheet(tokenStyles),
+  createSheet(widgetStyles),
+  createSheet(panelStyles),
+  createSheet(toastStyles),
+  createSheet(restoreToastStyles),
+  createSheet(overlayStyles),
+  createSheet(hoverCardStyles),
+];
 
 /**
  * Context for the widget controller lifecycle.
@@ -88,9 +105,7 @@ export function createWidgetController(
 
     const shadow = container.attachShadow({ mode: 'closed' });
 
-    const styleEl = document.createElement('style');
-    styleEl.textContent = widgetStyles + '\n' + panelStyles + '\n' + toastStyles + '\n' + restoreToastStyles + '\n' + overlayStyles + '\n' + hoverCardStyles;
-    shadow.appendChild(styleEl);
+    shadow.adoptedStyleSheets = sheets;
 
     const w = document.createElement('div');
     w.id = 'sunbreak-widget-wrapper';
