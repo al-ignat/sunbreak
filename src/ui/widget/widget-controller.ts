@@ -3,6 +3,8 @@ import Widget from './Widget';
 import type { FindingsState } from '../../content/findings-state';
 import type { SiteAdapter } from '../../types';
 import { buildRedactedText } from '../../content/interceptor';
+import { computeWidgetPosition } from './position';
+import type { AnchorConfig } from './position';
 import tokenStyles from './widget-tokens.css?inline';
 import widgetStyles from './widget.css?inline';
 import panelStyles from './findings-panel.css?inline';
@@ -87,6 +89,8 @@ export function createWidgetController(
   let restoreToastState: RestoreToastState | null = null;
   let overlayHandle: TextOverlayHandle | null = null;
 
+  const anchorConfig: AnchorConfig = { edge: 'bottom-right', offsetX: 12, offsetY: 36 };
+
   function ensureContainer(): ShadowRoot {
     if (container && shadowRoot) {
       return shadowRoot;
@@ -130,13 +134,14 @@ export function createWidgetController(
     if (!wrapper || !currentInput) return;
 
     const rect = currentInput.getBoundingClientRect();
-
-    // Position at bottom-right of the input area
-    const top = Math.round(rect.bottom - 36);
-    const left = Math.round(rect.right - 140);
-
-    wrapper.style.top = `${top}px`;
-    wrapper.style.left = `${left}px`;
+    const pos = computeWidgetPosition(
+      rect,
+      { width: 140, height: 36 },
+      { width: window.innerWidth, height: window.innerHeight },
+      anchorConfig,
+    );
+    wrapper.style.top = `${pos.top}px`;
+    wrapper.style.left = `${pos.left}px`;
   }
 
   function startPositionPolling(): void {
