@@ -1,0 +1,128 @@
+/* ============================================================
+   Widget Design Tokens — :host-scoped for Shadow DOM inheritance
+   ============================================================ */
+
+:host {
+  /* ── Primitives (raw palette) ──────────────────────────── */
+
+  /* Neutral */
+  --sb-raw-neutral-950: #141316;
+  --sb-raw-neutral-900: #1E1D21;
+  --sb-raw-neutral-800: #28272C;
+  --sb-raw-neutral-750: #2E2D33;
+  --sb-raw-neutral-700: #32313A;
+  --sb-raw-neutral-600: #3D3C44;
+  --sb-raw-neutral-400: #6B6869;
+  --sb-raw-neutral-300: #9B9898;
+  --sb-raw-neutral-50: #F0EDE8;
+
+  /* Green */
+  --sb-raw-green-400: #34D399;
+  --sb-raw-green-800: #065F46;
+
+  /* Amber */
+  --sb-raw-amber-400: #FBBF24;
+  --sb-raw-amber-700: #92700A;
+
+  /* Orange */
+  --sb-raw-orange-400: #FB923C;
+  --sb-raw-orange-700: #9A4A12;
+  --sb-raw-orange-500: #F59E0B;
+  --sb-raw-orange-600: #D97706;
+
+  /* Red */
+  --sb-raw-red-400: #F87171;
+  --sb-raw-red-800: #991B1B;
+
+  /* Blue */
+  --sb-raw-blue-400: #60A5FA;
+  --sb-raw-blue-800: #1E40AF;
+
+  /* ── Semantic tokens (intent-based) ────────────────────── */
+
+  --sb-color-surface: var(--sb-raw-neutral-900);
+  --sb-color-surface-elevated: var(--sb-raw-neutral-800);
+  --sb-color-surface-hover: var(--sb-raw-neutral-700);
+
+  --sb-color-border: var(--sb-raw-neutral-600);
+  --sb-color-border-subtle: var(--sb-raw-neutral-750);
+
+  --sb-color-text-primary: var(--sb-raw-neutral-50);
+  --sb-color-text-secondary: var(--sb-raw-neutral-300);
+  --sb-color-text-muted: var(--sb-raw-neutral-400);
+
+  --sb-color-cta: var(--sb-raw-orange-500);
+  --sb-color-cta-hover: var(--sb-raw-orange-600);
+
+  --sb-color-info: var(--sb-raw-blue-400);
+
+  /* ── Severity tokens ───────────────────────────────────── */
+
+  /* Clean */
+  --sb-severity-clean-icon: var(--sb-raw-green-400);
+  --sb-severity-clean-border: var(--sb-raw-green-800);
+  --sb-severity-clean-border-hover: var(--sb-raw-green-400);
+  --sb-severity-clean-shadow: rgba(52, 211, 153, 0.2);
+
+  /* Warning */
+  --sb-severity-warning-icon: var(--sb-raw-amber-400);
+  --sb-severity-warning-border: var(--sb-raw-amber-700);
+  --sb-severity-warning-border-hover: var(--sb-raw-amber-400);
+  --sb-severity-warning-shadow: rgba(251, 191, 36, 0.2);
+  --sb-severity-warning-badge: var(--sb-raw-amber-400);
+  --sb-severity-warning-badge-text: var(--sb-raw-neutral-900);
+
+  /* Concern */
+  --sb-severity-concern-icon: var(--sb-raw-orange-400);
+  --sb-severity-concern-border: var(--sb-raw-orange-700);
+  --sb-severity-concern-border-hover: var(--sb-raw-orange-400);
+  --sb-severity-concern-shadow: rgba(251, 146, 60, 0.2);
+  --sb-severity-concern-badge: var(--sb-raw-orange-400);
+  --sb-severity-concern-badge-text: var(--sb-raw-neutral-900);
+
+  /* Critical */
+  --sb-severity-critical-icon: var(--sb-raw-red-400);
+  --sb-severity-critical-border: var(--sb-raw-red-800);
+  --sb-severity-critical-border-hover: var(--sb-raw-red-400);
+  --sb-severity-critical-shadow: rgba(248, 113, 113, 0.2);
+  --sb-severity-critical-badge: var(--sb-raw-red-400);
+  --sb-severity-critical-badge-text: #FFFFFF;
+
+  /* ── Masked tokens ─────────────────────────────────────── */
+
+  --sb-masked-badge: var(--sb-raw-blue-800);
+  --sb-masked-badge-text: var(--sb-raw-blue-400);
+
+  /* ── Typography ────────────────────────────────────────── */
+
+  --sb-font-body: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --sb-font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+  /* ── Spacing ───────────────────────────────────────────── */
+
+  --sb-space-xs: 4px;
+  --sb-space-sm: 8px;
+  --sb-space-md: 12px;
+  --sb-space-lg: 16px;
+
+  /* ── Radii ─────────────────────────────────────────────── */
+
+  --sb-radius-sm: 6px;
+  --sb-radius-md: 10px;
+  --sb-radius-lg: 14px;
+  --sb-radius-pill: 100px;
+
+  /* ── Transitions ───────────────────────────────────────── */
+
+  --sb-transition-fast: 100ms ease-out;
+  --sb-transition-normal: 150ms ease-out;
+}
+
+/* ── Accessibility: respect reduced motion ─────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    --sb-transition-fast: 0ms;
+    --sb-transition-normal: 0ms;
+  }
+}

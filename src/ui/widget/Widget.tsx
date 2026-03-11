@@ -1,7 +1,7 @@
 import type { JSX } from 'preact';
 import { useState, useEffect, useCallback } from 'preact/hooks';
 import type { FindingsSnapshot, FindingsState } from '../../content/findings-state';
-import { maxSeverity, MASKED_COLORS } from './severity';
+import { maxSeverity } from './severity';
 import type { SeverityLevel } from './severity';
 import FindingsPanel from './FindingsPanel';
 import SendToast from './SendToast';
@@ -132,7 +132,8 @@ export default function Widget({
   return (
     <div class="sb-widget-container">
       <div
-        class={`sb-widget sb-widget--${severity}`}
+        class="sb-widget"
+        data-severity={severity}
         role="button"
         tabIndex={0}
         aria-label={buildAriaLabel(severity, snapshot.activeCount, maskedCount)}
@@ -153,7 +154,6 @@ export default function Widget({
           {hasMaskedBadge && (
             <span
               class="sb-widget__masked-badge"
-              style={{ background: MASKED_COLORS.badge, color: MASKED_COLORS.badgeText }}
             >
               {maskedCount}
             </span>

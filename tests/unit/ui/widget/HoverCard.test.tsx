@@ -53,9 +53,9 @@ describe('HoverCard', () => {
     expect(header.textContent).toContain('Email Address');
   });
 
-  it('renders severity dot with correct class', () => {
+  it('renders severity dot with correct data-severity', () => {
     const { container } = render(<HoverCard {...defaultProps()} />);
-    const dot = container.querySelector('.sb-hover-card__dot--amber');
+    const dot = container.querySelector('.sb-hover-card__dot[data-severity="warning"]');
     expect(dot).toBeTruthy();
   });
 
@@ -152,12 +152,12 @@ describe('HoverCard', () => {
     expect(onMouseLeave).toHaveBeenCalled();
   });
 
-  it('renders red dot for api-key type', () => {
+  it('renders critical dot for api-key type', () => {
     const finding = makeTracked({
       finding: makeFinding({ type: 'api-key', label: 'API Key' }),
     });
     const { container } = render(<HoverCard {...defaultProps({ finding })} />);
-    const dot = container.querySelector('.sb-hover-card__dot--red');
+    const dot = container.querySelector('.sb-hover-card__dot[data-severity="critical"]');
     expect(dot).toBeTruthy();
   });
 

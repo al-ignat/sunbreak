@@ -6,4 +6,18 @@
 .sb-underline {
   pointer-events: none;
   box-sizing: border-box;
+  border-bottom: 2px dotted transparent;
+}
+
+.sb-underline[data-severity="warning"] {
+  border-bottom-color: var(--sb-severity-warning-icon);
+}
+.sb-underline[data-severity="concern"] {
+  border-bottom-color: var(--sb-severity-concern-icon);
+}
+.sb-underline[data-severity="critical"] {
+  border-bottom-color: var(--sb-severity-critical-icon);
+}
+.sb-underline[data-severity="clean"] {
+  border-bottom-color: var(--sb-severity-clean-icon);
 }

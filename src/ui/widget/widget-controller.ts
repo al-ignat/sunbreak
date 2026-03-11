@@ -3,6 +3,9 @@ import Widget from './Widget';
 import type { FindingsState } from '../../content/findings-state';
 import type { SiteAdapter } from '../../types';
 import { buildRedactedText } from '../../content/interceptor';
+import { computeWidgetPosition } from './position';
+import type { AnchorConfig } from './position';
+import tokenStyles from './widget-tokens.css?inline';
 import widgetStyles from './widget.css?inline';
 import panelStyles from './findings-panel.css?inline';
 import toastStyles from './send-toast.css?inline';
@@ -11,6 +14,22 @@ import overlayStyles from './text-overlay.css?inline';
 import hoverCardStyles from './hover-card.css?inline';
 import type { TextOverlayHandle } from './TextOverlay';
 import type { MaskingMap } from '../../content/masking-map';
+
+function createSheet(css: string): CSSStyleSheet {
+  const sheet = new CSSStyleSheet();
+  sheet.replaceSync(css);
+  return sheet;
+}
+
+const sheets = [
+  createSheet(tokenStyles),
+  createSheet(widgetStyles),
+  createSheet(panelStyles),
+  createSheet(toastStyles),
+  createSheet(restoreToastStyles),
+  createSheet(overlayStyles),
+  createSheet(hoverCardStyles),
+];
 
 /**
  * Context for the widget controller lifecycle.
@@ -62,13 +81,13 @@ export function createWidgetController(
   let wrapper: HTMLDivElement | null = null;
   let currentInput: HTMLElement | null = null;
   let rafId: number | null = null;
-  let positionPollId: ReturnType<typeof setInterval> | null = null;
-  let lastInputTop = 0;
-  let lastInputLeft = 0;
+  let resizeObserver: ResizeObserver | null = null;
   let panelOpen = false;
   let toastState: ToastState | null = null;
   let restoreToastState: RestoreToastState | null = null;
   let overlayHandle: TextOverlayHandle | null = null;
+
+  const anchorConfig: AnchorConfig = { edge: 'bottom-right', offsetX: 12, offsetY: 36 };
 
   function ensureContainer(): ShadowRoot {
     if (container && shadowRoot) {
@@ -88,9 +107,7 @@ export function createWidgetController(
 
     const shadow = container.attachShadow({ mode: 'closed' });
 
-    const styleEl = document.createElement('style');
-    styleEl.textContent = widgetStyles + '\n' + panelStyles + '\n' + toastStyles + '\n' + restoreToastStyles + '\n' + overlayStyles + '\n' + hoverCardStyles;
-    shadow.appendChild(styleEl);
+    shadow.adoptedStyleSheets = sheets;
 
     const w = document.createElement('div');
     w.id = 'sunbreak-widget-wrapper';
@@ -115,32 +132,31 @@ export function createWidgetController(
     if (!wrapper || !currentInput) return;
 
     const rect = currentInput.getBoundingClientRect();
-
-    // Position at bottom-right of the input area
-    const top = Math.round(rect.bottom - 36);
-    const left = Math.round(rect.right - 140);
-
-    wrapper.style.top = `${top}px`;
-    wrapper.style.left = `${left}px`;
+    const pos = computeWidgetPosition(
+      rect,
+      { width: 140, height: 36 },
+      { width: window.innerWidth, height: window.innerHeight },
+      anchorConfig,
+    );
+    wrapper.style.top = `${pos.top}px`;
+    wrapper.style.left = `${pos.left}px`;
   }
 
-  function startPositionPolling(): void {
-    stopPositionPolling();
-    positionPollId = setInterval(() => {
-      if (!currentInput || !currentInput.isConnected) return;
-      const rect = currentInput.getBoundingClientRect();
-      if (Math.abs(rect.top - lastInputTop) > 1 || Math.abs(rect.left - lastInputLeft) > 1) {
-        lastInputTop = rect.top;
-        lastInputLeft = rect.left;
-        updatePosition();
-      }
-    }, 300);
+  function startObserving(): void {
+    stopObserving();
+    if (!currentInput) return;
+
+    resizeObserver = new ResizeObserver(() => {
+      onScrollOrResize();
+    });
+    resizeObserver.observe(currentInput);
+    resizeObserver.observe(document.body);
   }
 
-  function stopPositionPolling(): void {
-    if (positionPollId !== null) {
-      clearInterval(positionPollId);
-      positionPollId = null;
+  function stopObserving(): void {
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+      resizeObserver = null;
     }
   }
 
@@ -349,13 +365,10 @@ export function createWidgetController(
     if (ctx.isInvalid) return;
 
     currentInput = input;
-    const rect = input.getBoundingClientRect();
-    lastInputTop = rect.top;
-    lastInputLeft = rect.left;
     ensureContainer();
     updatePosition();
     renderWidget();
-    startPositionPolling();
+    startObserving();
 
     // Subscribe to findings state for re-renders
     const unsubFindings = findingsState.subscribe(() => {
@@ -388,7 +401,7 @@ export function createWidgetController(
     unmountInternal();
     unmountInternal = (): void => {};
 
-    stopPositionPolling();
+    stopObserving();
     window.removeEventListener('scroll', onScrollOrResize, true);
     window.removeEventListener('resize', onScrollOrResize);
 

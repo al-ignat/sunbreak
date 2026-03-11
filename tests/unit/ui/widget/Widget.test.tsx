@@ -51,7 +51,7 @@ describe('Widget', () => {
       const { container } = renderWidget();
       const widget = container.querySelector('.sb-widget');
       expect(widget).toBeTruthy();
-      expect(widget?.classList.contains('sb-widget--clean')).toBe(true);
+      expect((widget as HTMLElement)?.dataset.severity).toBe('clean');
     });
 
     it('does not show severity badge in clean state', () => {
@@ -74,7 +74,7 @@ describe('Widget', () => {
         findings: [makeFinding()],
       });
       const widget = container.querySelector('.sb-widget');
-      expect(widget?.classList.contains('sb-widget--warning')).toBe(true);
+      expect((widget as HTMLElement)?.dataset.severity).toBe('warning');
     });
 
     it('shows concern state for credit-card findings', () => {
@@ -82,7 +82,7 @@ describe('Widget', () => {
         findings: [makeFinding({ type: 'credit-card', value: '4111111111111111' })],
       });
       const widget = container.querySelector('.sb-widget');
-      expect(widget?.classList.contains('sb-widget--concern')).toBe(true);
+      expect((widget as HTMLElement)?.dataset.severity).toBe('concern');
     });
 
     it('shows critical state for api-key findings', () => {
@@ -90,7 +90,7 @@ describe('Widget', () => {
         findings: [makeFinding({ type: 'api-key', value: 'sk-proj-abc123' })],
       });
       const widget = container.querySelector('.sb-widget');
-      expect(widget?.classList.contains('sb-widget--critical')).toBe(true);
+      expect((widget as HTMLElement)?.dataset.severity).toBe('critical');
     });
 
     it('shows highest severity when mixed findings', () => {
@@ -101,7 +101,7 @@ describe('Widget', () => {
         ],
       });
       const widget = container.querySelector('.sb-widget');
-      expect(widget?.classList.contains('sb-widget--critical')).toBe(true);
+      expect((widget as HTMLElement)?.dataset.severity).toBe('critical');
     });
 
     it('shows severity badge with count', () => {
@@ -169,9 +169,8 @@ describe('Widget', () => {
       });
 
       expect(container.querySelector('.sb-widget__severity-badge')).toBeNull();
-      expect(
-        container.querySelector('.sb-widget--clean'),
-      ).toBeTruthy();
+      const widget = container.querySelector('.sb-widget');
+      expect((widget as HTMLElement)?.dataset.severity).toBe('clean');
     });
 
     it('does not count fixed findings in badge', () => {
