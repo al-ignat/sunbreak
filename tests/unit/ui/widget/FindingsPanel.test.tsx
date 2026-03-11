@@ -168,12 +168,12 @@ describe('FindingsPanel', () => {
       expect(container.querySelector('.sb-panel__dot--amber')).toBeTruthy();
     });
 
-    it('uses blue dot for keyword findings', () => {
+    it('uses amber dot for keyword findings', () => {
       const tracked = [
         makeTracked({ id: 'a', finding: { type: 'keyword' } }),
       ];
       const { container } = renderPanel({ tracked });
-      expect(container.querySelector('.sb-panel__dot--blue')).toBeTruthy();
+      expect(container.querySelector('.sb-panel__dot--amber')).toBeTruthy();
     });
   });
 

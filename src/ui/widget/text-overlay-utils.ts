@@ -1,23 +1,6 @@
-import type { FindingType } from '../../classifier/types';
 import type { TrackedFinding } from '../../content/findings-state';
-
-/** Underline color categories (tuned for visibility on dark host pages) */
-const SEVERITY_COLORS: Record<string, string> = {
-  'api-key': '#F87171',      // Red — credentials & secrets
-  ssn: '#F59E0B',            // Orange — identity data
-  cpr: '#F59E0B',
-  'ni-number': '#F59E0B',
-  'credit-card': '#F59E0B',
-  email: '#F59E0B',          // Amber — contact info
-  phone: '#F59E0B',
-  keyword: '#60A5FA',        // Blue — custom patterns
-  'ip-address': '#60A5FA',
-};
-
-/** Map a finding type to its underline color */
-export function severityColor(type: FindingType): string {
-  return SEVERITY_COLORS[type] ?? '#F59E0B';
-}
+import { severityColor } from './severity';
+export { severityColor };
 
 /**
  * Build a list of text segments with their cumulative offsets.

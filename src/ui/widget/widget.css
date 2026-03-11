@@ -1,4 +1,4 @@
-/* Corner widget — all styles scoped inside Shadow DOM */
+/* Extended widget — all styles scoped inside Shadow DOM */
 
 .sb-widget-container {
   position: relative;
@@ -21,17 +21,17 @@
 .sb-widget {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 8px;
+  padding: 8px 12px;
   border-radius: 100px;
   font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 700;
   line-height: 1;
   color: #F0EDE8;
   background: #1E1D21;
   border: 1px solid #3D3C44;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
   cursor: pointer;
   user-select: none;
   opacity: 0.6;
@@ -51,87 +51,118 @@
   outline-offset: 2px;
 }
 
-/* Clean state — green accent */
+/* ── Severity states ─────────────────────────────── */
+
 .sb-widget--clean {
-  border-color: #0D2818;
+  border-color: #065F46;
   color: #34D399;
 }
-
 .sb-widget--clean:hover {
   border-color: #34D399;
   box-shadow: 0 2px 12px rgba(52, 211, 153, 0.2);
 }
 
-/* Findings state — red accent */
-.sb-widget--findings {
-  border-color: #2A1010;
+.sb-widget--warning {
+  border-color: #92700A;
+  color: #FBBF24;
+  opacity: 0.85;
+}
+.sb-widget--warning:hover {
+  border-color: #FBBF24;
+  box-shadow: 0 2px 12px rgba(251, 191, 36, 0.2);
+  opacity: 1;
+}
+
+.sb-widget--concern {
+  border-color: #9A4A12;
+  color: #FB923C;
+  opacity: 0.85;
+}
+.sb-widget--concern:hover {
+  border-color: #FB923C;
+  box-shadow: 0 2px 12px rgba(251, 146, 60, 0.2);
+  opacity: 1;
+}
+
+.sb-widget--critical {
+  border-color: #991B1B;
   color: #F87171;
   opacity: 0.85;
 }
-
-.sb-widget--findings:hover {
+.sb-widget--critical:hover {
   border-color: #F87171;
   box-shadow: 0 2px 12px rgba(248, 113, 113, 0.2);
   opacity: 1;
 }
 
-/* Icon */
+/* ── Icon ──────────────────────────────────────── */
+
 .sb-widget__icon {
   display: flex;
   align-items: center;
   flex-shrink: 0;
 }
 
-/* Label */
-.sb-widget__label {
-  flex-shrink: 0;
-}
+/* ── Badge area ────────────────────────────────── */
 
-/* Status area */
-.sb-widget__status {
+.sb-widget__badges {
   display: flex;
   align-items: center;
-  margin-left: 2px;
+  gap: 6px;
 }
 
-/* Badge count */
-.sb-widget__badge {
+/* Severity count badge — colored pill */
+.sb-widget__severity-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 18px;
   height: 18px;
-  padding: 0 5px;
-  border-radius: 9px;
-  background: #F87171;
-  color: #ffffff;
+  padding: 2px 7px;
+  border-radius: 100px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1;
 }
 
-/* Check icon */
-.sb-widget__check {
-  display: flex;
+/* Badge colors per severity (bg + text from the severity level) */
+.sb-widget--warning .sb-widget__severity-badge {
+  background: #FBBF24;
+  color: #1E1D21;
+}
+.sb-widget--concern .sb-widget__severity-badge {
+  background: #FB923C;
+  color: #1E1D21;
+}
+.sb-widget--critical .sb-widget__severity-badge {
+  background: #F87171;
+  color: #FFFFFF;
+}
+
+/* Divider between severity and masked badges */
+.sb-widget__divider {
+  width: 1px;
+  height: 14px;
+  background: #2E2D33;
+  flex-shrink: 0;
+}
+
+/* Masked count badge — blue pill (inline style sets bg/color) */
+.sb-widget__masked-badge {
+  display: inline-flex;
   align-items: center;
-  color: #34D399;
-}
-
-/* Separator between badge and masked count */
-.sb-widget__sep {
-  margin: 0 4px;
-  color: #3D3C44;
-  font-weight: 300;
-}
-
-/* Masked count label */
-.sb-widget__masked {
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 2px 7px;
+  border-radius: 100px;
   font-size: 11px;
-  font-weight: 500;
-  color: #60A5FA;
+  font-weight: 700;
+  line-height: 1;
 }
 
-/* Accessibility: respect reduced motion */
+/* ── Accessibility: respect reduced motion ─────── */
+
 @media (prefers-reduced-motion: reduce) {
   .sb-widget {
     animation: none;

@@ -32,40 +32,40 @@ function makeTracked(overrides: Partial<TrackedFinding> & { id?: string } = {}):
 }
 
 describe('severityColor', () => {
-  it('returns red for api-key', () => {
+  it('returns critical red for api-key', () => {
     expect(severityColor('api-key')).toBe('#F87171');
   });
 
-  it('returns orange for ssn', () => {
-    expect(severityColor('ssn')).toBe('#F59E0B');
+  it('returns concern orange for ssn', () => {
+    expect(severityColor('ssn')).toBe('#FB923C');
   });
 
-  it('returns orange for credit-card', () => {
-    expect(severityColor('credit-card')).toBe('#F59E0B');
+  it('returns concern orange for credit-card', () => {
+    expect(severityColor('credit-card')).toBe('#FB923C');
   });
 
-  it('returns orange for cpr', () => {
-    expect(severityColor('cpr')).toBe('#F59E0B');
+  it('returns concern orange for cpr', () => {
+    expect(severityColor('cpr')).toBe('#FB923C');
   });
 
-  it('returns orange for ni-number', () => {
-    expect(severityColor('ni-number')).toBe('#F59E0B');
+  it('returns concern orange for ni-number', () => {
+    expect(severityColor('ni-number')).toBe('#FB923C');
   });
 
-  it('returns amber for email', () => {
-    expect(severityColor('email')).toBe('#F59E0B');
+  it('returns warning yellow for email', () => {
+    expect(severityColor('email')).toBe('#FBBF24');
   });
 
-  it('returns amber for phone', () => {
-    expect(severityColor('phone')).toBe('#F59E0B');
+  it('returns warning yellow for phone', () => {
+    expect(severityColor('phone')).toBe('#FBBF24');
   });
 
-  it('returns blue for keyword', () => {
-    expect(severityColor('keyword')).toBe('#60A5FA');
+  it('returns warning yellow for keyword', () => {
+    expect(severityColor('keyword')).toBe('#FBBF24');
   });
 
-  it('returns blue for ip-address', () => {
-    expect(severityColor('ip-address')).toBe('#60A5FA');
+  it('returns warning yellow for ip-address', () => {
+    expect(severityColor('ip-address')).toBe('#FBBF24');
   });
 });
 
