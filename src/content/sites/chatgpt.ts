@@ -41,4 +41,6 @@ export const chatgptAdapter: SiteAdapter = {
     const input = this.findInput();
     return input?.closest('form') ?? null;
   },
+
+  widgetAnchor: { gapX: 8 },
 };
