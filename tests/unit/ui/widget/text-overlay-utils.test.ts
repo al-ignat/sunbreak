@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  severityColor,
   createRangeFromOffsets,
   findingAtPoint,
   calculateUnderlines,
@@ -30,44 +29,6 @@ function makeTracked(overrides: Partial<TrackedFinding> & { id?: string } = {}):
     ...overrides,
   };
 }
-
-describe('severityColor', () => {
-  it('returns critical red for api-key', () => {
-    expect(severityColor('api-key')).toBe('#F87171');
-  });
-
-  it('returns concern orange for ssn', () => {
-    expect(severityColor('ssn')).toBe('#FB923C');
-  });
-
-  it('returns concern orange for credit-card', () => {
-    expect(severityColor('credit-card')).toBe('#FB923C');
-  });
-
-  it('returns concern orange for cpr', () => {
-    expect(severityColor('cpr')).toBe('#FB923C');
-  });
-
-  it('returns concern orange for ni-number', () => {
-    expect(severityColor('ni-number')).toBe('#FB923C');
-  });
-
-  it('returns warning yellow for email', () => {
-    expect(severityColor('email')).toBe('#FBBF24');
-  });
-
-  it('returns warning yellow for phone', () => {
-    expect(severityColor('phone')).toBe('#FBBF24');
-  });
-
-  it('returns warning yellow for keyword', () => {
-    expect(severityColor('keyword')).toBe('#FBBF24');
-  });
-
-  it('returns warning yellow for ip-address', () => {
-    expect(severityColor('ip-address')).toBe('#FBBF24');
-  });
-});
 
 describe('createRangeFromOffsets', () => {
   function createDiv(text: string): HTMLDivElement {
@@ -170,7 +131,7 @@ describe('findingAtPoint', () => {
   it('returns matching finding when point is within segment', () => {
     const tracked = [makeTracked({ id: 'tf-1' })];
     const segments: UnderlineSegment[] = [
-      { top: 24, left: 20, width: 100, color: '#F59E0B', findingId: 'tf-1' },
+      { top: 24, left: 20, width: 100, severity: 'warning', findingId: 'tf-1' },
     ];
 
     const result = findingAtPoint(segments, tracked, 50, 24);
@@ -181,7 +142,7 @@ describe('findingAtPoint', () => {
   it('returns null when point is outside all segments', () => {
     const tracked = [makeTracked({ id: 'tf-1' })];
     const segments: UnderlineSegment[] = [
-      { top: 24, left: 20, width: 100, color: '#F59E0B', findingId: 'tf-1' },
+      { top: 24, left: 20, width: 100, severity: 'warning', findingId: 'tf-1' },
     ];
 
     const result = findingAtPoint(segments, tracked, 200, 200);
@@ -191,7 +152,7 @@ describe('findingAtPoint', () => {
   it('uses hitSlop for vertical tolerance', () => {
     const tracked = [makeTracked({ id: 'tf-1' })];
     const segments: UnderlineSegment[] = [
-      { top: 24, left: 20, width: 100, color: '#F59E0B', findingId: 'tf-1' },
+      { top: 24, left: 20, width: 100, severity: 'warning', findingId: 'tf-1' },
     ];
 
     // 3px above the segment top — within default 4px hitSlop
@@ -202,7 +163,7 @@ describe('findingAtPoint', () => {
   it('returns null when beyond hitSlop', () => {
     const tracked = [makeTracked({ id: 'tf-1' })];
     const segments: UnderlineSegment[] = [
-      { top: 24, left: 20, width: 100, color: '#F59E0B', findingId: 'tf-1' },
+      { top: 24, left: 20, width: 100, severity: 'warning', findingId: 'tf-1' },
     ];
 
     // 10px above — beyond default 4px hitSlop
@@ -216,8 +177,8 @@ describe('findingAtPoint', () => {
       makeTracked({ id: 'tf-2', finding: makeFinding({ type: 'phone', value: '555-1234', startIndex: 20, endIndex: 28 }) }),
     ];
     const segments: UnderlineSegment[] = [
-      { top: 24, left: 20, width: 100, color: '#F59E0B', findingId: 'tf-1' },
-      { top: 24, left: 50, width: 80, color: '#F59E0B', findingId: 'tf-2' },
+      { top: 24, left: 20, width: 100, severity: 'warning', findingId: 'tf-1' },
+      { top: 24, left: 50, width: 80, severity: 'warning', findingId: 'tf-2' },
     ];
 
     const result = findingAtPoint(segments, tracked, 60, 24);

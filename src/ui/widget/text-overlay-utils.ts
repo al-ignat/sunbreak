@@ -1,6 +1,6 @@
 import type { TrackedFinding } from '../../content/findings-state';
-import { severityColor } from './severity';
-export { severityColor };
+import { findingSeverity } from './severity';
+import type { SeverityLevel } from './severity';
 
 /**
  * Build a list of text segments with their cumulative offsets.
@@ -90,7 +90,7 @@ export interface UnderlineSegment {
   readonly top: number;
   readonly left: number;
   readonly width: number;
-  readonly color: string;
+  readonly severity: SeverityLevel;
   readonly findingId: string;
 }
 
@@ -125,14 +125,14 @@ export function calculateUnderlines(
   // WRITE phase — build segments, no reflows
   const segments: UnderlineSegment[] = [];
   for (const { tf, rects } of allRects) {
-    const color = severityColor(tf.finding.type);
+    const sev = findingSeverity(tf.finding.type);
     for (const rect of rects) {
       if (rect.width < 1) continue; // skip zero-width rects
       segments.push({
         top: rect.bottom,
         left: rect.left,
         width: rect.width,
-        color,
+        severity: sev,
         findingId: tf.id,
       });
     }

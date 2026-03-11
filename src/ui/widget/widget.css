@@ -24,14 +24,14 @@
   gap: 8px;
   padding: 8px 12px;
   border-radius: 100px;
-  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--sb-font-body);
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
-  color: #F0EDE8;
-  background: #1E1D21;
-  border: 1px solid #3D3C44;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+  color: var(--_icon);
+  background: var(--sb-color-surface);
+  border: 1px solid var(--_border, var(--sb-color-border));
+  box-shadow: 0 2px 12px var(--_shadow, rgba(0, 0, 0, 0.12));
   cursor: pointer;
   user-select: none;
   opacity: 0.6;
@@ -47,51 +47,61 @@
 }
 
 .sb-widget:focus-visible {
-  outline: 2px solid #F59E0B;
+  outline: 2px solid var(--sb-color-cta);
   outline-offset: 2px;
 }
 
 /* ── Severity states ─────────────────────────────── */
 
-.sb-widget--clean {
-  border-color: #065F46;
-  color: #34D399;
+[data-severity="clean"] {
+  --_icon: var(--sb-severity-clean-icon);
+  --_border: var(--sb-severity-clean-border);
+  --_shadow: rgba(0, 0, 0, 0.12);
 }
-.sb-widget--clean:hover {
-  border-color: #34D399;
-  box-shadow: 0 2px 12px rgba(52, 211, 153, 0.2);
+[data-severity="clean"]:hover {
+  --_border: var(--sb-severity-clean-border-hover);
+  --_shadow: var(--sb-severity-clean-shadow);
 }
 
-.sb-widget--warning {
-  border-color: #92700A;
-  color: #FBBF24;
+[data-severity="warning"] {
+  --_icon: var(--sb-severity-warning-icon);
+  --_border: var(--sb-severity-warning-border);
+  --_badge: var(--sb-severity-warning-badge);
+  --_badge-text: var(--sb-severity-warning-badge-text);
+  --_shadow: rgba(251, 191, 36, 0.08);
   opacity: 0.85;
 }
-.sb-widget--warning:hover {
-  border-color: #FBBF24;
-  box-shadow: 0 2px 12px rgba(251, 191, 36, 0.2);
+[data-severity="warning"]:hover {
+  --_border: var(--sb-severity-warning-border-hover);
+  --_shadow: var(--sb-severity-warning-shadow);
   opacity: 1;
 }
 
-.sb-widget--concern {
-  border-color: #9A4A12;
-  color: #FB923C;
+[data-severity="concern"] {
+  --_icon: var(--sb-severity-concern-icon);
+  --_border: var(--sb-severity-concern-border);
+  --_badge: var(--sb-severity-concern-badge);
+  --_badge-text: var(--sb-severity-concern-badge-text);
+  --_shadow: rgba(251, 146, 60, 0.08);
   opacity: 0.85;
 }
-.sb-widget--concern:hover {
-  border-color: #FB923C;
-  box-shadow: 0 2px 12px rgba(251, 146, 60, 0.2);
+[data-severity="concern"]:hover {
+  --_border: var(--sb-severity-concern-border-hover);
+  --_shadow: var(--sb-severity-concern-shadow);
   opacity: 1;
 }
 
-.sb-widget--critical {
-  border-color: #991B1B;
-  color: #F87171;
+[data-severity="critical"] {
+  --_icon: var(--sb-severity-critical-icon);
+  --_border: var(--sb-severity-critical-border);
+  --_badge: var(--sb-severity-critical-badge);
+  --_badge-text: var(--sb-severity-critical-badge-text);
+  --_shadow: rgba(248, 113, 113, 0.08);
   opacity: 0.85;
 }
-.sb-widget--critical:hover {
-  border-color: #F87171;
-  box-shadow: 0 2px 12px rgba(248, 113, 113, 0.2);
+[data-severity="critical"]:hover {
+  --_border: var(--sb-severity-critical-border-hover);
+  --_shadow: var(--sb-severity-critical-shadow);
   opacity: 1;
 }
 
@@ -123,31 +133,19 @@
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
-}
-
-/* Badge colors per severity (bg + text from the severity level) */
-.sb-widget--warning .sb-widget__severity-badge {
-  background: #FBBF24;
-  color: #1E1D21;
-}
-.sb-widget--concern .sb-widget__severity-badge {
-  background: #FB923C;
-  color: #1E1D21;
-}
-.sb-widget--critical .sb-widget__severity-badge {
-  background: #F87171;
-  color: #FFFFFF;
+  background: var(--_badge, transparent);
+  color: var(--_badge-text, inherit);
 }
 
 /* Divider between severity and masked badges */
 .sb-widget__divider {
   width: 1px;
   height: 14px;
-  background: #2E2D33;
+  background: var(--sb-color-border-subtle);
   flex-shrink: 0;
 }
 
-/* Masked count badge — blue pill (inline style sets bg/color) */
+/* Masked count badge — blue pill */
 .sb-widget__masked-badge {
   display: inline-flex;
   align-items: center;
@@ -159,6 +157,8 @@
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
+  background: var(--sb-masked-badge);
+  color: var(--sb-masked-badge-text);
 }
 
 /* ── Accessibility: respect reduced motion ─────── */

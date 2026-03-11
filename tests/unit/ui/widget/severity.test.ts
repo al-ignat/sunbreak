@@ -2,11 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   findingSeverity,
   maxSeverity,
-  severityColor,
-  SEVERITY_COLORS,
-  MASKED_COLORS,
 } from '../../../../src/ui/widget/severity';
-import type { SeverityLevel } from '../../../../src/ui/widget/severity';
 import type { TrackedFinding } from '../../../../src/content/findings-state';
 import type { Finding } from '../../../../src/classifier/types';
 
@@ -131,40 +127,5 @@ describe('maxSeverity', () => {
       makeTracked({ id: 'tf-2' }), // email → warning (active)
     ];
     expect(maxSeverity(tracked)).toBe('warning');
-  });
-});
-
-describe('severityColor', () => {
-  it('returns icon color for the severity level', () => {
-    expect(severityColor('api-key')).toBe(SEVERITY_COLORS.critical.icon);
-    expect(severityColor('ssn')).toBe(SEVERITY_COLORS.concern.icon);
-    expect(severityColor('email')).toBe(SEVERITY_COLORS.warning.icon);
-  });
-});
-
-describe('SEVERITY_COLORS', () => {
-  const levels: SeverityLevel[] = ['clean', 'warning', 'concern', 'critical'];
-
-  it('defines all required color properties for each level', () => {
-    for (const level of levels) {
-      const colors = SEVERITY_COLORS[level];
-      expect(colors.icon).toBeTruthy();
-      expect(colors.border).toBeTruthy();
-      expect(colors.shadow).toBeTruthy();
-    }
-  });
-
-  it('has badge colors only for non-clean levels', () => {
-    expect(SEVERITY_COLORS.clean.badge).toBe('');
-    expect(SEVERITY_COLORS.warning.badge).toBeTruthy();
-    expect(SEVERITY_COLORS.concern.badge).toBeTruthy();
-    expect(SEVERITY_COLORS.critical.badge).toBeTruthy();
-  });
-});
-
-describe('MASKED_COLORS', () => {
-  it('defines badge and text colors', () => {
-    expect(MASKED_COLORS.badge).toBe('#1E40AF');
-    expect(MASKED_COLORS.badgeText).toBe('#60A5FA');
   });
 });
