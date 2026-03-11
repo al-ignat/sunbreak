@@ -87,8 +87,6 @@ export function createWidgetController(
   let restoreToastState: RestoreToastState | null = null;
   let overlayHandle: TextOverlayHandle | null = null;
 
-  let currentSendButton: HTMLElement | null = null;
-
   const sendButtonConfig: AnchorConfig = {
     mode: 'send-button',
     gapX: adapter.widgetAnchor?.gapX ?? 8,
@@ -147,7 +145,6 @@ export function createWidgetController(
 
     // Try send button as primary anchor
     const sendBtn = adapter.findSendButton();
-    currentSendButton = sendBtn;
 
     if (sendBtn) {
       const rect = sendBtn.getBoundingClientRect();
