@@ -90,6 +90,7 @@ export function createWidgetController(
   let anchorReady = false;
   let currentSendButton: HTMLElement | null = null;
   let currentAnchorMode: AnchorConfig['mode'] = 'input-box';
+  const maskingAllowed = adapter.capabilities?.reliableSetText !== false;
 
   const sendButtonConfig: AnchorConfig = {
     mode: 'send-button',
@@ -274,6 +275,8 @@ export function createWidgetController(
   }
 
   function handleFix(id: string): void {
+    if (!maskingAllowed) return;
+
     const snap = findingsState.getSnapshot();
     const tf = snap.tracked.find((t) => t.id === id);
     if (!tf || tf.status !== 'active') return;
@@ -283,7 +286,12 @@ export function createWidgetController(
 
     const text = adapter.getText(input);
     const redacted = buildRedactedText(text, [tf.finding]);
-    adapter.setText(input, redacted);
+    try {
+      adapter.setText(input, redacted);
+    } catch (e) {
+      console.error('[Sunbreak] setText failed:', e);
+      return;
+    }
     maskingMap?.set(tf.finding.placeholder, tf.finding.value);
     findingsState.fix(id);
   }
@@ -293,6 +301,8 @@ export function createWidgetController(
   }
 
   function handleFixAll(): void {
+    if (!maskingAllowed) return;
+
     const snap = findingsState.getSnapshot();
     const active = snap.tracked.filter((t) => t.status === 'active');
     if (active.length === 0) return;
@@ -305,7 +315,12 @@ export function createWidgetController(
       text,
       active.map((t) => t.finding),
     );
-    adapter.setText(input, redacted);
+    try {
+      adapter.setText(input, redacted);
+    } catch (e) {
+      console.error('[Sunbreak] setText failed:', e);
+      return;
+    }
     maskingMap?.setAll(
       active.map((t) => ({
         token: t.finding.placeholder,
@@ -415,9 +430,9 @@ export function createWidgetController(
         editorEl: currentInput,
         supportsOverlay: adapter.supportsOverlay !== false,
         panelOpen,
-        onFix: handleFix,
+        onFix: maskingAllowed ? handleFix : undefined,
         onIgnore: handleIgnore,
-        onFixAll: handleFixAll,
+        onFixAll: maskingAllowed ? handleFixAll : undefined,
         onClose: handleClose,
         onClick: (): void => {
           panelOpen = !panelOpen;

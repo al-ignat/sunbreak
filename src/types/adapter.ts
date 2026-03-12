@@ -1,6 +1,16 @@
 /** Supported AI tool site identifiers */
 export type SiteName = 'chatgpt' | 'claude' | 'gemini';
 
+/** Per-adapter capability flags — declares what the adapter can reliably do */
+export interface AdapterCapabilities {
+  /** Can setText safely sync with the editor framework (ProseMirror/Quill)? */
+  readonly reliableSetText: boolean;
+  /** Can the adapter reliably locate a send/action button for widget anchoring? */
+  readonly sendButtonAnchor: boolean;
+  /** Will this adapter eventually need page-world script injection? Declarative only. */
+  readonly pageContextBridge: boolean;
+}
+
 /** Per-site adapter for finding and interacting with AI tool input elements */
 export interface SiteAdapter {
   readonly name: SiteName;
@@ -30,6 +40,9 @@ export interface SiteAdapter {
   readonly widgetAnchor?: {
     readonly gapX: number;
   };
+
+  /** Adapter capability flags. Defaults to all-capable when omitted. */
+  readonly capabilities?: AdapterCapabilities;
 }
 
 /** Callback invoked when a prompt is captured before submission */

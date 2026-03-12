@@ -67,6 +67,11 @@ function findClaudeComposerActionButton(): HTMLElement | null {
 export const claudeAdapter: SiteAdapter = {
   name: 'claude',
   widgetAnchor: { gapX: 8 },
+  capabilities: {
+    reliableSetText: true,
+    sendButtonAnchor: true,
+    pageContextBridge: false,
+  },
 
   matches(hostname: string): boolean {
     return hostname === 'claude.ai';

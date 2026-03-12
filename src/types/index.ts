@@ -3,6 +3,7 @@ export { ok, err } from './result';
 export type {
   SiteName,
   SiteAdapter,
+  AdapterCapabilities,
   PromptCallback,
   FileCallback,
 } from './adapter';

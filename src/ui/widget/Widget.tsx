@@ -160,7 +160,7 @@ export default function Widget({
           )}
         </span>
       </div>
-      {panelOpen && onFix && onIgnore && onFixAll && onClose && (
+      {panelOpen && onIgnore && onClose && (
         <FindingsPanel
           tracked={snapshot.tracked}
           activeCount={snapshot.activeCount}

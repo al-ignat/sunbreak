@@ -10,7 +10,7 @@ export interface HoverCardProps {
   anchorX: number;
   /** Viewport Y of the underline */
   anchorY: number;
-  onFix: (id: string) => void;
+  onFix?: (id: string) => void;
   onIgnore: (id: string) => void;
   onIgnoreAllOfType: (type: string) => void;
   onDisableType: (type: string) => void;
@@ -48,7 +48,7 @@ export default function HoverCard({
   }, [anchorY]);
 
   const handleFix = useCallback((): void => {
-    onFix(finding.id);
+    onFix?.(finding.id);
   }, [onFix, finding.id]);
 
   const handleIgnore = useCallback((): void => {
@@ -128,14 +128,16 @@ export default function HoverCard({
       </div>
 
       <div class="sb-hover-card__actions">
-        <button
-          class="sb-hover-card__btn sb-hover-card__btn--fix"
-          type="button"
-          aria-label={`Fix ${finding.finding.label}`}
-          onClick={handleFix}
-        >
-          Fix
-        </button>
+        {onFix && (
+          <button
+            class="sb-hover-card__btn sb-hover-card__btn--fix"
+            type="button"
+            aria-label={`Fix ${finding.finding.label}`}
+            onClick={handleFix}
+          >
+            Fix
+          </button>
+        )}
         <button
           class="sb-hover-card__btn sb-hover-card__btn--ignore"
           type="button"
