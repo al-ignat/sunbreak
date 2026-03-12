@@ -10415,6 +10415,20 @@
         },
         {
           "type": "rectangle",
+          "id": "vgrci",
+          "x": 297,
+          "y": 1837,
+          "fill": {
+            "type": "image",
+            "enabled": true,
+            "url": "image-4.png",
+            "mode": "fill"
+          },
+          "width": 864,
+          "height": 565
+        },
+        {
+          "type": "rectangle",
           "id": "hkqKc",
           "x": 296,
           "y": 815,
@@ -10454,20 +10468,6 @@
           },
           "width": 861,
           "height": 580
-        },
-        {
-          "type": "rectangle",
-          "id": "vgrci",
-          "x": 233,
-          "y": 1751,
-          "fill": {
-            "type": "image",
-            "enabled": true,
-            "url": "image-4.png",
-            "mode": "fill"
-          },
-          "width": 864,
-          "height": 565
         },
         {
           "type": "rectangle",

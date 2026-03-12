@@ -311,7 +311,7 @@ For this prompt in ChatGPT -
 4. **Expect:** "N masked" label disappears from widget
 5. **Expect:** Copy with old tokens produces no RestoreToast
 
-**Pass / Fail: NOT TESTED**
+**Pass / Fail: PASS**
 **Notes:**
 
 ---
