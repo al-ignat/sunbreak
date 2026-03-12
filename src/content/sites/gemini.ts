@@ -17,6 +17,7 @@ const DROP_ZONE_SELECTORS = [
 
 export const geminiAdapter: SiteAdapter = {
   name: 'gemini',
+  widgetAnchor: { gapX: 8 },
 
   matches(hostname: string): boolean {
     return hostname === 'gemini.google.com';

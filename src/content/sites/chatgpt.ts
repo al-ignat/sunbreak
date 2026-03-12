@@ -13,6 +13,7 @@ const SEND_BUTTON_SELECTORS = [
 
 export const chatgptAdapter: SiteAdapter = {
   name: 'chatgpt',
+  widgetAnchor: { gapX: 8 },
 
   matches(hostname: string): boolean {
     return hostname === 'chatgpt.com' || hostname === 'chat.openai.com';
