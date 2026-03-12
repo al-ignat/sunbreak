@@ -71,6 +71,11 @@ function findGeminiComposerActionButton(): HTMLElement | null {
 export const geminiAdapter: SiteAdapter = {
   name: 'gemini',
   widgetAnchor: { gapX: 8 },
+  capabilities: {
+    reliableSetText: true,
+    sendButtonAnchor: true,
+    pageContextBridge: false,
+  },
 
   matches(hostname: string): boolean {
     return hostname === 'gemini.google.com';

@@ -104,6 +104,11 @@ function findComposerActionButton(): HTMLElement | null {
 export const chatgptAdapter: SiteAdapter = {
   name: 'chatgpt',
   widgetAnchor: { gapX: 8 },
+  capabilities: {
+    reliableSetText: true,
+    sendButtonAnchor: true,
+    pageContextBridge: false,
+  },
 
   matches(hostname: string): boolean {
     return hostname === 'chatgpt.com' || hostname === 'chat.openai.com';
