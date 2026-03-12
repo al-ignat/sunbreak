@@ -8,9 +8,9 @@ import type { MaskedEntry } from './Widget';
 export interface FindingsPanelProps {
   tracked: ReadonlyArray<TrackedFinding>;
   activeCount: number;
-  onFix: (id: string) => void;
+  onFix?: (id: string) => void;
   onIgnore: (id: string) => void;
-  onFixAll: () => void;
+  onFixAll?: () => void;
   onClose: () => void;
   maskedEntries?: ReadonlyArray<MaskedEntry>;
   maskedExpiresAt?: number | null;
@@ -104,7 +104,7 @@ export default function FindingsPanel({
     >
       <div class="sb-panel__header">
         <span class="sb-panel__count">{headerText}</span>
-        {activeCount > 1 && (
+        {activeCount > 1 && onFixAll && (
           <button
             class="sb-panel__fix-all"
             type="button"
@@ -134,14 +134,16 @@ export default function FindingsPanel({
                   {truncateValue(tf.finding.value, tf.finding.type)}
                 </span>
                 <span class="sb-panel__actions">
-                  <button
-                    class="sb-panel__btn sb-panel__btn--fix"
-                    type="button"
-                    aria-label={`Fix ${tf.finding.label} ${truncateValue(tf.finding.value, tf.finding.type)}`}
-                    onClick={(): void => onFix(tf.id)}
-                  >
-                    Fix
-                  </button>
+                  {onFix && (
+                    <button
+                      class="sb-panel__btn sb-panel__btn--fix"
+                      type="button"
+                      aria-label={`Fix ${tf.finding.label} ${truncateValue(tf.finding.value, tf.finding.type)}`}
+                      onClick={(): void => onFix(tf.id)}
+                    >
+                      Fix
+                    </button>
+                  )}
                   <button
                     class="sb-panel__btn sb-panel__btn--ignore"
                     type="button"
@@ -195,7 +197,7 @@ export default function FindingsPanel({
 
       <div class="sb-panel__footer">
         <InfoIcon size={14} />
-        Fix All = mask values, safe to send
+        {onFixAll ? 'Fix All = mask values, safe to send' : 'Sensitive data detected in prompt'}
       </div>
     </div>
   );
