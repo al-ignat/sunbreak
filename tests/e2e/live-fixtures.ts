@@ -27,9 +27,18 @@ export const test = base.extend<{
       args: [
         `--disable-extensions-except=${EXTENSION_PATH}`,
         `--load-extension=${EXTENSION_PATH}`,
+        '--disable-blink-features=AutomationControlled',
       ],
+      ignoreDefaultArgs: ['--enable-automation'],
       viewport: { width: 1280, height: 800 },
     });
+
+    // Wait for the extension service worker to be ready
+    let [sw] = context.serviceWorkers();
+    if (!sw) {
+      sw = await context.waitForEvent('serviceworker', { timeout: 10_000 });
+    }
+    console.log('[fixture] Extension service worker ready:', sw.url());
 
     await use(context);
     await context.close();

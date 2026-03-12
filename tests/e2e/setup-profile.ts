@@ -31,7 +31,9 @@ async function main(): Promise<void> {
     args: [
       `--disable-extensions-except=${EXTENSION_PATH}`,
       `--load-extension=${EXTENSION_PATH}`,
+      '--disable-blink-features=AutomationControlled',
     ],
+    ignoreDefaultArgs: ['--enable-automation'],
     viewport: { width: 1280, height: 800 },
   });
 
