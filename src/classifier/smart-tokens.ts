@@ -11,8 +11,9 @@ const ROLE_PREFIXES = new Set([
 
 /** Capitalize first letter, lowercase rest */
 function capitalize(str: string): string {
-  if (str.length === 0) return str;
-  return str[0]!.toUpperCase() + str.slice(1).toLowerCase();
+  const first = str[0];
+  if (first === undefined) return str;
+  return first.toUpperCase() + str.slice(1).toLowerCase();
 }
 
 /** Strip trailing digits from a string: "john123" -> "john" */
@@ -52,15 +53,17 @@ export function extractNameFromEmail(localPart: string): string | null {
   if (alphaParts.length === 0) return null;
 
   if (alphaParts.length === 1) {
-    const name = alphaParts[0]!;
+    const name = alphaParts[0];
+    if (name === undefined) return null;
     // Check role again after splitting (e.g., "support-team" splits to "support", "team")
     if (ROLE_PREFIXES.has(name.toLowerCase())) return null;
     return capitalize(name);
   }
 
   if (alphaParts.length === 2) {
-    const first = alphaParts[0]!;
-    const last = alphaParts[1]!;
+    const first = alphaParts[0];
+    const last = alphaParts[1];
+    if (first === undefined || last === undefined) return null;
 
     // Single-char first name = treat as initial + full last name
     if (first.length === 1) {
@@ -68,18 +71,23 @@ export function extractNameFromEmail(localPart: string): string | null {
     }
 
     // Standard: "John S."
-    return `${capitalize(first)} ${last[0]!.toUpperCase()}.`;
+    const lastInitial = last[0];
+    if (lastInitial === undefined) return null;
+    return `${capitalize(first)} ${lastInitial.toUpperCase()}.`;
   }
 
   // 3+ parts: use first + last initial
-  const first = alphaParts[0]!;
-  const last = alphaParts[alphaParts.length - 1]!;
+  const first = alphaParts[0];
+  const last = alphaParts[alphaParts.length - 1];
+  if (first === undefined || last === undefined) return null;
+  const lastChar = last[0];
+  if (lastChar === undefined) return null;
 
   if (first.length === 1) {
-    return `${first.toUpperCase()}. ${last[0]!.toUpperCase()}.`;
+    return `${first.toUpperCase()}. ${lastChar.toUpperCase()}.`;
   }
 
-  return `${capitalize(first)} ${last[0]!.toUpperCase()}.`;
+  return `${capitalize(first)} ${lastChar.toUpperCase()}.`;
 }
 
 /** Extract last N digits from a string (stripping non-digits) */

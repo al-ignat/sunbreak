@@ -259,8 +259,8 @@ describe('MaskingMap', () => {
       const before = Date.now();
       mm.set('a', '1');
       const expiresAt = mm.expiresAt;
-      expect(expiresAt).not.toBeNull();
-      expect(expiresAt!).toBeGreaterThanOrEqual(before + 5000);
+      if (expiresAt === null) throw new Error('expiresAt should not be null');
+      expect(expiresAt).toBeGreaterThanOrEqual(before + 5000);
       mm.destroy();
     });
 
@@ -273,8 +273,9 @@ describe('MaskingMap', () => {
       mm.set('b', '2');
       const second = mm.expiresAt;
 
-      expect(second).not.toBeNull();
-      expect(second!).toBeGreaterThan(first!);
+      if (first === null) throw new Error('first expiresAt should not be null');
+      if (second === null) throw new Error('second expiresAt should not be null');
+      expect(second).toBeGreaterThan(first);
       mm.destroy();
     });
 

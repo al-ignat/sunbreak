@@ -352,13 +352,13 @@ When `reliableSetText` flips to `false`, the chain stops at `handleFix()` — it
 
 ### 6a: Capability Flags
 
-- [ ] `AdapterCapabilities` interface defined in `src/types/adapter.ts`
-- [ ] All three adapters declare `capabilities` with initial values
-- [ ] Widget controller reads `reliableSetText` and conditionally renders Fix/FixAll
-- [ ] `handleFix()` wrapped in try/catch with user feedback on failure
-- [ ] Unit tests for detection-only mode (no Fix buttons)
-- [ ] Unit tests for backward compatibility (no `capabilities` → defaults to all-true)
-- [ ] Adapter with `reliableSetText: false` — Fix is no-op, masking map unaffected
+- [x] `AdapterCapabilities` interface defined in `src/types/adapter.ts`
+- [x] All three adapters declare `capabilities` with initial values
+- [x] Widget controller reads `reliableSetText` and conditionally renders Fix/FixAll
+- [x] `handleFix()` wrapped in try/catch with user feedback on failure
+- [x] Unit tests for detection-only mode (no Fix buttons)
+- [x] Unit tests for backward compatibility (no `capabilities` → defaults to all-true)
+- [x] Adapter with `reliableSetText: false` — Fix is no-op, masking map unaffected
 
 ### 6b: Cross-Tool Live Testing
 

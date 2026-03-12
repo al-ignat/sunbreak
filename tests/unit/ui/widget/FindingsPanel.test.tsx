@@ -254,7 +254,9 @@ describe('FindingsPanel', () => {
     });
 
     it('shows singular for one masked entry', () => {
-      renderPanel({ maskedEntries: [maskedEntries[0]!] });
+      const firstEntry = maskedEntries[0];
+      if (!firstEntry) throw new Error('maskedEntries[0] should exist');
+      renderPanel({ maskedEntries: [firstEntry] });
       expect(screen.getByText('1 masked value')).toBeTruthy();
     });
 
