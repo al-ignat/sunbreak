@@ -352,15 +352,10 @@ describe('widget-controller capability flags', () => {
 
     controller.mount(input);
 
-    // Get the finding ID from snapshot
     const snap = findingsState.getSnapshot();
     expect(snap.activeCount).toBe(1);
-    const findingId = snap.tracked[0].id;
 
-    // The widget renders without onFix — we can verify setText is never called
-    // by checking that the finding remains active after any fix attempt
-    // Since onFix is not passed to the component, there's no way to trigger it from UI
-    // But handleFix internally guards on maskingAllowed, so let's verify setText not called
+    // handleFix guards on maskingAllowed — setText should never be called
     expect(adapter.setText).not.toHaveBeenCalled();
   });
 
@@ -382,13 +377,11 @@ describe('widget-controller capability flags', () => {
     controller.mount(input);
 
     const snap = findingsState.getSnapshot();
-    const findingId = snap.tracked[0].id;
-
-    // Trigger fix via the internal handler (click simulation on the shadow DOM)
-    // We verify the adapter.setText was called by checking findingsState
-    // The widget controller passes handleFix as onFix to Widget — when reliableSetText is true
-    // Let's verify adapter capabilities are respected by checking the mock adapter
     expect(snap.activeCount).toBe(1);
+
+    // Widget controller passes handleFix as onFix when reliableSetText is true
+    // The finding is active and Fix should be available in the UI
+    expect(snap.tracked[0].status).toBe('active');
   });
 
   it('defaults to masking-allowed when capabilities is undefined', () => {
