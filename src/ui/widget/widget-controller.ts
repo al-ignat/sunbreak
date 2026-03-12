@@ -82,17 +82,18 @@ export function createWidgetController(
   let currentInput: HTMLElement | null = null;
   let rafId: number | null = null;
   let resizeObserver: ResizeObserver | null = null;
+  let mutationObserver: MutationObserver | null = null;
   let panelOpen = false;
   let toastState: ToastState | null = null;
   let restoreToastState: RestoreToastState | null = null;
   let overlayHandle: TextOverlayHandle | null = null;
   let anchorReady = false;
+  let currentSendButton: HTMLElement | null = null;
+  let currentAnchorMode: AnchorConfig['mode'] = 'input-box';
 
   const sendButtonConfig: AnchorConfig = {
     mode: 'send-button',
     gapX: adapter.widgetAnchor?.gapX ?? 8,
-    offsetX: 12,
-    offsetY: 36,
   };
 
   const inputFallbackConfig: AnchorConfig = {
@@ -101,6 +102,21 @@ export function createWidgetController(
     offsetX: 12,
     offsetY: 36,
   };
+
+  function shouldShowFloatingUi(): boolean {
+    return (
+      findingsState.getSnapshot().activeCount > 0 ||
+      (maskingMap?.size ?? 0) > 0 ||
+      panelOpen ||
+      toastState?.visible === true ||
+      restoreToastState?.visible === true
+    );
+  }
+
+  function setWrapperVisibility(visible: boolean): void {
+    if (!wrapper) return;
+    wrapper.style.visibility = visible ? 'visible' : 'hidden';
+  }
 
   function ensureContainer(): ShadowRoot {
     if (container && shadowRoot) {
@@ -126,6 +142,7 @@ export function createWidgetController(
     w.id = 'sunbreak-widget-wrapper';
     w.style.pointerEvents = 'auto';
     w.style.position = 'fixed';
+    w.style.visibility = 'hidden';
     shadow.appendChild(w);
 
     // Hide container if extension is currently disabled
@@ -141,39 +158,74 @@ export function createWidgetController(
     return shadow;
   }
 
+  function updateSendButtonTracking(): boolean {
+    const nextSendButton = adapter.findSendButton();
+    if (nextSendButton === currentSendButton) {
+      return false;
+    }
+
+    if (resizeObserver && currentSendButton) {
+      resizeObserver.unobserve(currentSendButton);
+    }
+
+    currentSendButton = nextSendButton;
+
+    if (resizeObserver && currentSendButton) {
+      resizeObserver.observe(currentSendButton);
+    }
+
+    return true;
+  }
+
+  function measureWidgetSize(): { width: number; height: number } | null {
+    if (!wrapper) return null;
+
+    const containerRect = wrapper.getBoundingClientRect();
+    const trigger = wrapper.querySelector('.sb-widget');
+    const triggerRect = trigger instanceof HTMLElement ? trigger.getBoundingClientRect() : containerRect;
+
+    const width = Math.round(containerRect.width);
+    const height = Math.round(triggerRect.height);
+
+    if (width <= 0 || height <= 0) {
+      return null;
+    }
+
+    return { width, height };
+  }
+
   function updatePosition(): void {
     if (!wrapper || !currentInput) return;
 
-    // Try send button as primary anchor
-    const sendBtn = adapter.findSendButton();
-
-    if (sendBtn) {
-      const rect = sendBtn.getBoundingClientRect();
-      const pos = computeWidgetPosition(
-        rect,
-        { width: 140, height: 36 },
-        { width: window.innerWidth, height: window.innerHeight },
-        sendButtonConfig,
-      );
-      wrapper.style.top = `${pos.top}px`;
-      wrapper.style.left = `${pos.left}px`;
-    } else {
-      // Fallback to input box
-      const rect = currentInput.getBoundingClientRect();
-      const pos = computeWidgetPosition(
-        rect,
-        { width: 140, height: 36 },
-        { width: window.innerWidth, height: window.innerHeight },
-        inputFallbackConfig,
-      );
-      wrapper.style.top = `${pos.top}px`;
-      wrapper.style.left = `${pos.left}px`;
+    if (!shouldShowFloatingUi()) {
+      anchorReady = false;
+      setWrapperVisibility(false);
+      return;
     }
+
+    updateSendButtonTracking();
+
+    const widgetSize = measureWidgetSize();
+    if (!widgetSize) {
+      return;
+    }
+
+    const anchorRect = currentSendButton?.getBoundingClientRect() ?? currentInput.getBoundingClientRect();
+    const anchorConfig = currentSendButton ? sendButtonConfig : inputFallbackConfig;
+    currentAnchorMode = anchorConfig.mode;
+    const pos = computeWidgetPosition(
+      anchorRect,
+      widgetSize,
+      { width: window.innerWidth, height: window.innerHeight },
+      anchorConfig,
+    );
+    wrapper.style.top = `${pos.top}px`;
+    wrapper.style.left = `${pos.left}px`;
 
     if (!anchorReady) {
       anchorReady = true;
-      renderWidget();
     }
+    setWrapperVisibility(true);
   }
 
   function startObserving(): void {
@@ -185,12 +237,20 @@ export function createWidgetController(
     });
     resizeObserver.observe(currentInput);
     resizeObserver.observe(document.body);
+    updateSendButtonTracking();
 
-    // Also observe send button if available
-    const sendBtn = adapter.findSendButton();
-    if (sendBtn) {
-      resizeObserver.observe(sendBtn);
-    }
+    const mutationRoot = currentInput.closest('form, fieldset') ?? document.body;
+    mutationObserver = new MutationObserver(() => {
+      const didChange = updateSendButtonTracking();
+      if (didChange || currentAnchorMode === 'send-button') {
+        onScrollOrResize();
+      }
+    });
+    mutationObserver.observe(mutationRoot, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
   }
 
   function stopObserving(): void {
@@ -198,6 +258,11 @@ export function createWidgetController(
       resizeObserver.disconnect();
       resizeObserver = null;
     }
+    if (mutationObserver) {
+      mutationObserver.disconnect();
+      mutationObserver = null;
+    }
+    currentSendButton = null;
   }
 
   function onScrollOrResize(): void {
@@ -343,7 +408,7 @@ export function createWidgetController(
   }
 
   function renderWidget(): void {
-    if (!wrapper || !anchorReady) return;
+    if (!wrapper) return;
     render(
       h(Widget, {
         findingsState,
@@ -387,6 +452,14 @@ export function createWidgetController(
       }),
       wrapper,
     );
+    if (!shouldShowFloatingUi()) {
+      anchorReady = false;
+      setWrapperVisibility(false);
+      return;
+    }
+    if (currentInput) {
+      onScrollOrResize();
+    }
   }
 
   function showToast(activeCount: number): Promise<'send-anyway' | 'timeout'> {
@@ -406,8 +479,9 @@ export function createWidgetController(
 
     currentInput = input;
     ensureContainer();
-    updatePosition();
+    renderWidget();
     startObserving();
+    updatePosition();
 
     // Subscribe to findings state for re-renders
     const unsubFindings = findingsState.subscribe(() => {
@@ -469,7 +543,9 @@ export function createWidgetController(
 
     currentInput = null;
     anchorReady = false;
+    currentAnchorMode = 'input-box';
     panelOpen = false;
+    setWrapperVisibility(false);
   }
 
   function destroy(): void {

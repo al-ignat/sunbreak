@@ -258,6 +258,30 @@ describe('createOrchestrator', () => {
         }),
       );
     });
+
+    it('clears active findings immediately after submission is released', async () => {
+      const mockShowToast = vi.fn().mockResolvedValue('send-anyway');
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: mockShowToast,
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        setEnabled: vi.fn(),
+      });
+
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
+
+      findingsState.update([makeFinding()]);
+      expect(findingsState.getSnapshot().activeCount).toBe(1);
+
+      await submitConfig.onBlocked();
+
+      expect(findingsState.getSnapshot().activeCount).toBe(0);
+      expect(findingsState.getSnapshot().tracked).toHaveLength(0);
+    });
   });
 
   describe('clipboard restore integration', () => {

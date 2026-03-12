@@ -1,14 +1,20 @@
-export interface AnchorConfig {
-  readonly mode: 'send-button' | 'input-box';
-  /** Gap between widget right edge and button left edge (send-button mode) */
-  readonly gapX?: number;
-  /** Edge to anchor to (input-box mode) */
-  readonly edge?: 'bottom-right' | 'bottom-left';
-  /** Horizontal offset from input edge (input-box mode) */
+export interface SendButtonAnchorConfig {
+  readonly mode: 'send-button';
+  /** Gap between widget right edge and button left edge */
+  readonly gapX: number;
+}
+
+export interface InputBoxAnchorConfig {
+  readonly mode: 'input-box';
+  /** Edge to anchor to */
+  readonly edge: 'bottom-right' | 'bottom-left';
+  /** Horizontal offset from input edge */
   readonly offsetX: number;
-  /** Vertical offset from input bottom (input-box mode) */
+  /** Vertical offset from input bottom */
   readonly offsetY: number;
 }
+
+export type AnchorConfig = SendButtonAnchorConfig | InputBoxAnchorConfig;
 
 export interface WidgetPosition {
   readonly top: number;
@@ -29,14 +35,12 @@ export function computeWidgetPosition(
   let left: number;
 
   if (config.mode === 'send-button') {
-    const gapX = config.gapX ?? 8;
     // Right edge of widget aligns to left edge of button, offset by gapX
-    left = anchorRect.left - widgetSize.width - gapX;
+    left = anchorRect.left - widgetSize.width - config.gapX;
     // Vertically center widget on button midpoint
     top = anchorRect.top + anchorRect.height / 2 - widgetSize.height / 2;
   } else {
-    const edge = config.edge ?? 'bottom-right';
-    switch (edge) {
+    switch (config.edge) {
       case 'bottom-right':
         top = anchorRect.bottom - config.offsetY;
         left = anchorRect.right - widgetSize.width - config.offsetX;

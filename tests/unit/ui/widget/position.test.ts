@@ -11,7 +11,7 @@ const defaultWidget = { width: 140, height: 36 };
 const defaultViewport = { width: 1280, height: 720 };
 const bottomRight: AnchorConfig = { mode: 'input-box', edge: 'bottom-right', offsetX: 12, offsetY: 36 };
 const bottomLeft: AnchorConfig = { mode: 'input-box', edge: 'bottom-left', offsetX: 12, offsetY: 36 };
-const sendButton: AnchorConfig = { mode: 'send-button', gapX: 8, offsetX: 12, offsetY: 36 };
+const sendButton: AnchorConfig = { mode: 'send-button', gapX: 8 };
 
 function makeButtonRect(overrides: Partial<DOMRect> = {}): DOMRect {
   // Typical send button: 36x36 near bottom-right of viewport
