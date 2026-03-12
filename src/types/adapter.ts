@@ -25,6 +25,11 @@ export interface SiteAdapter {
 
   /** Whether this site supports inline text overlay underlines (default: true) */
   readonly supportsOverlay?: boolean;
+
+  /** Widget positioning config — gap between widget and send button */
+  readonly widgetAnchor?: {
+    readonly gapX: number;
+  };
 }
 
 /** Callback invoked when a prompt is captured before submission */

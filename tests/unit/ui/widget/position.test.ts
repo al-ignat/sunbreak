@@ -9,8 +9,15 @@ function makeRect(overrides: Partial<DOMRect> = {}): DOMRect {
 
 const defaultWidget = { width: 140, height: 36 };
 const defaultViewport = { width: 1280, height: 720 };
-const bottomRight: AnchorConfig = { edge: 'bottom-right', offsetX: 12, offsetY: 36 };
-const bottomLeft: AnchorConfig = { edge: 'bottom-left', offsetX: 12, offsetY: 36 };
+const bottomRight: AnchorConfig = { mode: 'input-box', edge: 'bottom-right', offsetX: 12, offsetY: 36 };
+const bottomLeft: AnchorConfig = { mode: 'input-box', edge: 'bottom-left', offsetX: 12, offsetY: 36 };
+const sendButton: AnchorConfig = { mode: 'send-button', gapX: 8, offsetX: 12, offsetY: 36 };
+
+function makeButtonRect(overrides: Partial<DOMRect> = {}): DOMRect {
+  // Typical send button: 36x36 near bottom-right of viewport
+  const defaults = { top: 682, left: 1200, right: 1236, bottom: 718, width: 36, height: 36, x: 1200, y: 682 };
+  return { ...defaults, ...overrides, toJSON: () => ({}) } as DOMRect;
+}
 
 describe('computeWidgetPosition', () => {
   it('positions at bottom-right of input rect (default case)', () => {
@@ -99,5 +106,57 @@ describe('computeWidgetPosition', () => {
     // max left = 100 - 140 = -40 => min(unclamped, -40) => max(0, ...) = 0
     expect(pos.top).toBe(0);
     expect(pos.left).toBe(0);
+  });
+
+  describe('send-button mode', () => {
+    it('positions widget right edge to left of button with gapX', () => {
+      const pos = computeWidgetPosition(makeButtonRect(), defaultWidget, defaultViewport, sendButton);
+      // left = buttonRect.left(1200) - widgetSize.width(140) - gapX(8) = 1052
+      // top = buttonRect.top(682) + buttonRect.height(36)/2 - widgetSize.height(36)/2 = 682
+      expect(pos.left).toBe(1052);
+      expect(pos.top).toBe(682);
+    });
+
+    it('vertically centers widget on button midpoint', () => {
+      // Tall button (60px), widget is 36px
+      const tallButton = makeButtonRect({ top: 660, bottom: 720, height: 60 });
+      const pos = computeWidgetPosition(tallButton, defaultWidget, defaultViewport, sendButton);
+      // top = 660 + 60/2 - 36/2 = 660 + 30 - 18 = 672
+      expect(pos.top).toBe(672);
+    });
+
+    it('widget expands leftward as width increases (right edge stays fixed)', () => {
+      const narrow = { width: 80, height: 36 };
+      const wide = { width: 200, height: 36 };
+      const posNarrow = computeWidgetPosition(makeButtonRect(), narrow, defaultViewport, sendButton);
+      const posWide = computeWidgetPosition(makeButtonRect(), wide, defaultViewport, sendButton);
+      // Right edges should both be at buttonRect.left - gapX = 1200 - 8 = 1192
+      expect(posNarrow.left + narrow.width).toBe(1192);
+      expect(posWide.left + wide.width).toBe(1192);
+      // Wide widget left edge is further left
+      expect(posWide.left).toBeLessThan(posNarrow.left);
+    });
+
+    it('clamps to left edge of viewport', () => {
+      // Button near left edge, wide widget would go negative
+      const leftButton = makeButtonRect({ left: 100, right: 136 });
+      const pos = computeWidgetPosition(leftButton, defaultWidget, defaultViewport, sendButton);
+      // Unclamped left = 100 - 140 - 8 = -48, clamped to 0
+      expect(pos.left).toBe(0);
+    });
+
+    it('clamps to top of viewport', () => {
+      const topButton = makeButtonRect({ top: 5, bottom: 41, height: 36 });
+      const pos = computeWidgetPosition(topButton, defaultWidget, defaultViewport, sendButton);
+      // Unclamped top = 5 + 18 - 18 = 5, no clamping needed
+      expect(pos.top).toBe(5);
+    });
+
+    it('returns integer pixel values', () => {
+      const oddButton = makeButtonRect({ top: 682.5, left: 1200.3, bottom: 718.5, height: 36 });
+      const pos = computeWidgetPosition(oddButton, defaultWidget, defaultViewport, sendButton);
+      expect(Number.isInteger(pos.top)).toBe(true);
+      expect(Number.isInteger(pos.left)).toBe(true);
+    });
   });
 });
