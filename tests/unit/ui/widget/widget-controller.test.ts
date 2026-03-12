@@ -162,9 +162,11 @@ describe('widget-controller anchor behavior', () => {
   it('anchors to the send button with the measured widget width when available at mount', () => {
     appendInput();
     appendSendButton();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
 
     const controller = createWidgetController(
-      createFindingsState(),
+      findingsState,
       createMockAdapter({ widgetAnchor: { gapX: 12 } }),
       createMockCtx(),
     );
@@ -184,8 +186,10 @@ describe('widget-controller anchor behavior', () => {
 
   it('falls back to the input box and later promotes to send-button anchoring when the button appears', async () => {
     appendInput();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
 
-    const controller = createWidgetController(createFindingsState(), createMockAdapter(), createMockCtx());
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx());
     activeControllers.push(controller);
     const input = document.getElementById('editor');
     if (!input) throw new Error('input not found');
@@ -211,8 +215,10 @@ describe('widget-controller anchor behavior', () => {
   it('rebinds observers and repositions when the send button node is replaced', async () => {
     appendInput();
     const firstButton = appendSendButton();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
 
-    const controller = createWidgetController(createFindingsState(), createMockAdapter(), createMockCtx());
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx());
     activeControllers.push(controller);
     const input = document.getElementById('editor');
     if (!input) throw new Error('input not found');
@@ -253,6 +259,39 @@ describe('widget-controller anchor behavior', () => {
 
     const lastCall = vi.mocked(computeWidgetPosition).mock.lastCall;
     expect(lastCall?.[1]).toEqual({ width: 220, height: 36 });
+    expect(lastCall?.[3]).toEqual({ mode: 'send-button', gapX: 8 });
+  });
+
+  it('stays hidden in the clean state', () => {
+    appendInput();
+    appendSendButton();
+
+    const controller = createWidgetController(createFindingsState(), createMockAdapter(), createMockCtx());
+    activeControllers.push(controller);
+    const input = document.getElementById('editor');
+    if (!input) throw new Error('input not found');
+
+    controller.mount(input);
+
+    expect(computeWidgetPosition).not.toHaveBeenCalled();
+  });
+
+  it('remains visible when masked values exist even with no active findings', async () => {
+    appendInput();
+    appendSendButton();
+
+    const maskingMap = createMaskingMap();
+    maskingMap.set('«email-john»', 'john@acme.com');
+    const controller = createWidgetController(createFindingsState(), createMockAdapter(), createMockCtx(), maskingMap);
+    activeControllers.push(controller);
+    const input = document.getElementById('editor');
+    if (!input) throw new Error('input not found');
+
+    controller.mount(input);
+    await flushAsync();
+
+    expect(computeWidgetPosition).toHaveBeenCalled();
+    const lastCall = vi.mocked(computeWidgetPosition).mock.lastCall;
     expect(lastCall?.[3]).toEqual({ mode: 'send-button', gapX: 8 });
   });
 });

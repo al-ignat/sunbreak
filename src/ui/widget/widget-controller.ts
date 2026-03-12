@@ -103,6 +103,21 @@ export function createWidgetController(
     offsetY: 36,
   };
 
+  function shouldShowFloatingUi(): boolean {
+    return (
+      findingsState.getSnapshot().activeCount > 0 ||
+      (maskingMap?.size ?? 0) > 0 ||
+      panelOpen ||
+      toastState?.visible === true ||
+      restoreToastState?.visible === true
+    );
+  }
+
+  function setWrapperVisibility(visible: boolean): void {
+    if (!wrapper) return;
+    wrapper.style.visibility = visible ? 'visible' : 'hidden';
+  }
+
   function ensureContainer(): ShadowRoot {
     if (container && shadowRoot) {
       return shadowRoot;
@@ -182,6 +197,12 @@ export function createWidgetController(
   function updatePosition(): void {
     if (!wrapper || !currentInput) return;
 
+    if (!shouldShowFloatingUi()) {
+      anchorReady = false;
+      setWrapperVisibility(false);
+      return;
+    }
+
     updateSendButtonTracking();
 
     const widgetSize = measureWidgetSize();
@@ -203,8 +224,8 @@ export function createWidgetController(
 
     if (!anchorReady) {
       anchorReady = true;
-      wrapper.style.visibility = 'visible';
     }
+    setWrapperVisibility(true);
   }
 
   function startObserving(): void {
@@ -431,6 +452,11 @@ export function createWidgetController(
       }),
       wrapper,
     );
+    if (!shouldShowFloatingUi()) {
+      anchorReady = false;
+      setWrapperVisibility(false);
+      return;
+    }
     if (currentInput) {
       onScrollOrResize();
     }
@@ -519,9 +545,7 @@ export function createWidgetController(
     anchorReady = false;
     currentAnchorMode = 'input-box';
     panelOpen = false;
-    if (wrapper) {
-      wrapper.style.visibility = 'hidden';
-    }
+    setWrapperVisibility(false);
   }
 
   function destroy(): void {

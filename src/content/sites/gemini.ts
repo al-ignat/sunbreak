@@ -15,6 +15,59 @@ const DROP_ZONE_SELECTORS = [
   '.xap-uploader-dropzone',
 ] as const;
 
+function queryFallbackInRoot(root: ParentNode, selectors: readonly string[]): HTMLElement | null {
+  for (const selector of selectors) {
+    const el = root.querySelector<HTMLElement>(selector);
+    if (el) return el;
+  }
+
+  return null;
+}
+
+function isVisibleButton(button: HTMLButtonElement): boolean {
+  const rect = button.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+}
+
+function findBestComposerButton(root: ParentNode): HTMLElement | null {
+  const buttons = Array.from(root.querySelectorAll('button'))
+    .filter((button): button is HTMLButtonElement => button instanceof HTMLButtonElement)
+    .filter(isVisibleButton);
+
+  let best: HTMLButtonElement | null = null;
+
+  for (const button of buttons) {
+    if (!best) {
+      best = button;
+      continue;
+    }
+
+    const bestIsNamedSend = SEND_BUTTON_SELECTORS.some((selector) => best?.matches(selector));
+    const currentIsNamedSend = SEND_BUTTON_SELECTORS.some((selector) => button.matches(selector));
+    if (currentIsNamedSend && !bestIsNamedSend) {
+      best = button;
+      continue;
+    }
+    if (currentIsNamedSend === bestIsNamedSend && button.getBoundingClientRect().right > best.getBoundingClientRect().right) {
+      best = button;
+    }
+  }
+
+  return best;
+}
+
+function findGeminiComposerActionButton(): HTMLElement | null {
+  const input = queryFallback(INPUT_SELECTORS);
+  const composerRoot = input?.closest('form') ?? input?.parentElement ?? null;
+
+  if (composerRoot) {
+    const localMatch = findBestComposerButton(composerRoot) ?? queryFallbackInRoot(composerRoot, SEND_BUTTON_SELECTORS);
+    if (localMatch) return localMatch;
+  }
+
+  return queryFallback(SEND_BUTTON_SELECTORS);
+}
+
 export const geminiAdapter: SiteAdapter = {
   name: 'gemini',
   widgetAnchor: { gapX: 8 },
@@ -28,7 +81,7 @@ export const geminiAdapter: SiteAdapter = {
   },
 
   findSendButton(): HTMLElement | null {
-    return queryFallback(SEND_BUTTON_SELECTORS);
+    return findGeminiComposerActionButton();
   },
 
   getText(input: HTMLElement): string {

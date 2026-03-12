@@ -1,7 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { chatgptAdapter } from '../../../../src/content/sites/chatgpt';
 
 describe('chatgptAdapter', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('matches()', () => {
     // True positives
     it('matches chatgpt.com', () => {
@@ -104,7 +108,36 @@ describe('chatgptAdapter', () => {
       document.body.innerHTML = '';
     });
 
+    it('falls back to the rightmost visible submit button in the active composer', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function mockRect(this: HTMLElement): DOMRect {
+        if (this.getAttribute('data-testid') === 'composer-plus-btn') {
+          return { top: 0, left: 20, right: 60, bottom: 40, width: 40, height: 40, x: 20, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        if (this.getAttribute('data-testid') === 'mystery-audio-button') {
+          return { top: 0, left: 260, right: 300, bottom: 40, width: 40, height: 40, x: 260, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        return { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+      });
+
+      const composer = document.createElement('form');
+      const editor = document.createElement('div');
+      editor.id = 'prompt-textarea';
+      const plusBtn = document.createElement('button');
+      plusBtn.setAttribute('data-testid', 'composer-plus-btn');
+      plusBtn.type = 'button';
+      const audioBtn = document.createElement('button');
+      audioBtn.setAttribute('data-testid', 'mystery-audio-button');
+      audioBtn.type = 'submit';
+      composer.append(editor, plusBtn, audioBtn);
+      document.body.appendChild(composer);
+
+      expect(chatgptAdapter.findSendButton()).toBe(audioBtn);
+    });
+
     it('finds button by data-testid', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+        { top: 0, left: 0, right: 40, bottom: 40, width: 40, height: 40, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
+      );
       const btn = document.createElement('button');
       btn.setAttribute('data-testid', 'send-button');
       document.body.appendChild(btn);
@@ -112,13 +145,65 @@ describe('chatgptAdapter', () => {
     });
 
     it('falls back to aria-label', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+        { top: 0, left: 0, right: 40, bottom: 40, width: 40, height: 40, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
+      );
       const btn = document.createElement('button');
       btn.setAttribute('aria-label', 'Send prompt');
       document.body.appendChild(btn);
       expect(chatgptAdapter.findSendButton()).toBe(btn);
     });
 
+    it('falls back to stop button when send button is absent', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+        { top: 0, left: 0, right: 40, bottom: 40, width: 40, height: 40, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
+      );
+      const btn = document.createElement('button');
+      btn.setAttribute('aria-label', 'Stop generating');
+      document.body.appendChild(btn);
+      expect(chatgptAdapter.findSendButton()).toBe(btn);
+    });
+
+    it('falls back to composer speech button when send and stop buttons are absent', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+        { top: 0, left: 0, right: 40, bottom: 40, width: 40, height: 40, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
+      );
+      const btn = document.createElement('button');
+      btn.setAttribute('data-testid', 'composer-speech-button');
+      document.body.appendChild(btn);
+      expect(chatgptAdapter.findSendButton()).toBe(btn);
+    });
+
+    it('prefers the action button inside the active composer form', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function mockRect(this: HTMLElement): DOMRect {
+        if (this.getAttribute('aria-label') === 'Stop generating') {
+          return { top: 0, left: 260, right: 300, bottom: 40, width: 40, height: 40, x: 260, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        if (this.getAttribute('data-testid') === 'send-button') {
+          return { top: 0, left: 20, right: 60, bottom: 40, width: 40, height: 40, x: 20, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        return { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+      });
+
+      const composer = document.createElement('form');
+      const editor = document.createElement('div');
+      editor.id = 'prompt-textarea';
+      const stopBtn = document.createElement('button');
+      stopBtn.setAttribute('aria-label', 'Stop generating');
+      composer.append(editor, stopBtn);
+      document.body.appendChild(composer);
+
+      const strayBtn = document.createElement('button');
+      strayBtn.setAttribute('data-testid', 'send-button');
+      document.body.appendChild(strayBtn);
+
+      expect(chatgptAdapter.findSendButton()).toBe(stopBtn);
+    });
+
     it('returns null when no button exists', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+        { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
+      );
       expect(chatgptAdapter.findSendButton()).toBeNull();
     });
   });

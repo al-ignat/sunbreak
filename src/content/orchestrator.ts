@@ -195,6 +195,7 @@ export function createOrchestrator(
   async function onBlocked(): Promise<void> {
     const snap = findingsState.getSnapshot();
     const action = await widgetController.showToast(snap.activeCount);
+    findingsState.clear();
 
     const active = snap.tracked.filter((t) => t.status === 'active');
     const event: FlaggedEvent = {
