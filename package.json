@@ -9,7 +9,9 @@
     "test": "vitest run",
     "test:watch": "vitest watch",
     "lint": "eslint src/ tests/",
-    "test:e2e": "wxt build && playwright test"
+    "test:e2e": "wxt build && playwright test --project=extension",
+    "test:e2e:live": "wxt build && playwright test --project=live",
+    "test:e2e:setup": "wxt build && npx tsx tests/e2e/setup-profile.ts"
   },
   "dependencies": {
     "lucide-preact": "^0.577.0",
