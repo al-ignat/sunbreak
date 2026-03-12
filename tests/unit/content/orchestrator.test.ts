@@ -425,4 +425,40 @@ describe('createOrchestrator', () => {
       );
     });
   });
+
+  describe('capability flags', () => {
+    it('works normally with adapter that has no capabilities set', () => {
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const result = createOrchestrator(adapter, ctx);
+
+      expect(result.widgetController).toBeDefined();
+      expect(result.maskingMap).toBeDefined();
+    });
+
+    it('still creates maskingMap when reliableSetText is false', () => {
+      const adapter = createMockAdapter({
+        capabilities: { reliableSetText: false, sendButtonAnchor: true, pageContextBridge: false },
+      });
+      const ctx = createMockContext();
+      const result = createOrchestrator(adapter, ctx);
+
+      // MaskingMap should still exist for clipboard restore
+      expect(result.maskingMap).toBeDefined();
+      expect(typeof result.maskingMap.set).toBe('function');
+    });
+
+    it('still blocks submission when reliableSetText is false and findings exist', () => {
+      const adapter = createMockAdapter({
+        capabilities: { reliableSetText: false, sendButtonAnchor: true, pageContextBridge: false },
+      });
+      const ctx = createMockContext();
+      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
+
+      findingsState.update([makeFinding()]);
+
+      // Detection still works — submission should still be blocked
+      expect(submitConfig.shouldBlock()).toBe(true);
+    });
+  });
 });
