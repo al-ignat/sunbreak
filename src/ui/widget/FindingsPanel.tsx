@@ -29,6 +29,10 @@ function truncateOriginal(value: string): string {
   return `${value.slice(0, 8)}...`;
 }
 
+function explanationSummary(tf: TrackedFinding): string | null {
+  return tf.finding.context?.explanation?.summary ?? null;
+}
+
 function formatRemainingTime(expiresAt: number): string {
   const remaining = Math.max(0, expiresAt - Date.now());
   const minutes = Math.ceil(remaining / 60_000);
@@ -137,6 +141,11 @@ export default function FindingsPanel({
                   <span class="sb-panel__value" title={tf.finding.value}>
                     {truncateValue(tf.finding.value, tf.finding.type)}
                   </span>
+                  {explanationSummary(tf) && (
+                    <span class="sb-panel__explanation">
+                      {explanationSummary(tf)}
+                    </span>
+                  )}
                 </span>
                 <span class="sb-panel__actions">
                   {onFix && (

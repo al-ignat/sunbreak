@@ -22,6 +22,7 @@ describe('classify', () => {
       expect(result.findings).toHaveLength(1);
       expect(result.findings[0]?.type).toBe('email');
       expect(result.findings[0]?.value).toBe('john@example.com');
+      expect(result.findings[0]?.context?.baseConfidence).toBe('HIGH');
       expect(result.hasHighConfidence).toBe(true);
     });
 
@@ -225,6 +226,59 @@ describe('classify', () => {
       const result = classify('john@example.com', { keywords: [] });
       expect(result.durationMs).toBeGreaterThanOrEqual(0);
       expect(typeof result.durationMs).toBe('number');
+    });
+  });
+
+  describe('context foundation', () => {
+    it('attaches neutral context metadata to classifier findings', () => {
+      const result = classify('Contact john@example.com for details', { keywords: [] });
+      const finding = result.findings[0];
+      expect(finding?.context).toEqual({
+        baseConfidence: 'HIGH',
+        score: 0,
+        categories: [],
+        signals: [],
+        explanation: null,
+      });
+    });
+
+    it('boosts keyword findings in confidentiality-heavy wording', () => {
+      const result = classify(
+        'Confidential internal use only: Project Neptune migration details',
+        { keywords: ['Project Neptune'] },
+      );
+
+      const finding = result.findings[0];
+      expect(finding?.type).toBe('keyword');
+      expect(finding?.confidence).toBe('HIGH');
+      expect(finding?.context?.categories).toContain('confidentiality');
+      expect(finding?.context?.explanation?.summary).toContain('confidential');
+    });
+
+    it('boosts medium api-key findings when they look like connection-string material', () => {
+      const result = classify(
+        'Set api_key = abcdef1234567890abcdef1234567890 in the .env connection string',
+        { keywords: [] },
+      );
+
+      const finding = result.findings.find((candidate) => candidate.type === 'api-key');
+      expect(finding?.label).toBe('Possible API Key');
+      expect(finding?.confidence).toBe('HIGH');
+      expect(finding?.context?.categories).toContain('code-structure');
+      expect(finding?.context?.explanation?.summary).toContain('connection-string');
+    });
+
+    it('suppresses example-style medium findings out of the visible scanner tier', () => {
+      const result = classify(
+        'Example contact: sample@example.com for tutorial docs',
+        { keywords: [] },
+      );
+
+      const finding = result.findings[0];
+      expect(finding?.type).toBe('email');
+      expect(finding?.confidence).toBe('MEDIUM');
+      expect(finding?.context?.categories).toContain('example-data');
+      expect(finding?.context?.explanation?.summary).toContain('lower confidence');
     });
   });
 

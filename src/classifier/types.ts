@@ -13,6 +13,44 @@ export type FindingType =
 /** How confident the detector is that this is a real match */
 export type Confidence = 'HIGH' | 'MEDIUM' | 'LOW';
 
+/** Context-aware scoring categories layered on top of raw detector matches */
+export type ContextCategory =
+  | 'confidentiality'
+  | 'financial'
+  | 'legal-privilege'
+  | 'hr-compensation'
+  | 'code-structure'
+  | 'security-infrastructure'
+  | 'example-data';
+
+export type ContextSignalDirection = 'boost' | 'suppress' | 'neutral';
+
+export interface ContextSignal {
+  readonly category: ContextCategory;
+  readonly label: string;
+  readonly direction: ContextSignalDirection;
+  readonly weight: number;
+}
+
+export interface FindingExplanation {
+  readonly summary: string;
+  readonly reasons: ReadonlyArray<string>;
+  readonly categories: ReadonlyArray<ContextCategory>;
+}
+
+export interface FindingContext {
+  /** Detector confidence before any context-aware scoring is applied */
+  readonly baseConfidence: Confidence;
+  /** Aggregate score delta applied by the context layer */
+  readonly score: number;
+  /** Categories that influenced the final finding */
+  readonly categories: ReadonlyArray<ContextCategory>;
+  /** Structured signal list used for evaluation and explanation generation */
+  readonly signals: ReadonlyArray<ContextSignal>;
+  /** Product-facing explanation for why this finding is worth surfacing */
+  readonly explanation: FindingExplanation | null;
+}
+
 /** A single piece of sensitive data found in the prompt */
 export interface Finding {
   /** What type of sensitive data was found */
@@ -29,6 +67,8 @@ export interface Finding {
   readonly label: string;
   /** Redaction placeholder, e.g. [EMAIL_1], [PHONE_2] */
   readonly placeholder: string;
+  /** Optional context-aware scoring and explanation metadata */
+  readonly context?: FindingContext;
 }
 
 /** Result returned by the classification engine */
@@ -61,6 +101,29 @@ export interface ClassifyOptions {
   /** Character ranges to skip during classification (e.g. already-masked tokens) */
   readonly excludeRanges?: ReadonlyArray<ExcludeRange>;
 }
+
+export interface ContextWindow {
+  readonly before: string;
+  readonly match: string;
+  readonly after: string;
+  readonly nearby: string;
+}
+
+export interface ContextScorerInput {
+  readonly text: string;
+  readonly finding: Finding;
+  readonly siblings: ReadonlyArray<Finding>;
+  readonly window: ContextWindow;
+}
+
+export interface ContextScoreResult {
+  readonly scoreDelta: number;
+  readonly categories?: ReadonlyArray<ContextCategory>;
+  readonly signals?: ReadonlyArray<ContextSignal>;
+  readonly explanation?: FindingExplanation | null;
+}
+
+export type ContextScorer = (input: ContextScorerInput) => ContextScoreResult | null;
 
 /**
  * Detector priority order for deduplication tiebreaking.

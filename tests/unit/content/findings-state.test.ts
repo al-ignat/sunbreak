@@ -79,6 +79,39 @@ describe('FindingsState', () => {
       expect(id1).toBe(id2);
     });
 
+    it('preserves id when only context metadata changes for the same type+value', () => {
+      const state = createFindingsState();
+      state.update([makeFinding()]);
+      const id = idAt(state.getSnapshot().tracked, 0);
+
+      state.update([
+        makeFinding({
+          context: {
+            baseConfidence: 'HIGH',
+            score: 1,
+            categories: ['confidentiality'],
+            signals: [
+              {
+                category: 'confidentiality',
+                label: 'confidential marker',
+                direction: 'boost',
+                weight: 1,
+              },
+            ],
+            explanation: {
+              summary: 'Flagged because nearby wording suggests confidential internal content.',
+              reasons: ['Confidential wording boosted the match.'],
+              categories: ['confidentiality'],
+            },
+          },
+        }),
+      ]);
+
+      const snap = state.getSnapshot();
+      expect(snap.tracked[0]?.id).toBe(id);
+      expect(snap.tracked[0]?.finding.context?.score).toBe(1);
+    });
+
     it('handles multiple findings with same type+value (occurrence order)', () => {
       const state = createFindingsState();
       const f1 = makeFinding({ startIndex: 0, endIndex: 16 });

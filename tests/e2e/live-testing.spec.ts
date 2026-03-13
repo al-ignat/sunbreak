@@ -502,6 +502,98 @@ for (const site of SITES) {
       await page.close();
     });
 
+    test('T11: explanation text appears for contextual PII (Epic 2)', async ({ context }) => {
+      const page = await context.newPage();
+      await page.goto(site.url, { waitUntil: 'domcontentloaded' });
+
+      const editor = page.locator(site.editorSelector).first();
+      await editor.waitFor({ state: 'visible', timeout: 15_000 });
+
+      try {
+        await waitForWidgetRoot(page);
+      } catch {
+        console.log(`[${site.name}] T11 SKIP: widget root not injected`);
+        test.skip();
+        return;
+      }
+
+      // Type PII near a confidentiality context keyword
+      await editor.click();
+      await page.keyboard.type('Please send the confidential report to john.doe@example.com');
+
+      // Wait for scanner debounce (500ms) + context scoring + rendering
+      await page.waitForTimeout(2500);
+
+      // Open the panel by clicking the widget badge
+      const badgeClicked = await clickShadowElement(page, '#sunbreak-widget-root', '.sb-widget');
+      console.log(`[${site.name}] T11 badge clicked: ${badgeClicked}`);
+      await page.waitForTimeout(500);
+
+      // Read all shadow DOM text — should contain explanation mentioning "confidential"
+      const shadowText = await readShadowText(page, '#sunbreak-widget-root');
+      console.log(`[${site.name}] T11 shadow text (first 300): "${shadowText.substring(0, 300)}"`);
+
+      const hasExplanation = shadowText.toLowerCase().includes('confidential');
+      console.log(`[${site.name}] T11 explanation contains "confidential": ${hasExplanation}`);
+      expect.soft(hasExplanation).toBe(true);
+      if (hasExplanation) {
+        console.log(`[${site.name}] T11 PASS: context explanation visible`);
+      }
+
+      // Clear
+      await page.keyboard.press('Meta+a');
+      await page.keyboard.press('Backspace');
+      await page.close();
+    });
+
+    test('T12: example/demo context lowers confidence (Epic 2)', async ({ context }) => {
+      const page = await context.newPage();
+      await page.goto(site.url, { waitUntil: 'domcontentloaded' });
+
+      const editor = page.locator(site.editorSelector).first();
+      await editor.waitFor({ state: 'visible', timeout: 15_000 });
+
+      try {
+        await waitForWidgetRoot(page);
+      } catch {
+        console.log(`[${site.name}] T12 SKIP: widget root not injected`);
+        test.skip();
+        return;
+      }
+
+      // Type PII in a clear example/demo context
+      await editor.click();
+      await page.keyboard.type('For the tutorial demo, use sample@example.com as the test address');
+
+      // Wait for scanner debounce + context scoring
+      await page.waitForTimeout(2500);
+
+      // Read shadow text to check for example-data explanation
+      const shadowText = await readShadowText(page, '#sunbreak-widget-root');
+      console.log(`[${site.name}] T12 shadow text (first 300): "${shadowText.substring(0, 300)}"`);
+
+      // If the finding is still visible (email starts HIGH, suppresses to MEDIUM),
+      // the explanation should mention lowered confidence or example/sample context
+      const hasLowerExplanation = shadowText.toLowerCase().includes('lower')
+        || shadowText.toLowerCase().includes('example')
+        || shadowText.toLowerCase().includes('sample');
+
+      if (shadowText.length > 0 && hasLowerExplanation) {
+        console.log(`[${site.name}] T12 PASS: example-data context explanation visible`);
+      } else if (shadowText.length === 0 || !shadowText.includes('@')) {
+        // Finding may have been fully suppressed (no widget content) — that's also valid
+        console.log(`[${site.name}] T12 PASS: finding suppressed by example-data context`);
+      } else {
+        console.log(`[${site.name}] T12 SOFT FAIL: no example-data context signal detected`);
+        expect.soft(hasLowerExplanation).toBe(true);
+      }
+
+      // Clear
+      await page.keyboard.press('Meta+a');
+      await page.keyboard.press('Backspace');
+      await page.close();
+    });
+
     test('T8: extension re-attaches after SPA navigation', async ({ context }) => {
       const page = await context.newPage();
       await page.goto(site.url, { waitUntil: 'domcontentloaded' });
