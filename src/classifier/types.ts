@@ -20,7 +20,8 @@ export type ContextCategory =
   | 'legal-privilege'
   | 'hr-compensation'
   | 'code-structure'
-  | 'security-infrastructure';
+  | 'security-infrastructure'
+  | 'example-data';
 
 export type ContextSignalDirection = 'boost' | 'suppress' | 'neutral';
 

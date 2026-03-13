@@ -81,6 +81,36 @@ describe('context-scorer foundation', () => {
     expect(finding.confidence).toBe('HIGH');
     expect(finding.context?.score).toBe(1);
     expect(finding.context?.explanation?.summary).toContain('compensation');
+    expect(finding.context?.explanation?.reasons).toEqual([
+      'Nearby salary wording increased confidence.',
+    ]);
+  });
+
+  it('suppresses medium-confidence findings when nearby context looks like example data', () => {
+    const scorer: ContextScorer = () => ({
+      scoreDelta: -1,
+      categories: ['example-data'],
+      signals: [
+        {
+          category: 'example-data',
+          label: 'example-style content',
+          direction: 'suppress',
+          weight: -1,
+        },
+      ],
+      explanation: null,
+    });
+
+    const finding = scoreFindingWithContext(
+      'Use sample@example.com in the tutorial docs',
+      makeFinding({ confidence: 'MEDIUM', value: 'sample@example.com', startIndex: 4, endIndex: 22 }),
+      [],
+      [scorer],
+    );
+
+    expect(finding.confidence).toBe('LOW');
+    expect(finding.context?.categories).toEqual(['example-data']);
+    expect(finding.context?.explanation?.summary).toContain('lower confidence');
   });
 
   it('scores every finding in the list while preserving order', () => {

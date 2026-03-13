@@ -9,6 +9,7 @@ import type {
 import { DETECTOR_PRIORITY } from './types';
 import { generateDescriptiveToken, createTokenContext } from './smart-tokens';
 import { scoreFindingsWithContext } from './context-scorer';
+import { CONTEXT_SCORERS } from './context-rules';
 import {
   detectEmails,
   detectPhones,
@@ -182,7 +183,7 @@ export function classify(text: string, options: ClassifyOptions): Classification
   filtered.sort((a, b) => a.startIndex - b.startIndex);
 
   // Apply context-aware scoring and explanation metadata
-  const withContext = scoreFindingsWithContext(input, filtered);
+  const withContext = scoreFindingsWithContext(input, filtered, CONTEXT_SCORERS);
 
   // Assign placeholders
   const withPlaceholders = assignPlaceholders(withContext);

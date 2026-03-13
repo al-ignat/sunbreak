@@ -7,6 +7,7 @@ import type {
   Finding,
   FindingContext,
 } from './types';
+import { buildFindingExplanation } from './explanations';
 
 const CONTEXT_WINDOW_RADIUS = 80;
 
@@ -60,7 +61,8 @@ function mergeScoreResults(
   ];
   const signals = results.flatMap((result) => result.signals ?? []);
   const explanation =
-    results.find((result) => result.explanation)?.explanation ?? null;
+    results.find((result) => result.explanation)?.explanation ??
+    buildFindingExplanation(signals);
 
   return {
     score,
