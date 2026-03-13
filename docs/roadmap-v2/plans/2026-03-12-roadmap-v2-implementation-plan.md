@@ -349,7 +349,7 @@ Phase 1 should be considered complete only when all of the following are true:
 
 ### Implementation outcome — 2026-03-13
 
-**Status:** substantially completed in code, with live provider verification still pending
+**Status:** completed for code and verification scope, pending PR packaging only
 
 **Implemented in this execution pass**
 
@@ -378,11 +378,14 @@ Phase 1 should be considered complete only when all of the following are true:
 - `npm test` -> **43/43 test files passed, 726/726 tests passed**
 - `npm run build` -> **passed**
 - `npm run lint` -> **passed with 8 pre-existing warnings in older test files, no errors**
+- Playwright live-provider run -> **30/30 passed**
+  - ChatGPT: **10/10**
+  - Claude: **10/10**
+  - Gemini: **10/10**
 
 **Verification not completed yet**
 
-- live manual provider matrix on ChatGPT, Claude, and Gemini was **not** run in this environment
-- no live E2E/browser-session verification was executed as part of this pass
+- none required for Epic 1 beyond normal PR review sanity checks
 
 **Current Epic 1 assessment**
 
@@ -390,7 +393,7 @@ Phase 1 should be considered complete only when all of the following are true:
 - disabled/degraded behavior is materially safer than before
 - overlay and hover positioning are more robust under normal DOM movement
 - local debugging support is now strong enough to investigate provider-specific failures faster
-- the remaining Epic 1 risk is primarily live provider drift, not untested local controller logic
+- the remaining Epic 1 risk is ordinary future provider drift, not current verification coverage
 
 ---
 
