@@ -69,6 +69,34 @@ describe('HoverCard', () => {
     expect(masked.textContent).toBe('[EMAIL_1]');
   });
 
+  it('renders explanation summary when context metadata is present', () => {
+    const finding = makeTracked({
+      finding: makeFinding({
+        context: {
+          baseConfidence: 'HIGH',
+          score: 1,
+          categories: ['confidentiality'],
+          signals: [
+            {
+              category: 'confidentiality',
+              label: 'confidential wording',
+              direction: 'boost',
+              weight: 1,
+            },
+          ],
+          explanation: {
+            summary: 'Flagged because nearby wording suggests confidential internal content.',
+            reasons: ['confidential wording increased confidence.'],
+            categories: ['confidentiality'],
+          },
+        },
+      }),
+    });
+
+    const { container } = render(<HoverCard {...defaultProps({ finding })} />);
+    expect(container.querySelector('.sb-hover-card__explanation')?.textContent).toContain('confidential');
+  });
+
   it('calls onFix with finding id when Fix is clicked', () => {
     const onFix = vi.fn();
     const { container } = render(<HoverCard {...defaultProps({ onFix })} />);

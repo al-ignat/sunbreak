@@ -144,6 +144,37 @@ describe('FindingsPanel', () => {
       renderPanel();
       expect(screen.getByText('john@example.com')).toBeTruthy();
     });
+
+    it('renders explanation text when context metadata is present', () => {
+      const tracked = [
+        makeTracked({
+          id: 'a',
+          finding: {
+            context: {
+              baseConfidence: 'HIGH',
+              score: 1,
+              categories: ['confidentiality'],
+              signals: [
+                {
+                  category: 'confidentiality',
+                  label: 'confidential wording',
+                  direction: 'boost',
+                  weight: 1,
+                },
+              ],
+              explanation: {
+                summary: 'Flagged because nearby wording suggests confidential internal content.',
+                reasons: ['confidential wording increased confidence.'],
+                categories: ['confidentiality'],
+              },
+            },
+          },
+        }),
+      ];
+
+      const { container } = renderPanel({ tracked });
+      expect(container.querySelector('.sb-panel__explanation')?.textContent).toContain('confidential');
+    });
   });
 
   describe('severity colors', () => {

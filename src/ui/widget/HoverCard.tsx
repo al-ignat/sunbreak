@@ -134,6 +134,11 @@ export default function HoverCard({
         <div class="sb-hover-card__original">{finding.finding.value}</div>
         <div class="sb-hover-card__arrow" aria-hidden="true"><ArrowDownIcon size={12} /></div>
         <div class="sb-hover-card__masked">{finding.finding.placeholder}</div>
+        {finding.finding.context?.explanation?.summary && (
+          <div class="sb-hover-card__explanation">
+            {finding.finding.context.explanation.summary}
+          </div>
+        )}
       </div>
 
       <div class="sb-hover-card__actions">

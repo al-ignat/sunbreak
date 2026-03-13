@@ -263,4 +263,47 @@ describe('attachScanner', () => {
     expect(snap.tracked.length).toBeGreaterThan(0);
     expect(snap.tracked[0]?.finding.type).toBe('keyword');
   });
+
+  it('filters out keyword findings suppressed to LOW confidence by example-style context', () => {
+    let text = '';
+    const adapter = makeAdapter(() => text);
+    const input = adapter.findInput();
+    if (!input) throw new Error('no input');
+    const state = createFindingsState();
+    const config = makeConfig({
+      getKeywords: (): string[] => ['ProjectNeptune'],
+    });
+    const ctx = makeCtx();
+
+    attachScanner(input, adapter, config, state, ctx);
+
+    text = 'Tutorial placeholder: use ProjectNeptune as an example value';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(500);
+
+    expect(state.getSnapshot().tracked).toHaveLength(0);
+  });
+
+  it('keeps boosted keyword findings visible and carries explanation metadata', () => {
+    let text = '';
+    const adapter = makeAdapter(() => text);
+    const input = adapter.findInput();
+    if (!input) throw new Error('no input');
+    const state = createFindingsState();
+    const config = makeConfig({
+      getKeywords: (): string[] => ['ProjectNeptune'],
+    });
+    const ctx = makeCtx();
+
+    attachScanner(input, adapter, config, state, ctx);
+
+    text = 'Confidential internal use only: ProjectNeptune launch checklist';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(500);
+
+    const snap = state.getSnapshot();
+    expect(snap.tracked).toHaveLength(1);
+    expect(snap.tracked[0]?.finding.confidence).toBe('HIGH');
+    expect(snap.tracked[0]?.finding.context?.explanation?.summary).toContain('confidential');
+  });
 });
