@@ -51,15 +51,21 @@ export default function RestoreToast({
     <div
       class="sb-restore-toast"
       role="alertdialog"
-      aria-label={`Restore ${count} masked value${plural}? Auto-dismissing in ${seconds} seconds.`}
+      aria-label={`Masked text copied. Restore ${count} original value${plural} locally? Auto-declining in ${seconds} seconds.`}
       aria-live="polite"
     >
       <div class="sb-restore-toast__message">
         <span class="sb-restore-toast__icon" aria-hidden="true">
           <ClipboardCopyIcon size={16} />
         </span>
-        <span class="sb-restore-toast__text">
-          Restore {count} masked value{plural}?
+        <span class="sb-restore-toast__content">
+          <span class="sb-restore-toast__eyebrow">Masked text copied</span>
+          <span class="sb-restore-toast__text">
+            Restore {count} original value{plural} locally?
+          </span>
+          <span class="sb-restore-toast__note">
+            Safe masked text stays on the clipboard unless you confirm.
+          </span>
         </span>
         <span class="sb-restore-toast__countdown" aria-hidden="true">
           <ClockIcon size={12} />

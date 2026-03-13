@@ -31,7 +31,7 @@
 
 .sb-restore-toast__message {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   padding: 10px 12px;
 }
@@ -41,12 +41,33 @@
   align-items: center;
   color: var(--sb-color-info);
   flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.sb-restore-toast__content {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sb-restore-toast__eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--sb-color-text-secondary);
 }
 
 .sb-restore-toast__text {
-  flex: 1;
   font-weight: 600;
   color: var(--sb-color-info);
+}
+
+.sb-restore-toast__note {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--sb-color-text-muted);
 }
 
 .sb-restore-toast__countdown {
