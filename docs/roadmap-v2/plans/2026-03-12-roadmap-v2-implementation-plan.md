@@ -762,7 +762,7 @@ Epic 2 should be considered complete only when all of the following are true:
 
 ### Implementation outcome — 2026-03-13
 
-**Status:** completed for code and local verification scope, with live browser verification still recommended
+**Status:** completed for code and verification scope, pending PR packaging only
 
 **Implemented in this execution pass**
 
@@ -793,10 +793,10 @@ Epic 2 should be considered complete only when all of the following are true:
 - `npm test` -> **45/45 test files passed, 743/743 tests passed**
 - `npm run build` -> **passed**
 - `npm run lint` -> **passed with 8 pre-existing warnings in older test files, no errors**
+- Playwright live-provider verification -> **passed**
 
 **Verification still recommended**
 
-- live browser/provider verification for the new explanation UI in ChatGPT, Claude, and Gemini
 - a prompt-corpus comparison pass to quantify precision improvements against a fixed baseline set
 
 **Current Epic 2 assessment**
@@ -804,7 +804,7 @@ Epic 2 should be considered complete only when all of the following are true:
 - Sunbreak now has a real context-aware scoring stage rather than regex-only classification
 - explanation metadata is now product-facing, not just internal classifier state
 - the implementation is intentionally conservative and deterministic: simple local rules, bounded categories, no model dependency
-- the largest remaining gap is evaluation rigor, not missing implementation plumbing
+- the largest remaining gap is evaluation rigor, not missing implementation or browser-surface verification
 
 ---
 
