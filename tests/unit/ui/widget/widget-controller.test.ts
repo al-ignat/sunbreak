@@ -102,6 +102,14 @@ function appendSendButton(role: 'primary' | 'replacement' = 'primary'): HTMLButt
   return button;
 }
 
+function getWidgetHost(): HTMLElement {
+  const host = document.getElementById('sunbreak-widget-root');
+  if (!(host instanceof HTMLElement)) {
+    throw new Error('widget host not found');
+  }
+  return host;
+}
+
 async function flushAsync(): Promise<void> {
   await Promise.resolve();
   await vi.runAllTimersAsync();
@@ -182,6 +190,7 @@ describe('widget-controller anchor behavior', () => {
     expect(lastCall?.[0].left).toBe(1200);
     expect(lastCall?.[1]).toEqual({ width: 140, height: 36 });
     expect(lastCall?.[3]).toEqual({ mode: 'send-button', gapX: 12 });
+    expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
   });
 
   it('falls back to the input box and later promotes to send-button anchoring when the button appears', async () => {
@@ -203,6 +212,7 @@ describe('widget-controller anchor behavior', () => {
       offsetX: 12,
       offsetY: 36,
     });
+    expect(getWidgetHost().dataset.anchorMode).toBe('input-box-fallback');
 
     appendSendButton();
     await flushAsync();
@@ -210,6 +220,7 @@ describe('widget-controller anchor behavior', () => {
     const callsAfterPromotion = vi.mocked(computeWidgetPosition).mock.calls;
     expect(callsAfterPromotion.at(-1)?.[0].left).toBe(1200);
     expect(callsAfterPromotion.at(-1)?.[3]).toEqual({ mode: 'send-button', gapX: 8 });
+    expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
   });
 
   it('rebinds observers and repositions when the send button node is replaced', async () => {
@@ -274,6 +285,8 @@ describe('widget-controller anchor behavior', () => {
     controller.mount(input);
 
     expect(computeWidgetPosition).not.toHaveBeenCalled();
+    expect(getWidgetHost().dataset.anchorMode).toBe('hidden');
+    expect(getWidgetHost().dataset.anchorReason).toBe('idle');
   });
 
   it('remains visible when masked values exist even with no active findings', async () => {
@@ -293,6 +306,28 @@ describe('widget-controller anchor behavior', () => {
     expect(computeWidgetPosition).toHaveBeenCalled();
     const lastCall = vi.mocked(computeWidgetPosition).mock.lastCall;
     expect(lastCall?.[3]).toEqual({ mode: 'send-button', gapX: 8 });
+  });
+
+  it('re-mounts cleanly without stacking anchor subscriptions', async () => {
+    appendInput();
+    appendSendButton();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
+
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx());
+    activeControllers.push(controller);
+    const input = document.getElementById('editor');
+    if (!input) throw new Error('input not found');
+
+    controller.mount(input);
+    controller.mount(input);
+    vi.mocked(computeWidgetPosition).mockClear();
+
+    findingsState.update([makeFinding({ value: 'jane@acme.com' })]);
+    await flushAsync();
+
+    expect(vi.mocked(computeWidgetPosition).mock.calls).toHaveLength(1);
+    expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
   });
 });
 
