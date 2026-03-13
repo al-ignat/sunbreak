@@ -1132,6 +1132,48 @@ Epic 3 should be considered complete only when all of the following are true:
 - originals remain memory-only with test-backed expiry and reset behavior
 - the team has prompt examples demonstrating that masking preserves AI usefulness
 
+### Implementation outcome — 2026-03-13
+
+**Status:** completed for local code and automated verification scope, pending live-provider / prompt-usability confirmation
+
+**Implemented in this execution pass**
+
+- formalized the masking token taxonomy in code with explicit per-type disclosure policy
+- hardened email/person token generation so shared mailboxes stay generic and trailing role qualifiers do not distort person-like tokens
+- improved multi-person readability by surfacing the exact mask token preview in the findings panel and contextual rationale in the hover card
+- replaced naive substring rewriting with validated redaction planning:
+  - invalid or stale spans are skipped instead of corrupting text
+  - `Fix All` now marks only successfully applied replacements as fixed
+- hardened clipboard restore flow so stale or detached restore approvals cannot overwrite a newer clipboard state
+- rewrote restore toast copy to make the trust model explicit:
+  - masked text lands first
+  - restore is local and opt-in
+  - timeout declines safely by default
+- clarified masked-state UI and accessibility language around local-only state:
+  - widget aria-label now says `masked locally`
+  - panel copy now explains originals stay in memory only
+  - masked-state section explains clipboard restore remains explicit
+- fixed a masking-map restore bug where shorter tokens could corrupt longer token restores when placeholders shared prefixes
+- added expiry-state hardening so empty `setAll()` calls do not arm masking TTL state
+
+**Verification completed**
+
+- `npm test` -> **45/45 test files passed, 762/762 tests passed**
+- `npm run build` -> **passed**
+- `npm run lint` -> **passed with 8 pre-existing warnings in older test files, no errors**
+
+**Verification still recommended**
+
+- Playwright live-provider validation on ChatGPT, Claude, and Gemini for the Epic 3 masking flows
+- prompt-usability evaluation using the planned multi-person, code/config, finance, and HR prompt set
+
+**Current Epic 3 assessment**
+
+- masking now behaves much more like a product workflow than a raw redaction helper
+- the restore path is materially safer against stale state and more legible to the user
+- masked-state lifecycle is now communicated more clearly in both UI text and accessibility labels
+- the main remaining Epic 3 gap is end-to-end behavioral confirmation on live providers and prompt-quality validation, not missing local implementation
+
 ---
 
 ## Epic 4 — Company-Specific Patterns
