@@ -192,7 +192,7 @@ describe('FindingsPanel', () => {
       const tracked = [makeTracked({ id: 'test-id-456' })];
       renderPanel({ tracked, onIgnore });
 
-      fireEvent.click(screen.getByText('Ignore'));
+      fireEvent.click(screen.getByLabelText(/^Ignore/));
       expect(onIgnore).toHaveBeenCalledWith('test-id-456');
     });
 
@@ -327,7 +327,7 @@ describe('FindingsPanel', () => {
 
     it('Ignore button has contextual aria-label', () => {
       renderPanel();
-      const ignoreBtn = screen.getByText('Ignore');
+      const ignoreBtn = screen.getByLabelText(/^Ignore/);
       expect(ignoreBtn.getAttribute('aria-label')).toContain('Ignore');
       expect(ignoreBtn.getAttribute('aria-label')).toContain('Email Address');
     });

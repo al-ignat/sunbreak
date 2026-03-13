@@ -70,10 +70,10 @@ describe('chatgptAdapter', () => {
       expect(chatgptAdapter.getText(editor)).toBe('');
     });
 
-    it('trims whitespace', () => {
+    it('preserves surrounding whitespace for offset stability', () => {
       const editor = document.createElement('div');
       editor.innerHTML = '<p>  spaced  </p>';
-      expect(chatgptAdapter.getText(editor)).toBe('spaced');
+      expect(chatgptAdapter.getText(editor)).toBe('  spaced  ');
     });
   });
 

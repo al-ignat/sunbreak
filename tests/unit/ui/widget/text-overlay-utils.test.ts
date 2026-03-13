@@ -3,10 +3,12 @@ import {
   createRangeFromOffsets,
   findingAtPoint,
   calculateUnderlines,
+  getVisibleEditorRect,
 } from '../../../../src/ui/widget/text-overlay-utils';
 import type { UnderlineSegment } from '../../../../src/ui/widget/text-overlay-utils';
 import type { TrackedFinding } from '../../../../src/content/findings-state';
 import type { Finding } from '../../../../src/classifier/types';
+import { buildEditorTextModel } from '../../../../src/content/sites/dom-utils';
 
 function makeFinding(overrides: Partial<Finding> = {}): Finding {
   return {
@@ -125,6 +127,30 @@ describe('createRangeFromOffsets', () => {
     expect(range.startContainer.textContent).toBe('hello');
     expect(range.endContainer.textContent).toBe('world');
   });
+
+  it('preserves leading and trailing spaces in the canonical text model', () => {
+    const div = document.createElement('div');
+    div.innerHTML = '<p>  john@example.com  </p>';
+    document.body.appendChild(div);
+
+    expect(buildEditorTextModel(div).text).toBe('  john@example.com  ');
+
+    const range = createRangeFromOffsets(div, 2, 18);
+    if (!range) throw new Error('Range should not be null');
+    expect(range.toString()).toBe('john@example.com');
+  });
+
+  it('preserves blank edge paragraphs when computing offsets', () => {
+    const div = document.createElement('div');
+    div.innerHTML = '<p><br></p><p>john@example.com</p><p><br></p>';
+    document.body.appendChild(div);
+
+    expect(buildEditorTextModel(div).text).toBe('\njohn@example.com\n');
+
+    const range = createRangeFromOffsets(div, 1, 17);
+    if (!range) throw new Error('Range should not be null');
+    expect(range.toString()).toBe('john@example.com');
+  });
 });
 
 describe('findingAtPoint', () => {
@@ -202,7 +228,14 @@ describe('calculateUnderlines', () => {
       makeTracked({ status: 'fixed' }),
     ];
 
-    const result = calculateUnderlines(div, tracked);
+    const result = calculateUnderlines(div, tracked, {
+      top: 0,
+      left: 0,
+      right: 400,
+      bottom: 200,
+      width: 400,
+      height: 200,
+    });
     expect(result).toEqual([]);
   });
 
@@ -211,7 +244,84 @@ describe('calculateUnderlines', () => {
     div.textContent = 'hello';
     document.body.appendChild(div);
 
-    const result = calculateUnderlines(div, []);
+    const result = calculateUnderlines(div, [], {
+      top: 0,
+      left: 0,
+      right: 400,
+      bottom: 200,
+      width: 400,
+      height: 200,
+    });
     expect(result).toEqual([]);
+  });
+
+  it('clips underline segments to the visible editor viewport', () => {
+    const parent = document.createElement('div');
+    parent.style.overflow = 'hidden';
+    const div = document.createElement('div');
+    div.textContent = 'john@example.com';
+    parent.appendChild(div);
+    document.body.appendChild(parent);
+
+    parent.getBoundingClientRect = () => ({
+      top: 100,
+      left: 50,
+      right: 250,
+      bottom: 180,
+      width: 200,
+      height: 80,
+      x: 50,
+      y: 100,
+      toJSON: () => ({}),
+    }) as DOMRect;
+    div.getBoundingClientRect = () => ({
+      top: 60,
+      left: 20,
+      right: 420,
+      bottom: 260,
+      width: 400,
+      height: 200,
+      x: 20,
+      y: 60,
+      toJSON: () => ({}),
+    }) as DOMRect;
+    Range.prototype.getClientRects = () => ([
+      {
+        top: 120,
+        left: 70,
+        right: 230,
+        bottom: 134,
+        width: 160,
+        height: 14,
+        x: 70,
+        y: 120,
+        toJSON: () => ({}),
+      },
+      {
+        top: 190,
+        left: 70,
+        right: 230,
+        bottom: 204,
+        width: 160,
+        height: 14,
+        x: 70,
+        y: 190,
+        toJSON: () => ({}),
+      },
+    ]) as unknown as DOMRectList;
+
+    const visible = getVisibleEditorRect(div);
+    if (!visible) throw new Error('Visible rect should not be null');
+
+    const result = calculateUnderlines(div, [makeTracked()], visible);
+    expect(result).toEqual([
+      {
+        top: 134,
+        left: 70,
+        width: 160,
+        severity: 'warning',
+        findingId: 'tf-1',
+      },
+    ]);
   });
 });
