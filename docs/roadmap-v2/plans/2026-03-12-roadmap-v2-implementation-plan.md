@@ -760,6 +760,52 @@ Epic 2 should be considered complete only when all of the following are true:
 - latency remains acceptable in normal prompt entry
 - the team has a reusable evaluation corpus for future classifier work
 
+### Implementation outcome — 2026-03-13
+
+**Status:** completed for code and local verification scope, with live browser verification still recommended
+
+**Implemented in this execution pass**
+
+- extended the classifier finding model with context metadata:
+  - base confidence
+  - score delta
+  - context categories
+  - structured signals
+  - explanation object
+- inserted a dedicated post-regex context-scoring stage into the classifier pipeline
+- added the first contextual category rules for:
+  - confidentiality markers
+  - legal privilege markers
+  - HR / compensation indicators
+  - financial indicators
+  - code structure / connection-string context
+  - security infrastructure context
+- added a bounded example/demo-data suppressor to reduce visibility of weaker example-style findings
+- added deterministic explanation generation from context signals
+- preserved findings-state stability by keeping tracked finding identity on `type + value`
+- verified scanner behavior against final post-context confidence
+- surfaced explanation summaries in:
+  - hover card
+  - findings panel
+
+**Verification completed**
+
+- `npm test` -> **45/45 test files passed, 743/743 tests passed**
+- `npm run build` -> **passed**
+- `npm run lint` -> **passed with 8 pre-existing warnings in older test files, no errors**
+
+**Verification still recommended**
+
+- live browser/provider verification for the new explanation UI in ChatGPT, Claude, and Gemini
+- a prompt-corpus comparison pass to quantify precision improvements against a fixed baseline set
+
+**Current Epic 2 assessment**
+
+- Sunbreak now has a real context-aware scoring stage rather than regex-only classification
+- explanation metadata is now product-facing, not just internal classifier state
+- the implementation is intentionally conservative and deterministic: simple local rules, bounded categories, no model dependency
+- the largest remaining gap is evaluation rigor, not missing implementation plumbing
+
 ---
 
 ## Epic 3 — Reversible Masking Productization
