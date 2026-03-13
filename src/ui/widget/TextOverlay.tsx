@@ -4,8 +4,10 @@ import type { TrackedFinding, FindingsState } from '../../content/findings-state
 import {
   calculateUnderlines,
   findingAtPoint as findingAtPointUtil,
+  getVisibleEditorRect,
 } from './text-overlay-utils';
 import type { UnderlineSegment } from './text-overlay-utils';
+import type { ViewportRect } from './text-overlay-utils';
 import HoverCard from './HoverCard';
 
 /** Handle exposed for Phase 6 hover card coupling */
@@ -21,17 +23,6 @@ export interface TextOverlayProps {
   onIgnore?: (id: string) => void;
   onIgnoreAllOfType?: (type: string) => void;
   onDisableType?: (type: string) => void;
-}
-
-/** Find the nearest scroll ancestor of an element */
-function findScrollParent(el: HTMLElement): HTMLElement | null {
-  let parent = el.parentElement;
-  while (parent) {
-    const overflow = getComputedStyle(parent).overflowY;
-    if (overflow === 'auto' || overflow === 'scroll') return parent;
-    parent = parent.parentElement;
-  }
-  return null;
 }
 
 /** Delay before hiding hover card after mouse leaves */
@@ -53,94 +44,120 @@ export default function TextOverlay({
   onDisableType,
 }: TextOverlayProps): JSX.Element | null {
   const [segments, setSegments] = useState<UnderlineSegment[]>([]);
-  const [editorRect, setEditorRect] = useState<DOMRect | null>(null);
-  const [scrollDelta, setScrollDelta] = useState(0);
+  const [editorRect, setEditorRect] = useState<ViewportRect | null>(null);
   const [hover, setHover] = useState<HoverState | null>(null);
   const trackedRef = useRef<ReadonlyArray<TrackedFinding>>([]);
   const segmentsRef = useRef<UnderlineSegment[]>([]);
-  const baseScrollRef = useRef(0);
-  const rafRef = useRef<number | null>(null);
+  const recalcRafRef = useRef<number | null>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hoverFindingIdRef = useRef<string | null>(null);
+
+  function getAnchorForFinding(
+    findingId: string,
+  ): Pick<HoverState, 'anchorX' | 'anchorY'> | null {
+    const seg = segmentsRef.current.find((candidate) => candidate.findingId === findingId);
+    if (!seg) return null;
+    return {
+      anchorX: seg.left + seg.width / 2,
+      anchorY: seg.top,
+    };
+  }
 
   // Full recalc: create ranges, get rects, update segments
   const recalculate = useCallback((): void => {
     if (!editorEl || !editorEl.isConnected) {
+      segmentsRef.current = [];
       setSegments([]);
       setEditorRect(null);
       return;
     }
 
     const tracked = trackedRef.current;
-    const newSegments = calculateUnderlines(editorEl, tracked);
-    const rect = editorEl.getBoundingClientRect();
+    const rect = getVisibleEditorRect(editorEl);
+    if (!rect) {
+      segmentsRef.current = [];
+      setSegments([]);
+      setEditorRect(null);
+      return;
+    }
 
-    // Reset scroll baseline
-    const scrollParent = findScrollParent(editorEl);
-    baseScrollRef.current = scrollParent?.scrollTop ?? 0;
-    setScrollDelta(0);
-
+    const newSegments = calculateUnderlines(editorEl, tracked, rect);
     segmentsRef.current = newSegments;
     setSegments(newSegments);
     setEditorRect(rect);
+
+    const hoveredId = hoverFindingIdRef.current;
+    if (!hoveredId) return;
+
+    const nextFinding = tracked.find(
+      (candidate) => candidate.id === hoveredId && candidate.status === 'active',
+    );
+    const anchor = getAnchorForFinding(hoveredId);
+    if (!nextFinding || !anchor) {
+      setHover(null);
+      hoverFindingIdRef.current = null;
+      return;
+    }
+
+    setHover({
+      finding: nextFinding,
+      anchorX: anchor.anchorX,
+      anchorY: anchor.anchorY,
+    });
   }, [editorEl]);
+
+  const scheduleRecalculate = useCallback((): void => {
+    if (recalcRafRef.current !== null) return;
+    recalcRafRef.current = requestAnimationFrame(() => {
+      recalcRafRef.current = null;
+      recalculate();
+    });
+  }, [recalculate]);
 
   // Subscribe to findings state changes
   useEffect(() => {
     const unsub = findingsState.subscribe((snap) => {
       trackedRef.current = snap.tracked;
-      recalculate();
+      scheduleRecalculate();
     });
     // Initial sync
     trackedRef.current = findingsState.getSnapshot().tracked;
     recalculate();
     return unsub;
-  }, [findingsState, recalculate]);
+  }, [findingsState, recalculate, scheduleRecalculate]);
 
-  // Scroll handler — compositor-only transform
+  // Track layout changes that move the editor without changing findings
   useEffect(() => {
     if (!editorEl) return;
-    const scrollParent = findScrollParent(editorEl);
-    if (!scrollParent) return;
 
-    function onScroll(): void {
-      if (rafRef.current !== null) return;
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = null;
-        const currentScroll = scrollParent.scrollTop;
-        setScrollDelta(currentScroll - baseScrollRef.current);
-      });
-    }
+    const resizeObserver = new ResizeObserver(() => {
+      scheduleRecalculate();
+    });
+    resizeObserver.observe(editorEl);
+    resizeObserver.observe(document.body);
 
-    scrollParent.addEventListener('scroll', onScroll, { passive: true });
+    const onViewportChange = (): void => {
+      scheduleRecalculate();
+    };
+
+    window.addEventListener('resize', onViewportChange);
+    window.addEventListener('scroll', onViewportChange, true);
+
     return (): void => {
-      scrollParent.removeEventListener('scroll', onScroll);
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', onViewportChange);
+      window.removeEventListener('scroll', onViewportChange, true);
+    };
+  }, [editorEl, scheduleRecalculate]);
+
+  useEffect(() => {
+    return (): void => {
+      if (recalcRafRef.current !== null) {
+        cancelAnimationFrame(recalcRafRef.current);
+        recalcRafRef.current = null;
       }
     };
-  }, [editorEl]);
-
-  // Resize handler — full recalc
-  useEffect(() => {
-    if (!editorEl) return;
-
-    let resizeRaf: number | null = null;
-    function onResize(): void {
-      if (resizeRaf !== null) return;
-      resizeRaf = requestAnimationFrame(() => {
-        resizeRaf = null;
-        recalculate();
-      });
-    }
-
-    window.addEventListener('resize', onResize);
-    return (): void => {
-      window.removeEventListener('resize', onResize);
-      if (resizeRaf !== null) cancelAnimationFrame(resizeRaf);
-    };
-  }, [editorEl, recalculate]);
+  }, []);
 
   // Clear hover when the hovered finding is no longer active
   useEffect(() => {
@@ -175,10 +192,9 @@ export default function TextOverlay({
         cancelHoverTimer();
         if (hoverFindingIdRef.current !== found.id) {
           hoverFindingIdRef.current = found.id;
-          // Find the segment for anchor positioning
-          const seg = segmentsRef.current.find((s) => s.findingId === found.id);
-          const anchorX = seg ? seg.left + seg.width / 2 : e.clientX;
-          const anchorY = seg ? seg.top : e.clientY;
+          const anchor = getAnchorForFinding(found.id);
+          const anchorX = anchor?.anchorX ?? e.clientX;
+          const anchorY = anchor?.anchorY ?? e.clientY;
           setHover({ finding: found, anchorX, anchorY });
         }
       } else {
@@ -277,8 +293,6 @@ export default function TextOverlay({
           overflow: 'hidden',
           pointerEvents: 'none',
           zIndex: 2147483645,
-          transform: `translateY(${-scrollDelta}px)`,
-          willChange: 'transform',
         }}
       >
         {segments.map((seg, i) => (

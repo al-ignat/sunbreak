@@ -34,11 +34,17 @@ describe('TextOverlay', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
     findingsState = createFindingsState();
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback): number => {
+      cb(0);
+      return 1;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((): void => {});
   });
 
   afterEach(() => {
     cleanup();
     document.body.innerHTML = '';
+    vi.restoreAllMocks();
   });
 
   it('renders nothing when no active findings', () => {
@@ -174,5 +180,148 @@ describe('TextOverlay', () => {
 
     const overlay = container.querySelector('.sb-text-overlay') as HTMLElement;
     expect(overlay.style.pointerEvents).toBe('none');
+  });
+
+  it('recalculates overlay position on scroll-driven layout changes without new findings', () => {
+    editor = createEditorWithText('john@example.com is here');
+
+    let editorRect = {
+      top: 0,
+      left: 0,
+      width: 400,
+      height: 200,
+      bottom: 200,
+      right: 400,
+      x: 0,
+      y: 0,
+    };
+    let underlineRect = {
+      top: 10,
+      left: 20,
+      width: 100,
+      height: 14,
+      bottom: 24,
+      right: 120,
+      x: 20,
+      y: 10,
+    };
+
+    Range.prototype.getClientRects = vi.fn(
+      () => [{ ...underlineRect, toJSON: vi.fn() }] as unknown as DOMRectList,
+    );
+    editor.getBoundingClientRect = vi.fn(
+      () => ({ ...editorRect, toJSON: vi.fn() }) as DOMRect,
+    );
+
+    findingsState.update([makeFinding()]);
+
+    const { container } = render(
+      <TextOverlay
+        findingsState={findingsState}
+        editorEl={editor}
+      />,
+    );
+
+    const overlayBefore = container.querySelector('.sb-text-overlay') as HTMLElement;
+    const underlineBefore = container.querySelector('.sb-underline') as HTMLElement;
+    expect(overlayBefore.style.top).toBe('0px');
+    expect(underlineBefore.style.top).toBe('24px');
+
+    editorRect = {
+      ...editorRect,
+      top: 50,
+      bottom: 250,
+      y: 50,
+    };
+    underlineRect = {
+      ...underlineRect,
+      top: 60,
+      bottom: 74,
+      y: 60,
+    };
+
+    act(() => {
+      window.dispatchEvent(new Event('scroll'));
+    });
+
+    const overlayAfter = container.querySelector('.sb-text-overlay') as HTMLElement;
+    const underlineAfter = container.querySelector('.sb-underline') as HTMLElement;
+    expect(overlayAfter.style.top).toBe('50px');
+    expect(underlineAfter.style.top).toBe('24px');
+  });
+
+  it('clips overlay bounds and underlines to the visible composer viewport', () => {
+    const parent = document.createElement('div');
+    parent.style.overflow = 'hidden';
+    document.body.appendChild(parent);
+
+    editor = document.createElement('div');
+    editor.setAttribute('contenteditable', 'true');
+    editor.textContent = 'john@example.com';
+    parent.appendChild(editor);
+
+    parent.getBoundingClientRect = vi.fn(() => ({
+      top: 100,
+      left: 50,
+      right: 250,
+      bottom: 180,
+      width: 200,
+      height: 80,
+      x: 50,
+      y: 100,
+      toJSON: vi.fn(),
+    }));
+    editor.getBoundingClientRect = vi.fn(() => ({
+      top: 60,
+      left: 20,
+      right: 420,
+      bottom: 260,
+      width: 400,
+      height: 200,
+      x: 20,
+      y: 60,
+      toJSON: vi.fn(),
+    }));
+    Range.prototype.getClientRects = vi.fn(() => ([
+      {
+        top: 120,
+        left: 70,
+        right: 230,
+        bottom: 134,
+        width: 160,
+        height: 14,
+        x: 70,
+        y: 120,
+        toJSON: vi.fn(),
+      },
+      {
+        top: 190,
+        left: 70,
+        right: 230,
+        bottom: 204,
+        width: 160,
+        height: 14,
+        x: 70,
+        y: 190,
+        toJSON: vi.fn(),
+      },
+    ]) as unknown as DOMRectList);
+
+    findingsState.update([makeFinding()]);
+
+    const { container } = render(
+      <TextOverlay
+        findingsState={findingsState}
+        editorEl={editor}
+      />,
+    );
+
+    const overlay = container.querySelector('.sb-text-overlay') as HTMLElement;
+    const underlines = container.querySelectorAll('.sb-underline');
+    expect(overlay.style.top).toBe('100px');
+    expect(overlay.style.left).toBe('50px');
+    expect(overlay.style.width).toBe('200px');
+    expect(overlay.style.height).toBe('80px');
+    expect(underlines).toHaveLength(1);
   });
 });

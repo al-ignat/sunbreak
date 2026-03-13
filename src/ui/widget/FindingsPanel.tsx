@@ -103,7 +103,9 @@ export default function FindingsPanel({
       onKeyDown={handleKeyDown}
     >
       <div class="sb-panel__header">
-        <span class="sb-panel__count">{headerText}</span>
+        <span class="sb-panel__count">
+          {headerText} <span class="sb-panel__count-suffix">in this prompt</span>
+        </span>
         {activeCount > 1 && onFixAll && (
           <button
             class="sb-panel__fix-all"
@@ -130,8 +132,11 @@ export default function FindingsPanel({
                   data-severity={findingSeverity(tf.finding.type)}
                   aria-hidden="true"
                 />
-                <span class="sb-panel__value" title={tf.finding.value}>
-                  {truncateValue(tf.finding.value, tf.finding.type)}
+                <span class="sb-panel__info">
+                  <span class="sb-panel__type">{tf.finding.label}</span>
+                  <span class="sb-panel__value" title={tf.finding.value}>
+                    {truncateValue(tf.finding.value, tf.finding.type)}
+                  </span>
                 </span>
                 <span class="sb-panel__actions">
                   {onFix && (
@@ -150,8 +155,7 @@ export default function FindingsPanel({
                     aria-label={`Ignore ${tf.finding.label} ${truncateValue(tf.finding.value, tf.finding.type)}`}
                     onClick={(): void => onIgnore(tf.id)}
                   >
-                    <EyeOffIcon size={12} />
-                    Ignore
+                    <EyeOffIcon size={14} />
                   </button>
                 </span>
               </li>
@@ -196,7 +200,7 @@ export default function FindingsPanel({
       )}
 
       <div class="sb-panel__footer">
-        <InfoIcon size={14} />
+        <InfoIcon size={12} />
         {onFixAll ? 'Fix All = mask values, safe to send' : 'Sensitive data detected in prompt'}
       </div>
     </div>

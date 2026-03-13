@@ -435,3 +435,90 @@ describe('widget-controller capability flags', () => {
     consoleSpy.mockRestore();
   });
 });
+
+describe('widget-controller panel dismissal', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+    wrapperWidth = 140;
+    triggerHeight = 36;
+    FakeResizeObserver.instances = [];
+    vi.useFakeTimers();
+
+    vi.stubGlobal('ResizeObserver', FakeResizeObserver);
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback): number => {
+      return window.setTimeout(() => cb(0), 0);
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id: number): void => {
+      clearTimeout(id);
+    });
+
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function getBoundingClientRect(this: HTMLElement): DOMRect {
+      if (this.id === 'editor') {
+        return makeRect({ top: 600, left: 200, right: 920, bottom: 700, width: 720, height: 100, x: 200, y: 600 });
+      }
+      if (this.id === 'sunbreak-widget-wrapper') {
+        return makeRect({ top: 0, left: 0, right: wrapperWidth, bottom: triggerHeight, width: wrapperWidth, height: triggerHeight, x: 0, y: 0 });
+      }
+      if (this.classList.contains('sb-widget')) {
+        return makeRect({ top: 0, left: 0, right: 112, bottom: triggerHeight, width: 112, height: triggerHeight, x: 0, y: 0 });
+      }
+      if (this.dataset.role === 'primary') {
+        return makeRect({ top: 660, left: 1200, right: 1236, bottom: 696, width: 36, height: 36, x: 1200, y: 660 });
+      }
+      return makeRect();
+    });
+
+    const originalAttachShadow = Element.prototype.attachShadow;
+    vi.spyOn(Element.prototype, 'attachShadow').mockImplementation(function patchedAttachShadow(
+      this: Element,
+      init: ShadowRootInit,
+    ): ShadowRoot {
+      return originalAttachShadow.call(this, { ...init, mode: 'open' });
+    });
+
+    vi.mocked(computeWidgetPosition).mockClear();
+  });
+
+  afterEach(() => {
+    while (activeControllers.length > 0) {
+      activeControllers.pop()?.destroy();
+    }
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('closes the findings panel when clicking outside the widget host', async () => {
+    appendInput();
+    appendSendButton();
+
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx());
+    activeControllers.push(controller);
+
+    const input = document.getElementById('editor');
+    if (!input) throw new Error('input not found');
+    controller.mount(input);
+    await flushAsync();
+
+    const host = document.getElementById('sunbreak-widget-root');
+    if (!(host instanceof HTMLElement)) throw new Error('widget host not found');
+    const shadow = host.shadowRoot;
+    if (!shadow) throw new Error('shadow root not found');
+
+    const trigger = shadow.querySelector('.sb-widget');
+    if (!(trigger instanceof HTMLElement)) throw new Error('widget trigger not found');
+    trigger.click();
+    await flushAsync();
+
+    expect(shadow.querySelector('.sb-panel')).toBeTruthy();
+
+    document.body.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true,
+      composed: true,
+    }));
+    await flushAsync();
+
+    expect(shadow.querySelector('.sb-panel')).toBeNull();
+  });
+});

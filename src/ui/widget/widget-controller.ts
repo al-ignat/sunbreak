@@ -274,6 +274,15 @@ export function createWidgetController(
     });
   }
 
+  function handleDocumentPointerDown(event: PointerEvent): void {
+    if (!panelOpen || !container) return;
+    const path = typeof event.composedPath === 'function'
+      ? event.composedPath()
+      : [];
+    if (path.includes(container)) return;
+    handleClose();
+  }
+
   function handleFix(id: string): void {
     if (!maskingAllowed) return;
 
@@ -511,6 +520,7 @@ export function createWidgetController(
     // Position listeners
     window.addEventListener('scroll', onScrollOrResize, true);
     window.addEventListener('resize', onScrollOrResize);
+    document.addEventListener('pointerdown', handleDocumentPointerDown, true);
 
     // Cleanup subscription on next unmount
     const prevUnmount = unmountInternal;
@@ -532,6 +542,7 @@ export function createWidgetController(
     stopObserving();
     window.removeEventListener('scroll', onScrollOrResize, true);
     window.removeEventListener('resize', onScrollOrResize);
+    document.removeEventListener('pointerdown', handleDocumentPointerDown, true);
 
     if (rafId !== null) {
       cancelAnimationFrame(rafId);
