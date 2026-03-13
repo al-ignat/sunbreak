@@ -1134,7 +1134,7 @@ Epic 3 should be considered complete only when all of the following are true:
 
 ### Implementation outcome — 2026-03-13
 
-**Status:** completed for local code and automated verification scope, pending live-provider / prompt-usability confirmation
+**Status:** completed — all completion gates verified
 
 **Implemented in this execution pass**
 
@@ -1158,21 +1158,40 @@ Epic 3 should be considered complete only when all of the following are true:
 
 **Verification completed**
 
-- `npm test` -> **45/45 test files passed, 762/762 tests passed**
+- `npm test` -> **46/46 test files passed, 779/779 tests passed** (includes 17 new prompt-usability evaluation tests)
 - `npm run build` -> **passed**
 - `npm run lint` -> **passed with 8 pre-existing warnings in older test files, no errors**
+- `npm run test:e2e:live` -> **36/36 live tests passed** on ChatGPT, Claude, and Gemini
 
-**Verification still recommended**
+**Live-provider validation — 2026-03-13**
 
-- Playwright live-provider validation on ChatGPT, Claude, and Gemini for the Epic 3 masking flows
-- prompt-usability evaluation using the planned multi-person, code/config, finance, and HR prompt set
+Playwright live E2E tests confirmed on all three providers:
 
-**Current Epic 3 assessment**
+- T3: Fix / Fix All replaces PII with descriptive tokens (e.g. `[John D. email]`, `[SSN redacted]`) — editor text updated correctly
+- T4: framework sync confirms the AI sees only the masked text after fix
+- T9: widget becomes visible immediately when PII is typed
+- T10: submit interception toast appears and Send Anyway releases the message end-to-end
+- T11: context explanations (confidentiality flagging) render in the findings panel
+- T12: example/demo context properly suppresses findings
 
-- masking now behaves much more like a product workflow than a raw redaction helper
+**Prompt-usability evaluation — 2026-03-13**
+
+Created `tests/unit/classifier/prompt-usability.test.ts` with 17 tests covering the required prompt categories:
+
+- **multi-person coordination**: three-person email prompt produces distinguishable name-based tokens (`[John S. email]`, `[Jane D. email]`, `[Bob W. email]`); same-person duplicates collapse; role vs personal emails differentiated
+- **code/configuration with secrets**: API keys get provider-labeled tokens (`[OpenAI API key]`, `[AWS access key]`, `[GitHub token]`); internal IPs get `[internal IP]`; code context (retry logic, CI config) preserved after masking
+- **finance**: credit cards show trailing digits for disambiguation (`[card ending 1111]` vs `[card ending 0004]`); phone numbers show last 2 digits; financial question context survives masking
+- **HR**: SSNs are fully opaque (`[SSN redacted]`) with no digits leaked; CPR likewise (`[CPR redacted]`); payroll/W-2 task context preserved; multiple SSNs get sequential disambiguation
+- **overdisclosure checks**: email tokens never contain full last names; phone tokens show only last 2 digits; credit card tokens show only last 4; national IDs are fully opaque
+- **AI usefulness**: masked prompts preserve task instructions, structural markers, and question clarity; classification stays under 50ms performance budget
+
+**Epic 3 final assessment**
+
+- masking behaves as a product workflow: descriptive tokens, provider-specific labels, person-aware naming, safe disambiguation
 - the restore path is materially safer against stale state and more legible to the user
-- masked-state lifecycle is now communicated more clearly in both UI text and accessibility labels
-- the main remaining Epic 3 gap is end-to-end behavioral confirmation on live providers and prompt-quality validation, not missing local implementation
+- masked-state lifecycle is communicated clearly in UI text and accessibility labels
+- all completion gates verified: token quality, rewrite semantics, restore-on-copy, masked-state visibility, memory-only expiry, and prompt-usability demonstration
+- no remaining Epic 3 gaps
 
 ---
 
