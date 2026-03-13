@@ -1237,6 +1237,280 @@ Created `tests/unit/classifier/prompt-usability.test.ts` with 17 tests covering 
 4. `feat(classifier): run custom patterns with labels and severity`
 5. `test(patterns): add validation and performance coverage`
 
+### Detailed execution plan
+
+This epic should be executed as a configuration-product epic, not just as “let users type regex.”
+
+The goal is to let a team model company-specific identifiers safely and repeatedly:
+
+- start from understandable templates where possible
+- allow custom patterns when needed
+- make every pattern testable against sample text before it affects live scanning
+- keep pattern execution bounded so bad configuration cannot degrade the extension
+
+### Execution principles
+
+- treat custom patterns as managed detector definitions, not free-form raw strings floating through storage
+- prefer structured inputs and templates over regex-first UX
+- make validation and sample testing mandatory product surfaces, not hidden implementation details
+- keep execution local, deterministic, and performance-bounded
+- avoid mixing company-specific patterns into the existing keyword model; they need their own storage and runtime path
+
+### Workstream 1 — Storage model and detector contract
+
+**Objective:** define the persistent model for company-specific patterns and the runtime contract the classifier will consume.
+
+**Primary modules**
+
+- [src/storage/types.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/types.ts)
+- [src/storage/dashboard.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/dashboard.ts)
+- likely new pattern modules under `src/classifier/`
+
+**Tasks**
+
+1. Introduce a dedicated `CustomPattern` model with fields for:
+   - stable id
+   - label
+   - description
+   - enabled flag
+   - severity or finding-class mapping
+   - pattern source
+   - sample strings
+   - optional template origin
+2. Define a normalized runtime shape separate from the stored editable shape.
+3. Decide how custom pattern matches map into the existing finding model:
+   - reuse `keyword`
+   - add a new finding type
+   - or add metadata on top of a custom-pattern execution path
+4. Add storage helpers for CRUD, import/export, and normalization.
+5. Define migration behavior for future schema changes up front.
+
+**Important boundary**
+
+Do not overload `keywords` storage with richer pattern metadata.
+Epic 4 needs a first-class model or the dashboard and runtime logic will stay brittle.
+
+**Exit criteria**
+
+- custom patterns have a stable storage schema
+- runtime loading and normalization are explicit and testable
+
+### Workstream 2 — Template library and guided creation model
+
+**Objective:** give users practical starting points before they ever touch regex syntax.
+
+**Primary modules**
+
+- new dashboard/template modules under `src/ui/dashboard/`
+- [src/ui/dashboard/KeywordManager.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/KeywordManager.tsx) or its replacement
+
+**Tasks**
+
+1. Define the first template categories:
+   - employee IDs
+   - customer IDs
+   - invoice / PO numbers
+   - project codes
+   - internal ticket / case references
+   - contract or matter references
+2. For each template, define:
+   - human-readable purpose
+   - editable placeholders
+   - generated regex
+   - examples that should and should not match
+3. Decide which patterns can be represented with structured fields instead of raw regex.
+4. Provide a fallback “advanced custom pattern” mode only when template coverage is insufficient.
+5. Make template-derived patterns editable after creation without losing provenance.
+
+**Exit criteria**
+
+- users can create useful company-specific patterns without regex knowledge for the common cases
+- templates and advanced mode share the same downstream storage model
+
+### Workstream 3 — Validation and sample-testing engine
+
+**Objective:** prevent malformed or dangerous patterns from reaching live prompt scanning.
+
+**Primary modules**
+
+- new validation/execution modules under `src/classifier/` or `src/utils/`
+- [src/storage/dashboard.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/dashboard.ts)
+
+**Tasks**
+
+1. Add validation for:
+   - invalid regex syntax
+   - empty or trivial expressions
+   - catastrophic backtracking risk heuristics
+   - patterns that are too broad
+2. Build a test-against-sample flow that returns:
+   - matches
+   - capture spans
+   - failure or warning states
+3. Decide whether samples are single-string only or support positive/negative cases separately.
+4. Bound sample execution time and pattern length.
+5. Surface warnings for patterns that match nearly everything or nothing.
+
+**Important boundary**
+
+Validation should happen before save and again before runtime compilation.
+Do not trust stored pattern text blindly.
+
+**Exit criteria**
+
+- malformed or obviously dangerous patterns are blocked or heavily warned
+- users can test patterns against representative company samples before enabling them
+
+### Workstream 4 — Dashboard management UX
+
+**Objective:** ship a pattern-management surface that is understandable to non-regex users and scalable for teams.
+
+**Primary modules**
+
+- [src/ui/dashboard/KeywordManager.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/KeywordManager.tsx) or successor component
+- [src/ui/dashboard/SettingsPanel.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/SettingsPanel.tsx)
+- [src/entrypoints/dashboard/App.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/entrypoints/dashboard/App.tsx)
+
+**Tasks**
+
+1. Decide whether custom patterns live:
+   - beside keywords in the current manager area
+   - or in a dedicated company-pattern card / tab
+2. Add list and editing views with:
+   - enable/disable
+   - label
+   - severity/category
+   - template badge
+   - sample-test status
+3. Support add, edit, duplicate, delete, import, and export.
+4. Make advanced regex editing visually secondary to guided creation.
+5. Keep empty-state copy focused on concrete company identifier examples.
+
+**Exit criteria**
+
+- the dashboard makes custom pattern management feel like configuration, not developer tooling
+- import/export and editing workflows are low-friction
+
+### Workstream 5 — Classifier execution and findings integration
+
+**Objective:** run company-specific patterns during classification without destabilizing the existing detector pipeline.
+
+**Primary modules**
+
+- [src/classifier/engine.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/classifier/engine.ts)
+- [src/classifier/types.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/classifier/types.ts)
+- [src/content/scanner.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/content/scanner.ts)
+- [src/content/findings-state.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/content/findings-state.ts)
+
+**Tasks**
+
+1. Compile enabled custom patterns into a bounded detector set.
+2. Decide execution order relative to:
+   - built-in detectors
+   - keyword matching
+   - context scoring
+3. Attach custom labels and severity/category metadata to resulting findings.
+4. Ensure overlap resolution between custom patterns and built-in findings is deterministic.
+5. Verify scanner updates when patterns are added, edited, or toggled in settings.
+
+**Key product question**
+
+If a company pattern and a built-in detector overlap, which one should define the user-facing label?
+That needs to be explicit, not incidental.
+
+**Exit criteria**
+
+- company-specific patterns participate in live scanning predictably
+- classifier output remains stable and explainable when overlaps happen
+
+### Workstream 6 — Import/export format and team portability
+
+**Objective:** make company-specific configuration shareable without creating an opaque blob format.
+
+**Primary modules**
+
+- [src/storage/dashboard.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/dashboard.ts)
+- dashboard import/export UI modules
+
+**Tasks**
+
+1. Define a human-readable import/export format:
+   - JSON preferred over ad hoc text blobs
+   - include schema version
+   - include template provenance and sample metadata when present
+2. Validate imports before merge.
+3. Decide merge semantics:
+   - replace all
+   - append unique
+   - interactive collision handling later
+4. Add export naming and provenance markers so teams know what they are sharing.
+5. Keep imports local-only and never tied to backend dependency.
+
+**Exit criteria**
+
+- patterns can be moved between teammates or workspaces cleanly
+- import errors are understandable and non-destructive
+
+### Workstream 7 — Test and performance matrix
+
+**Objective:** prove that custom patterns are safe, understandable, and fast enough for live prompt scanning.
+
+**Primary automated tests**
+
+- storage model and migration tests
+- dashboard validation / import-export tests
+- classifier execution tests for custom patterns
+- scanner integration tests when settings change live
+
+**Test additions required**
+
+1. Storage and validation:
+   - invalid regex rejected
+   - empty pattern rejected
+   - duplicate ids or labels handled cleanly
+   - import schema version checks
+2. Template flow:
+   - template creates expected regex
+   - editing preserves label/severity semantics
+   - generated examples match as intended
+3. Runtime behavior:
+   - custom match appears with correct label and severity
+   - overlap with built-in detector resolves deterministically
+   - disabled patterns do not execute
+4. Performance:
+   - bounded pattern count still keeps classification interactive
+   - obviously risky expressions are blocked before runtime
+
+**Manual verification matrix**
+
+1. Create a company pattern from a template and verify sample testing before save.
+2. Create an advanced regex pattern and verify warnings / validation behavior.
+3. Enable, disable, edit, and delete patterns and confirm live scanning updates.
+4. Import and export a pattern bundle and confirm round-trip integrity.
+5. Verify overlapping company-specific and built-in findings render predictably in the widget.
+
+### Suggested implementation order inside the epic
+
+1. Storage model and detector contract.
+2. Template library and guided creation.
+3. Validation and sample-testing engine.
+4. Dashboard management UX.
+5. Classifier execution and findings integration.
+6. Import/export format.
+7. Test and performance pass.
+
+### Epic 4 completion gate
+
+Epic 4 should be considered complete only when all of the following are true:
+
+- company-specific patterns have a first-class storage and runtime model
+- guided templates cover the most common internal identifier use cases
+- advanced custom patterns are validated and sample-tested before live use
+- dashboard management UX is understandable without regex expertise
+- company-specific findings surface with clear labels and predictable severity/category behavior
+- import/export is portable and non-destructive
+- performance remains comfortably interactive under realistic pattern counts
+
 ---
 
 ## Epic 5 — Recovery And Provider Guidance
