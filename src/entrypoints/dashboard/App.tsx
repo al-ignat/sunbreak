@@ -7,9 +7,11 @@ import { BarChart } from '../../ui/dashboard/BarChart';
 import { ActivityLog } from '../../ui/dashboard/ActivityLog';
 import { SettingsPanel } from '../../ui/dashboard/SettingsPanel';
 import { KeywordManager } from '../../ui/dashboard/KeywordManager';
+import { CustomPatternManager } from '../../ui/dashboard/CustomPatternManager';
 import { ReportCards } from '../../ui/dashboard/ReportCards';
 import type {
   AggregatedStats,
+  CustomPattern,
   FlaggedEvent,
   DetectionSettings,
   ExtensionSettings,
@@ -24,6 +26,7 @@ import {
   getDetectionSettings,
   getExtensionSettings,
   getKeywords,
+  getCustomPatterns,
 } from '../../storage/dashboard';
 
 export default function App(): JSX.Element {
@@ -41,16 +44,18 @@ export default function App(): JSX.Element {
     { ...DEFAULT_EXTENSION_SETTINGS },
   );
   const [keywords, setKeywordsLocal] = useState<ReadonlyArray<string>>([]);
+  const [customPatterns, setCustomPatternsLocal] = useState<ReadonlyArray<CustomPattern>>([]);
 
   const loadData = useCallback(async (): Promise<void> => {
     try {
-      const [s7, s30, evts, ds, es, kw] = await Promise.all([
+      const [s7, s30, evts, ds, es, kw, patterns] = await Promise.all([
         getWeeklyStats(7),
         getWeeklyStats(30),
         getFlaggedEvents(),
         getDetectionSettings(),
         getExtensionSettings(),
         getKeywords(),
+        getCustomPatterns(),
       ]);
       setStats7(s7);
       setStats30(s30);
@@ -58,6 +63,7 @@ export default function App(): JSX.Element {
       setDetectionSettingsLocal(ds);
       setExtensionSettingsLocal(es);
       setKeywordsLocal(kw);
+      setCustomPatternsLocal(patterns);
     } catch {
       // Storage errors should not crash the dashboard
     }
@@ -91,6 +97,12 @@ export default function App(): JSX.Element {
     } catch { /* ignore */ }
   }, []);
 
+  const refreshCustomPatterns = useCallback(async (): Promise<void> => {
+    try {
+      setCustomPatternsLocal(await getCustomPatterns());
+    } catch { /* ignore */ }
+  }, []);
+
   useEffect(() => {
     void loadData();
 
@@ -107,6 +119,9 @@ export default function App(): JSX.Element {
       if (keys.includes('keywords')) {
         void refreshKeywords();
       }
+      if (keys.includes('customPatterns')) {
+        void refreshCustomPatterns();
+      }
     };
 
     if (chrome.storage?.onChanged) {
@@ -118,7 +133,7 @@ export default function App(): JSX.Element {
         chrome.storage.onChanged.removeListener(listener);
       }
     };
-  }, [loadData, refreshStats, refreshEvents, refreshSettings, refreshKeywords]);
+  }, [loadData, refreshStats, refreshEvents, refreshSettings, refreshKeywords, refreshCustomPatterns]);
 
   function handleTabChange(tab: TabId): void {
     setActiveTab(tab);
@@ -167,10 +182,16 @@ export default function App(): JSX.Element {
             />
           )}
           {activeTab === 'keywords' && (
-            <KeywordManager
-              keywords={keywords}
-              onDataChange={loadData}
-            />
+            <>
+              <KeywordManager
+                keywords={keywords}
+                onDataChange={loadData}
+              />
+              <CustomPatternManager
+                patterns={customPatterns}
+                onDataChange={loadData}
+              />
+            </>
           )}
           {activeTab === 'reports' && <ReportCards />}
         </div>
