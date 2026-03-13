@@ -18,6 +18,7 @@ import { computeWidgetPosition } from '../../../../src/ui/widget/position';
 import type { SiteAdapter } from '../../../../src/types';
 import type { Finding } from '../../../../src/classifier/types';
 import type { WidgetContext } from '../../../../src/ui/widget/widget-controller';
+import { clearLocalDiagnostics, getLocalDiagnostics } from '../../../../src/utils/local-diagnostics';
 
 let wrapperWidth = 140;
 let triggerHeight = 36;
@@ -102,6 +103,14 @@ function appendSendButton(role: 'primary' | 'replacement' = 'primary'): HTMLButt
   return button;
 }
 
+function getWidgetHost(): HTMLElement {
+  const host = document.getElementById('sunbreak-widget-root');
+  if (!(host instanceof HTMLElement)) {
+    throw new Error('widget host not found');
+  }
+  return host;
+}
+
 async function flushAsync(): Promise<void> {
   await Promise.resolve();
   await vi.runAllTimersAsync();
@@ -111,6 +120,7 @@ async function flushAsync(): Promise<void> {
 describe('widget-controller anchor behavior', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    clearLocalDiagnostics();
     wrapperWidth = 140;
     triggerHeight = 36;
     FakeResizeObserver.instances = [];
@@ -182,6 +192,7 @@ describe('widget-controller anchor behavior', () => {
     expect(lastCall?.[0].left).toBe(1200);
     expect(lastCall?.[1]).toEqual({ width: 140, height: 36 });
     expect(lastCall?.[3]).toEqual({ mode: 'send-button', gapX: 12 });
+    expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
   });
 
   it('falls back to the input box and later promotes to send-button anchoring when the button appears', async () => {
@@ -203,6 +214,7 @@ describe('widget-controller anchor behavior', () => {
       offsetX: 12,
       offsetY: 36,
     });
+    expect(getWidgetHost().dataset.anchorMode).toBe('input-box-fallback');
 
     appendSendButton();
     await flushAsync();
@@ -210,6 +222,7 @@ describe('widget-controller anchor behavior', () => {
     const callsAfterPromotion = vi.mocked(computeWidgetPosition).mock.calls;
     expect(callsAfterPromotion.at(-1)?.[0].left).toBe(1200);
     expect(callsAfterPromotion.at(-1)?.[3]).toEqual({ mode: 'send-button', gapX: 8 });
+    expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
   });
 
   it('rebinds observers and repositions when the send button node is replaced', async () => {
@@ -274,6 +287,8 @@ describe('widget-controller anchor behavior', () => {
     controller.mount(input);
 
     expect(computeWidgetPosition).not.toHaveBeenCalled();
+    expect(getWidgetHost().dataset.anchorMode).toBe('hidden');
+    expect(getWidgetHost().dataset.anchorReason).toBe('idle');
   });
 
   it('remains visible when masked values exist even with no active findings', async () => {
@@ -294,11 +309,122 @@ describe('widget-controller anchor behavior', () => {
     const lastCall = vi.mocked(computeWidgetPosition).mock.lastCall;
     expect(lastCall?.[3]).toEqual({ mode: 'send-button', gapX: 8 });
   });
+
+  it('re-mounts cleanly without stacking anchor subscriptions', async () => {
+    appendInput();
+    appendSendButton();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
+
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx());
+    activeControllers.push(controller);
+    const input = document.getElementById('editor');
+    if (!input) throw new Error('input not found');
+
+    controller.mount(input);
+    controller.mount(input);
+    vi.mocked(computeWidgetPosition).mockClear();
+
+    findingsState.update([makeFinding({ value: 'jane@acme.com' })]);
+    await flushAsync();
+
+    expect(vi.mocked(computeWidgetPosition).mock.calls).toHaveLength(1);
+    expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
+  });
+
+  it('suppresses visible UI when disabled and re-anchors when re-enabled', async () => {
+    appendInput();
+    appendSendButton();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
+
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx());
+    activeControllers.push(controller);
+    const input = document.getElementById('editor');
+    if (!input) throw new Error('input not found');
+
+    controller.mount(input);
+    await flushAsync();
+
+    expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
+    const callsBeforeDisable = vi.mocked(computeWidgetPosition).mock.calls.length;
+
+    controller.setEnabled(false);
+
+    expect(getWidgetHost().style.display).toBe('none');
+    expect(getWidgetHost().dataset.anchorMode).toBe('disabled');
+    expect(getWidgetHost().dataset.anchorReason).toBe('extension-disabled');
+    expect(vi.mocked(computeWidgetPosition).mock.calls).toHaveLength(callsBeforeDisable);
+
+    controller.setEnabled(true);
+    await flushAsync();
+
+    expect(getWidgetHost().style.display).toBe('');
+    expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
+    expect(vi.mocked(computeWidgetPosition).mock.calls.length).toBeGreaterThan(callsBeforeDisable);
+    expect(getLocalDiagnostics()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subsystem: 'widget-controller',
+          event: 'enabled-changed',
+          details: expect.objectContaining({ enabled: false }),
+        }),
+        expect.objectContaining({
+          subsystem: 'widget-controller',
+          event: 'anchor-state-changed',
+          details: expect.objectContaining({ mode: 'disabled' }),
+        }),
+      ]),
+    );
+  });
+
+  it('resolves active send and restore toasts safely when disabled', async () => {
+    appendInput();
+    appendSendButton();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
+
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx(), createMaskingMap());
+    activeControllers.push(controller);
+    const input = document.getElementById('editor');
+    if (!input) throw new Error('input not found');
+
+    controller.mount(input);
+    const sendPromise = controller.showToast(1);
+    const restorePromise = controller.showRestoreToast(2);
+
+    controller.setEnabled(false);
+
+    await expect(sendPromise).resolves.toBe('timeout');
+    await expect(restorePromise).resolves.toBe(false);
+    expect(getWidgetHost().dataset.anchorMode).toBe('disabled');
+  });
+
+  it('switches to degraded mode when the mounted input is detached', async () => {
+    const input = appendInput();
+    appendSendButton();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
+
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx());
+    activeControllers.push(controller);
+
+    controller.mount(input);
+    await flushAsync();
+
+    input.remove();
+    window.dispatchEvent(new Event('resize'));
+    await flushAsync();
+
+    expect(getWidgetHost().dataset.anchorMode).toBe('degraded');
+    expect(getWidgetHost().dataset.anchorReason).toBe('input-detached');
+  });
 });
 
 describe('widget-controller capability flags', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    clearLocalDiagnostics();
     wrapperWidth = 140;
     triggerHeight = 36;
     FakeResizeObserver.instances = [];
@@ -439,6 +565,7 @@ describe('widget-controller capability flags', () => {
 describe('widget-controller panel dismissal', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    clearLocalDiagnostics();
     wrapperWidth = 140;
     triggerHeight = 36;
     FakeResizeObserver.instances = [];

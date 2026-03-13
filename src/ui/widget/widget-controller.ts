@@ -14,6 +14,38 @@ import overlayStyles from './text-overlay.css?inline';
 import hoverCardStyles from './hover-card.css?inline';
 import type { TextOverlayHandle } from './TextOverlay';
 import type { MaskingMap } from '../../content/masking-map';
+import { recordLocalDiagnostic } from '../../utils/local-diagnostics';
+
+type WidgetAnchorMode =
+  | 'send-button'
+  | 'input-box-fallback'
+  | 'hidden'
+  | 'disabled'
+  | 'degraded';
+
+type WidgetAnchorReason =
+  | 'idle'
+  | 'extension-disabled'
+  | 'missing-input'
+  | 'input-detached'
+  | 'input-unmeasurable'
+  | 'widget-unmeasurable';
+
+type AnchorResolution =
+  | {
+      mode: 'send-button';
+      anchorRect: DOMRect;
+      config: AnchorConfig;
+    }
+  | {
+      mode: 'input-box-fallback';
+      anchorRect: DOMRect;
+      config: AnchorConfig;
+    }
+  | {
+      mode: 'hidden' | 'disabled' | 'degraded';
+      reason: WidgetAnchorReason;
+    };
 
 function createSheet(css: string): CSSStyleSheet {
   const sheet = new CSSStyleSheet();
@@ -87,9 +119,9 @@ export function createWidgetController(
   let toastState: ToastState | null = null;
   let restoreToastState: RestoreToastState | null = null;
   let overlayHandle: TextOverlayHandle | null = null;
-  let anchorReady = false;
   let currentSendButton: HTMLElement | null = null;
-  let currentAnchorMode: AnchorConfig['mode'] = 'input-box';
+  let currentAnchorMode: WidgetAnchorMode = 'hidden';
+  let currentAnchorReason: WidgetAnchorReason = 'idle';
   const maskingAllowed = adapter.capabilities?.reliableSetText !== false;
 
   const sendButtonConfig: AnchorConfig = {
@@ -117,6 +149,41 @@ export function createWidgetController(
   function setWrapperVisibility(visible: boolean): void {
     if (!wrapper) return;
     wrapper.style.visibility = visible ? 'visible' : 'hidden';
+  }
+
+  function setAnchorState(
+    mode: WidgetAnchorMode,
+    reason: WidgetAnchorReason = 'idle',
+  ): void {
+    if (
+      currentAnchorMode === mode &&
+      currentAnchorReason === reason &&
+      container?.dataset.anchorMode === mode &&
+      container?.dataset.anchorReason === reason &&
+      wrapper?.dataset.anchorMode === mode &&
+      wrapper?.dataset.anchorReason === reason
+    ) {
+      return;
+    }
+
+    currentAnchorMode = mode;
+    currentAnchorReason = reason;
+
+    if (container) {
+      container.dataset.anchorMode = mode;
+      container.dataset.anchorReason = reason;
+    }
+
+    if (wrapper) {
+      wrapper.dataset.anchorMode = mode;
+      wrapper.dataset.anchorReason = reason;
+    }
+
+    recordLocalDiagnostic('widget-controller', 'anchor-state-changed', {
+      adapter: adapter.name,
+      mode,
+      reason,
+    });
   }
 
   function ensureContainer(): ShadowRoot {
@@ -155,6 +222,10 @@ export function createWidgetController(
 
     shadowRoot = shadow;
     wrapper = w;
+    setAnchorState(extensionEnabled ? 'hidden' : 'disabled', extensionEnabled ? 'idle' : 'extension-disabled');
+    recordLocalDiagnostic('widget-controller', 'container-created', {
+      adapter: adapter.name,
+    });
 
     return shadow;
   }
@@ -174,6 +245,12 @@ export function createWidgetController(
     if (resizeObserver && currentSendButton) {
       resizeObserver.observe(currentSendButton);
     }
+
+    recordLocalDiagnostic('widget-controller', 'send-button-tracked', {
+      adapter: adapter.name,
+      present: currentSendButton !== null,
+      mode: currentSendButton ? 'send-button' : 'input-box-fallback',
+    });
 
     return true;
   }
@@ -195,37 +272,90 @@ export function createWidgetController(
     return { width, height };
   }
 
-  function updatePosition(): void {
-    if (!wrapper || !currentInput) return;
+  function resolveAnchor(): AnchorResolution {
+    if (!extensionEnabled) {
+      return {
+        mode: 'disabled',
+        reason: 'extension-disabled',
+      };
+    }
 
     if (!shouldShowFloatingUi()) {
-      anchorReady = false;
-      setWrapperVisibility(false);
-      return;
+      return {
+        mode: 'hidden',
+        reason: 'idle',
+      };
+    }
+
+    if (!currentInput) {
+      return {
+        mode: 'degraded',
+        reason: 'missing-input',
+      };
+    }
+
+    if (!currentInput.isConnected) {
+      return {
+        mode: 'degraded',
+        reason: 'input-detached',
+      };
     }
 
     updateSendButtonTracking();
 
-    const widgetSize = measureWidgetSize();
-    if (!widgetSize) {
+    if (currentSendButton) {
+      return {
+        mode: 'send-button',
+        anchorRect: currentSendButton.getBoundingClientRect(),
+        config: sendButtonConfig,
+      };
+    }
+
+    const inputRect = currentInput.getBoundingClientRect();
+    if (inputRect.width <= 0 || inputRect.height <= 0) {
+      return {
+        mode: 'degraded',
+        reason: 'input-unmeasurable',
+      };
+    }
+
+    return {
+      mode: 'input-box-fallback',
+      anchorRect: inputRect,
+      config: inputFallbackConfig,
+    };
+  }
+
+  function updatePosition(): void {
+    if (!wrapper) return;
+    if (!currentInput) {
+      setAnchorState(extensionEnabled ? 'degraded' : 'disabled', extensionEnabled ? 'missing-input' : 'extension-disabled');
+      setWrapperVisibility(false);
+      return;
+    }
+    const anchor = resolveAnchor();
+    if (anchor.mode === 'hidden' || anchor.mode === 'disabled' || anchor.mode === 'degraded') {
+      setAnchorState(anchor.mode, anchor.reason);
+      setWrapperVisibility(false);
       return;
     }
 
-    const anchorRect = currentSendButton?.getBoundingClientRect() ?? currentInput.getBoundingClientRect();
-    const anchorConfig = currentSendButton ? sendButtonConfig : inputFallbackConfig;
-    currentAnchorMode = anchorConfig.mode;
+    const widgetSize = measureWidgetSize();
+    if (!widgetSize) {
+      setAnchorState('degraded', 'widget-unmeasurable');
+      setWrapperVisibility(false);
+      return;
+    }
+
     const pos = computeWidgetPosition(
-      anchorRect,
+      anchor.anchorRect,
       widgetSize,
       { width: window.innerWidth, height: window.innerHeight },
-      anchorConfig,
+      anchor.config,
     );
     wrapper.style.top = `${pos.top}px`;
     wrapper.style.left = `${pos.left}px`;
-
-    if (!anchorReady) {
-      anchorReady = true;
-    }
+    setAnchorState(anchor.mode);
     setWrapperVisibility(true);
   }
 
@@ -298,6 +428,13 @@ export function createWidgetController(
     try {
       adapter.setText(input, redacted);
     } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      recordLocalDiagnostic('widget-controller', 'write-back-failed', {
+        adapter: adapter.name,
+        action: 'fix-one',
+        findingType: tf.finding.type,
+        message,
+      });
       console.error('[Sunbreak] setText failed:', e);
       return;
     }
@@ -327,6 +464,13 @@ export function createWidgetController(
     try {
       adapter.setText(input, redacted);
     } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      recordLocalDiagnostic('widget-controller', 'write-back-failed', {
+        adapter: adapter.name,
+        action: 'fix-all',
+        findingCount: active.length,
+        message,
+      });
       console.error('[Sunbreak] setText failed:', e);
       return;
     }
@@ -431,12 +575,38 @@ export function createWidgetController(
     });
   }
 
+  function clearVisibleUiForDisable(): void {
+    panelOpen = false;
+    overlayHandle = null;
+
+    if (toastState) {
+      const { resolve } = toastState;
+      toastState = null;
+      resolve('timeout');
+    }
+
+    if (restoreToastState) {
+      const { resolve } = restoreToastState;
+      restoreToastState = null;
+      resolve(false);
+    }
+  }
+
   function renderWidget(): void {
     if (!wrapper) return;
+    if (!extensionEnabled) {
+      render(null, wrapper);
+      overlayHandle = null;
+      setAnchorState('disabled', 'extension-disabled');
+      setWrapperVisibility(false);
+      return;
+    }
+
+    const mountedEditor = currentInput?.isConnected ? currentInput : null;
     render(
       h(Widget, {
         findingsState,
-        editorEl: currentInput,
+        editorEl: mountedEditor,
         supportsOverlay: adapter.supportsOverlay !== false,
         panelOpen,
         onFix: maskingAllowed ? handleFix : undefined,
@@ -477,13 +647,17 @@ export function createWidgetController(
       wrapper,
     );
     if (!shouldShowFloatingUi()) {
-      anchorReady = false;
+      setAnchorState('hidden', 'idle');
       setWrapperVisibility(false);
       return;
     }
-    if (currentInput) {
+    if (mountedEditor) {
       onScrollOrResize();
+      return;
     }
+
+    setAnchorState('degraded', 'input-detached');
+    setWrapperVisibility(false);
   }
 
   function showToast(activeCount: number): Promise<'send-anyway' | 'timeout'> {
@@ -501,7 +675,14 @@ export function createWidgetController(
   function mount(input: HTMLElement): void {
     if (ctx.isInvalid) return;
 
+    if (currentInput || wrapper) {
+      unmount();
+    }
+
     currentInput = input;
+    recordLocalDiagnostic('widget-controller', 'mount', {
+      adapter: adapter.name,
+    });
     ensureContainer();
     renderWidget();
     startObserving();
@@ -536,6 +717,11 @@ export function createWidgetController(
   };
 
   function unmount(): void {
+    recordLocalDiagnostic('widget-controller', 'unmount', {
+      adapter: adapter.name,
+      mode: currentAnchorMode,
+      reason: currentAnchorReason,
+    });
     unmountInternal();
     unmountInternal = (): void => {};
 
@@ -568,13 +754,17 @@ export function createWidgetController(
     }
 
     currentInput = null;
-    anchorReady = false;
-    currentAnchorMode = 'input-box';
+    currentAnchorMode = extensionEnabled ? 'hidden' : 'disabled';
+    currentAnchorReason = extensionEnabled ? 'idle' : 'extension-disabled';
     panelOpen = false;
+    setAnchorState(currentAnchorMode, currentAnchorReason);
     setWrapperVisibility(false);
   }
 
   function destroy(): void {
+    recordLocalDiagnostic('widget-controller', 'destroy', {
+      adapter: adapter.name,
+    });
     unmount();
     if (container?.parentNode) {
       container.parentNode.removeChild(container);
@@ -594,9 +784,18 @@ export function createWidgetController(
 
   function setEnabled(enabled: boolean): void {
     extensionEnabled = enabled;
+    recordLocalDiagnostic('widget-controller', 'enabled-changed', {
+      adapter: adapter.name,
+      enabled,
+    });
     if (container) {
       container.style.display = enabled ? '' : 'none';
     }
+    if (!enabled) {
+      clearVisibleUiForDisable();
+    }
+    setAnchorState(enabled ? 'hidden' : 'disabled', enabled ? 'idle' : 'extension-disabled');
+    renderWidget();
   }
 
   return { mount, unmount, destroy, showToast, showRestoreToast, getOverlayHandle, setEnabled };

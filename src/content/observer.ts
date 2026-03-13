@@ -11,6 +11,7 @@ import type { FindingsState } from './findings-state';
 import type { createWidgetController } from '../ui/widget/widget-controller';
 import type { MaskingMap } from './masking-map';
 import type { ClipboardInterceptor } from './clipboard-interceptor';
+import { recordLocalDiagnostic } from '../utils/local-diagnostics';
 
 /** How long to wait for the editor element before giving up (ms) */
 const FIND_TIMEOUT_MS = 10_000;
@@ -139,6 +140,10 @@ export function startObserving(
   let healthCheckId: number | null = null;
 
   function tearDown(): void {
+    recordLocalDiagnostic('observer', 'teardown', {
+      adapter: adapter.name,
+      hadInput: currentInput !== null,
+    });
     cleanupInterceptor?.();
     cleanupInterceptor = null;
     cleanupFileDetector?.();
@@ -156,6 +161,10 @@ export function startObserving(
 
   async function attach(): Promise<void> {
     if (ctx.isInvalid) return;
+    recordLocalDiagnostic('observer', 'attach-start', {
+      adapter: adapter.name,
+      pathname: window.location.pathname,
+    });
     // Catch navigations that wxt:locationchange missed (e.g. ChatGPT "New chat")
     clearIfNavigatedFromConversation();
     tearDown();
@@ -164,11 +173,20 @@ export function startObserving(
     if (!input || ctx.isInvalid) {
       if (!ctx.isInvalid) {
         recordAdapterFailure(adapter.name);
+        recordLocalDiagnostic('observer', 'attach-failed', {
+          adapter: adapter.name,
+          pathname: window.location.pathname,
+          reason: 'input-not-found',
+        });
       }
       return;
     }
 
     currentInput = input;
+    recordLocalDiagnostic('observer', 'attach-success', {
+      adapter: adapter.name,
+      pathname: window.location.pathname,
+    });
 
     const interceptorCtx = {
       get isInvalid(): boolean {
@@ -219,6 +237,10 @@ export function startObserving(
     healthCheckId = ctx.setInterval(() => {
       if (!currentInput?.isConnected) {
         // Element was removed — re-attach
+        recordLocalDiagnostic('observer', 'health-check-reattach', {
+          adapter: adapter.name,
+          pathname: window.location.pathname,
+        });
         void attach();
       }
     }, HEALTH_CHECK_INTERVAL_MS);
@@ -244,6 +266,11 @@ export function startObserving(
     if (wasInConversation) {
       maskingMap?.clear();
       scannerDeps?.state.clear();
+      recordLocalDiagnostic('observer', 'conversation-cleared', {
+        adapter: adapter.name,
+        from: lastKnownPathname,
+        to: currentPathname,
+      });
     }
 
     lastKnownPathname = currentPathname;
@@ -257,6 +284,10 @@ export function startObserving(
     window,
     'wxt:locationchange' as string,
     () => {
+      recordLocalDiagnostic('observer', 'locationchange', {
+        adapter: adapter.name,
+        pathname: window.location.pathname,
+      });
       clearIfNavigatedFromConversation();
       void attach();
     },
@@ -264,6 +295,9 @@ export function startObserving(
 
   // Full cleanup on context invalidation
   ctx.onInvalidated(() => {
+    recordLocalDiagnostic('observer', 'context-invalidated', {
+      adapter: adapter.name,
+    });
     tearDown();
   });
 }

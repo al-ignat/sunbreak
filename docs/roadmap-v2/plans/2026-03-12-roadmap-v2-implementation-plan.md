@@ -25,6 +25,8 @@ The order below is the recommended execution order, not just a thematic grouping
 
 **Purpose:** make the current in-page experience feel stable and production-ready.
 
+**Maps to roadmap phase:** Phase 1 — Finish The Core Interaction Layer
+
 ### Deliverables
 
 - finalized anchor behavior across ChatGPT, Claude, and Gemini
@@ -70,6 +72,328 @@ The order below is the recommended execution order, not just a thematic grouping
 3. `fix(overlay): stabilize hover and underline positioning`
 4. `feat(debug): add local widget lifecycle diagnostics`
 5. `test(widget): extend cross-provider interaction coverage`
+
+### Detailed execution plan
+
+This epic should be executed as a stabilization phase, not a feature expansion phase.
+
+The goal is to make the current interaction layer boringly reliable before any Phase 2 detection work starts.
+
+### Execution principles
+
+- prefer explicit lifecycle and anchor states over inferred UI behavior
+- keep provider-specific logic inside site adapters, not widget internals
+- fix state ownership before polishing visuals
+- only ship polish that survives disabled/degraded/reattach edge cases
+- every behavior change must be covered by either unit tests or a manual provider matrix
+
+### Workstream 1 — Baseline and failure inventory
+
+**Objective:** document the current behavior and identify where instability actually comes from.
+
+**Primary modules**
+
+- [src/ui/widget/widget-controller.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/widget-controller.ts)
+- [src/ui/widget/position.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/position.ts)
+- [src/content/orchestrator.ts](/private/tmp/sunbreak-roadmap-review/src/content/orchestrator.ts)
+- [src/content/observer.ts](/private/tmp/sunbreak-roadmap-review/src/content/observer.ts)
+- provider adapters under `src/content/sites/`
+
+**Tasks**
+
+1. Audit the current widget lifecycle from adapter attach -> scanner updates -> widget mount -> overlay updates -> submit/reset.
+2. Enumerate all current anchor states already present in code:
+   - send button found
+   - input fallback
+   - hidden because no floating UI is needed
+   - disabled because extension settings are off
+   - invalidated/unmounted because the content context is gone
+3. Identify where state is implicit today:
+   - `anchorReady`
+   - `currentSendButton`
+   - `panelOpen`
+   - toast visibility
+   - extension enabled state
+4. Build a concrete issue list from existing tests and manual provider checks:
+   - attach late after SPA navigation
+   - send button replaced by provider rerender
+   - input grows/shrinks while typing
+   - scroll or resize causes drift
+   - widget remains visible after findings clear
+   - disabled state still leaves stale UI mounted
+5. Convert that issue list into an acceptance checklist stored in this doc or a linked follow-up checklist.
+
+**Exit criteria**
+
+- a single agreed list of Phase 1 failure modes exists
+- ownership of each failure mode is mapped to widget controller, observer/orchestrator, positioning, or provider adapter
+
+### Workstream 2 — Explicit anchor and lifecycle state model
+
+**Objective:** make widget positioning and visibility decisions deterministic.
+
+**Primary modules**
+
+- [src/ui/widget/widget-controller.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/widget-controller.ts)
+- [src/ui/widget/position.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/position.ts)
+- [src/content/sites/chatgpt.ts](/private/tmp/sunbreak-roadmap-review/src/content/sites/chatgpt.ts)
+- [src/content/sites/claude.ts](/private/tmp/sunbreak-roadmap-review/src/content/sites/claude.ts)
+- [src/content/sites/gemini.ts](/private/tmp/sunbreak-roadmap-review/src/content/sites/gemini.ts)
+
+**Tasks**
+
+1. Replace ad hoc anchor bookkeeping with an explicit state model, for example:
+   - `send-button`
+   - `input-box-fallback`
+   - `hidden`
+   - `disabled`
+   - `degraded`
+2. Separate two decisions that are currently easy to conflate:
+   - whether the UI should exist
+   - where the UI should anchor
+3. Ensure provider adapters expose the minimum stable contract needed for anchor selection:
+   - `findInput`
+   - `findSendButton`
+   - any adapter capability flags that justify fallback behavior
+4. Standardize what happens when the send button disappears or is replaced mid-session:
+   - unobserve old node
+   - observe replacement
+   - fall back to input-box anchor without flicker
+5. Make invalidation and unmount behavior idempotent so repeated attach/detach cycles do not leak observers or stale wrappers.
+
+**Implementation notes**
+
+- do not encode provider names inside `widget-controller.ts` if an adapter capability or DOM contract can express the same rule
+- keep `computeWidgetPosition()` pure; state transitions belong in controller/orchestrator code
+- prefer returning structured anchor diagnostics over boolean flags where possible
+
+**Exit criteria**
+
+- every visible widget state maps to a named lifecycle/anchor state
+- send-button loss no longer causes orphaned UI or undefined behavior
+- remount after SPA rerender behaves the same way across all providers
+
+### Workstream 3 — Disabled, hidden, and degraded behavior hardening
+
+**Objective:** make non-happy-path behavior feel intentional instead of broken.
+
+**Primary modules**
+
+- [src/content/orchestrator.ts](/private/tmp/sunbreak-roadmap-review/src/content/orchestrator.ts)
+- [src/ui/widget/widget-controller.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/widget-controller.ts)
+- [src/content/findings-state.ts](/private/tmp/sunbreak-roadmap-review/src/content/findings-state.ts)
+
+**Tasks**
+
+1. Verify that extension disabled state suppresses all visible runtime UI:
+   - widget trigger
+   - panel
+   - hover card
+   - send toast
+   - restore toast
+   - overlay decorations
+2. Distinguish hidden because there is nothing to show from degraded because the widget cannot anchor confidently.
+3. Decide and implement degraded behavior explicitly:
+   - remain attached to input fallback
+   - suppress only the unstable surface
+   - expose local diagnostics for developers
+4. Ensure state clears consistently after:
+   - findings are resolved
+   - prompt is submitted
+   - input DOM node is replaced
+   - extension is toggled off and back on
+5. Verify log-only and masking-disabled modes do not accidentally leave stale widget state behind.
+
+**Exit criteria**
+
+- disabled mode produces no lingering visible UI
+- degraded mode is predictable and testable
+- state reset behavior is consistent after submit, clear, detach, and settings changes
+
+### Workstream 4 — Overlay, hover, and panel interaction stabilization
+
+**Objective:** remove the fragile feeling from inline findings interactions.
+
+**Primary modules**
+
+- [src/ui/widget/TextOverlay.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/TextOverlay.tsx)
+- [src/ui/widget/text-overlay-utils.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/text-overlay-utils.ts)
+- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
+
+**Tasks**
+
+1. Stabilize overlay measurement against normal text-entry changes:
+   - multiline growth
+   - scroll offsets
+   - zoom and resize
+   - provider-specific input padding differences
+2. Reduce hover-card edge cases:
+   - hover target mismatch
+   - card clipping near viewport edges
+   - hover leaving overlay causing flicker
+   - stale hover state after findings update
+3. Align findings panel behavior with current findings state:
+   - no stale counts
+   - correct empty state after fixes
+   - correct masked/unmasked presentation
+4. Ensure toast and restore-toast interactions do not overlap awkwardly with panel or hover card positioning.
+5. Treat CSS consistency as the last step in this workstream, after positioning and lifecycle bugs are resolved.
+
+**Exit criteria**
+
+- overlay markers remain aligned during ordinary typing and scrolling
+- hover card does not flicker or render off-screen in common cases
+- panel state matches findings state after fix, fix-all, send-anyway, and clear flows
+
+### Workstream 5 — Diagnostics and observability
+
+**Objective:** make anchor and attach failures debuggable without remote telemetry.
+
+**Primary modules**
+
+- [src/ui/widget/widget-controller.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/widget-controller.ts)
+- [src/content/orchestrator.ts](/private/tmp/sunbreak-roadmap-review/src/content/orchestrator.ts)
+- [src/content/observer.ts](/private/tmp/sunbreak-roadmap-review/src/content/observer.ts)
+
+**Tasks**
+
+1. Add developer-facing diagnostics for:
+   - attach success/failure
+   - chosen anchor mode
+   - fallback transitions
+   - invalidation/unmount reasons
+   - write-back or set-text failures where relevant
+2. Keep diagnostics local-only and easy to disable.
+3. Standardize event names so manual debugging across providers uses the same vocabulary.
+4. Ensure diagnostics are descriptive enough to support Phase 1 bug reports and future adapter work.
+
+**Exit criteria**
+
+- a developer can tell why the widget is hidden, degraded, or re-anchored without stepping through all runtime state manually
+
+### Workstream 6 — Test expansion and manual verification
+
+**Objective:** lock down cross-provider stability before moving on to Phase 2.
+
+**Primary automated tests**
+
+- [tests/unit/ui/widget/widget-controller.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/widget-controller.test.ts)
+- [tests/unit/ui/widget/position.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/position.test.ts)
+- [tests/unit/ui/widget/TextOverlay.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/TextOverlay.test.tsx)
+- [tests/unit/ui/widget/HoverCard.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/HoverCard.test.tsx)
+- [tests/unit/ui/widget/FindingsPanel.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/FindingsPanel.test.tsx)
+- [tests/unit/content/orchestrator.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/orchestrator.test.ts)
+- [tests/unit/content/observer.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/observer.test.ts)
+- [tests/unit/content/sites/chatgpt.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/sites/chatgpt.test.ts)
+- [tests/unit/content/sites/claude.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/sites/claude.test.ts)
+- [tests/unit/content/sites/gemini.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/sites/gemini.test.ts)
+
+**Test additions required**
+
+1. Anchor-state transition coverage:
+   - send button present -> missing
+   - input fallback -> send button recovered
+   - findings clear -> hidden
+   - enabled -> disabled -> enabled
+2. Observer/orchestrator lifecycle coverage:
+   - SPA rerender detaches current input
+   - reattach does not duplicate observers or UI
+   - settings updates propagate to visible UI correctly
+3. Overlay interaction coverage:
+   - findings update while hover card is open
+   - scrolling or resizing recomputes overlay positions
+   - fix/fix-all clears visual markers correctly
+4. Provider adapter coverage:
+   - current selectors for ChatGPT, Claude, Gemini still resolve the intended nodes
+   - fallback behavior is exercised when provider DOM assumptions break
+
+**Manual verification matrix**
+
+Run the same checks on ChatGPT, Claude, and Gemini:
+
+1. Clean prompt: no widget, no overlay, no hover artifacts.
+2. Flagged prompt while typing: widget anchors correctly and stays aligned.
+3. Input grows to multiple lines: widget and overlay stay stable.
+4. Scroll or resize during a flagged prompt: positions recompute without drift.
+5. Fix one finding and fix all findings: panel, overlay, and counts stay consistent.
+6. Send anyway: toast behavior resolves cleanly and state resets.
+7. Disable extension while UI is visible: all runtime UI disappears.
+8. Re-enable extension: widget returns only when findings justify it.
+9. Provider rerender/navigation: widget reattaches without duplication or stale UI.
+
+**Exit criteria**
+
+- automated coverage exists for the main anchor/lifecycle regressions
+- manual matrix passes on all three supported providers
+
+### Suggested implementation order inside the epic
+
+1. Baseline and inventory.
+2. Explicit anchor/lifecycle state model.
+3. Disabled/hidden/degraded hardening.
+4. Overlay and hover stabilization.
+5. Diagnostics.
+6. Test expansion and provider matrix pass.
+
+### Phase 1 completion gate
+
+Phase 1 should be considered complete only when all of the following are true:
+
+- widget anchor behavior is reliable on ChatGPT, Claude, and Gemini
+- visible UI is fully suppressed when the extension is disabled
+- degraded and fallback states are explicit rather than accidental
+- overlay, hover card, panel, and toast behavior feel coherent in normal use
+- the team has enough local diagnostics to debug provider-specific failures quickly
+- Phase 1 bugs are no longer dominating the perceived product quality of the extension
+
+### Implementation outcome — 2026-03-13
+
+**Status:** completed for code and verification scope, pending PR packaging only
+
+**Implemented in this execution pass**
+
+- widget anchor modes are now explicit in runtime state:
+  - `send-button`
+  - `input-box-fallback`
+  - `hidden`
+  - `disabled`
+  - `degraded`
+- widget remounts no longer stack stale subscriptions during re-attach cycles
+- disabling the extension now clears visible runtime UI instead of only hiding the host element
+- re-enabling the extension re-anchors from current findings rather than reviving stale toast/panel state
+- overlay recalculation now responds to editor DOM mutation in addition to scroll and resize
+- hover card positioning is clamped within the viewport rather than relying on a one-way flip state
+- local diagnostics now capture:
+  - observer attach success/failure
+  - health-check reattach
+  - location change and conversation clearing
+  - widget anchor-state transitions
+  - enable/disable transitions
+  - write-back failures
+- cross-provider adapter coverage was extended for hidden/zero-size action-button edge cases
+
+**Verification completed**
+
+- `npm test` -> **43/43 test files passed, 726/726 tests passed**
+- `npm run build` -> **passed**
+- `npm run lint` -> **passed with 8 pre-existing warnings in older test files, no errors**
+- Playwright live-provider run -> **30/30 passed**
+  - ChatGPT: **10/10**
+  - Claude: **10/10**
+  - Gemini: **10/10**
+
+**Verification not completed yet**
+
+- none required for Epic 1 beyond normal PR review sanity checks
+
+**Current Epic 1 assessment**
+
+- the codebase now has a much clearer anchor/lifecycle model
+- disabled/degraded behavior is materially safer than before
+- overlay and hover positioning are more robust under normal DOM movement
+- local debugging support is now strong enough to investigate provider-specific failures faster
+- the remaining Epic 1 risk is ordinary future provider drift, not current verification coverage
 
 ---
 
