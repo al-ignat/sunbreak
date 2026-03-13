@@ -163,6 +163,31 @@ describe('geminiAdapter', () => {
       expect(geminiAdapter.findSendButton()).toBe(mic);
     });
 
+    it('ignores hidden send buttons and keeps the visible composer action', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function mockRect(this: HTMLElement): DOMRect {
+        if (this.classList.contains('send-button')) {
+          return { top: 0, left: 20, right: 20, bottom: 0, width: 0, height: 0, x: 20, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        if (this.getAttribute('data-testid') === 'gemini-mic') {
+          return { top: 0, left: 260, right: 300, bottom: 40, width: 40, height: 40, x: 260, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        return { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+      });
+
+      const composer = document.createElement('form');
+      const editor = document.createElement('div');
+      editor.className = 'ql-editor';
+      editor.setAttribute('contenteditable', 'true');
+      const hiddenSend = document.createElement('button');
+      hiddenSend.className = 'send-button';
+      const mic = document.createElement('button');
+      mic.setAttribute('data-testid', 'gemini-mic');
+      composer.append(editor, hiddenSend, mic);
+      document.body.appendChild(composer);
+
+      expect(geminiAdapter.findSendButton()).toBe(mic);
+    });
+
     it('returns null when no button exists', () => {
       vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
         { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,

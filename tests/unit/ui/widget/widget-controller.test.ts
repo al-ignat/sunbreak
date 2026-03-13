@@ -399,6 +399,26 @@ describe('widget-controller anchor behavior', () => {
     await expect(restorePromise).resolves.toBe(false);
     expect(getWidgetHost().dataset.anchorMode).toBe('disabled');
   });
+
+  it('switches to degraded mode when the mounted input is detached', async () => {
+    const input = appendInput();
+    appendSendButton();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
+
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx());
+    activeControllers.push(controller);
+
+    controller.mount(input);
+    await flushAsync();
+
+    input.remove();
+    window.dispatchEvent(new Event('resize'));
+    await flushAsync();
+
+    expect(getWidgetHost().dataset.anchorMode).toBe('degraded');
+    expect(getWidgetHost().dataset.anchorReason).toBe('input-detached');
+  });
 });
 
 describe('widget-controller capability flags', () => {

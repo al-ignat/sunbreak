@@ -200,6 +200,30 @@ describe('chatgptAdapter', () => {
       expect(chatgptAdapter.findSendButton()).toBe(stopBtn);
     });
 
+    it('ignores hidden action buttons and falls back to the visible composer action', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function mockRect(this: HTMLElement): DOMRect {
+        if (this.getAttribute('data-testid') === 'send-button') {
+          return { top: 0, left: 20, right: 20, bottom: 0, width: 0, height: 0, x: 20, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        if (this.getAttribute('aria-label') === 'Stop generating') {
+          return { top: 0, left: 260, right: 300, bottom: 40, width: 40, height: 40, x: 260, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        return { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+      });
+
+      const composer = document.createElement('form');
+      const editor = document.createElement('div');
+      editor.id = 'prompt-textarea';
+      const hiddenSend = document.createElement('button');
+      hiddenSend.setAttribute('data-testid', 'send-button');
+      const stopBtn = document.createElement('button');
+      stopBtn.setAttribute('aria-label', 'Stop generating');
+      composer.append(editor, hiddenSend, stopBtn);
+      document.body.appendChild(composer);
+
+      expect(chatgptAdapter.findSendButton()).toBe(stopBtn);
+    });
+
     it('returns null when no button exists', () => {
       vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
         { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,

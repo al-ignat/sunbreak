@@ -156,6 +156,31 @@ describe('claudeAdapter', () => {
       expect(claudeAdapter.findSendButton()).toBe(voice);
     });
 
+    it('ignores hidden send buttons and keeps the visible composer action', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function mockRect(this: HTMLElement): DOMRect {
+        if (this.getAttribute('aria-label') === 'Send message') {
+          return { top: 0, left: 20, right: 20, bottom: 0, width: 0, height: 0, x: 20, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        if (this.getAttribute('data-testid') === 'claude-voice') {
+          return { top: 0, left: 260, right: 300, bottom: 40, width: 40, height: 40, x: 260, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        return { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+      });
+
+      const composer = document.createElement('fieldset');
+      const editor = document.createElement('div');
+      editor.className = 'ProseMirror';
+      editor.setAttribute('contenteditable', 'true');
+      const hiddenSend = document.createElement('button');
+      hiddenSend.setAttribute('aria-label', 'Send message');
+      const voice = document.createElement('button');
+      voice.setAttribute('data-testid', 'claude-voice');
+      composer.append(editor, hiddenSend, voice);
+      document.body.appendChild(composer);
+
+      expect(claudeAdapter.findSendButton()).toBe(voice);
+    });
+
     it('returns null when no button exists', () => {
       vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
         { top: 0, left: 0, right: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
