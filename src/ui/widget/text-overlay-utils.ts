@@ -159,7 +159,7 @@ export function calculateUnderlines(
   // WRITE phase — build segments, no reflows
   const segments: UnderlineSegment[] = [];
   for (const { tf, rects } of allRects) {
-    const sev = findingSeverity(tf.finding.type);
+    const sev = findingSeverity(tf.finding);
     for (const rect of rects) {
       if (rect.width < 1) continue; // skip zero-width rects
       if (rect.bottom <= visibleRect.top || rect.top >= visibleRect.bottom) {

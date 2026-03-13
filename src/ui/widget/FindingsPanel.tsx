@@ -5,6 +5,10 @@ import { ShieldCheckIcon, EyeOffIcon, InfoIcon, ClockIcon } from './icons';
 import { findingSeverity } from './severity';
 import type { MaskedEntry } from './Widget';
 
+function isMaskableFinding(tf: TrackedFinding): boolean {
+  return tf.finding.type !== 'custom-pattern';
+}
+
 export interface FindingsPanelProps {
   tracked: ReadonlyArray<TrackedFinding>;
   activeCount: number;
@@ -34,7 +38,7 @@ function explanationSummary(tf: TrackedFinding): string | null {
 }
 
 function placeholderPreview(tf: TrackedFinding): string | null {
-  if (tf.finding.placeholder.length === 0) return null;
+  if (tf.finding.type === 'custom-pattern' || tf.finding.placeholder.length === 0) return null;
   return `Masks to ${tf.finding.placeholder}`;
 }
 
@@ -98,6 +102,7 @@ export default function FindingsPanel({
   );
 
   const activeFindings = tracked.filter((t) => t.status === 'active');
+  const maskableActiveCount = activeFindings.filter(isMaskableFinding).length;
 
   const plural = activeCount === 1 ? '' : 's';
   const headerText = `${activeCount} finding${plural}`;
@@ -115,7 +120,7 @@ export default function FindingsPanel({
         <span class="sb-panel__count">
           {headerText} <span class="sb-panel__count-suffix">in this prompt</span>
         </span>
-        {activeCount > 1 && onFixAll && (
+        {maskableActiveCount > 1 && onFixAll && (
           <button
             class="sb-panel__fix-all"
             type="button"
@@ -138,7 +143,7 @@ export default function FindingsPanel({
               <li key={tf.id} class="sb-panel__row" role="listitem">
                 <span
                   class="sb-panel__dot"
-                  data-severity={findingSeverity(tf.finding.type)}
+                  data-severity={findingSeverity(tf.finding)}
                   aria-hidden="true"
                 />
                 <span class="sb-panel__info">
@@ -158,7 +163,7 @@ export default function FindingsPanel({
                   )}
                 </span>
                 <span class="sb-panel__actions">
-                  {onFix && (
+                  {onFix && isMaskableFinding(tf) && (
                     <button
                       class="sb-panel__btn sb-panel__btn--fix"
                       type="button"
@@ -223,7 +228,9 @@ export default function FindingsPanel({
 
       <div class="sb-panel__footer">
         <InfoIcon size={12} />
-        {onFixAll ? 'Fix All = mask values, safe to send' : 'Sensitive data detected in prompt'}
+        {maskableActiveCount > 0
+          ? 'Fix actions mask supported values locally before sending'
+          : 'Sensitive data or company identifiers detected in prompt'}
       </div>
     </div>
   );

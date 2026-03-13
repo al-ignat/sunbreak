@@ -185,6 +185,64 @@ describe('FindingsState', () => {
       expect(snap.tracked[0]?.status).toBe('fixed');
       expect(snap.tracked[1]?.status).toBe('active');
     });
+
+    it('differentiates custom patterns by pattern id when values collide', () => {
+      const state = createFindingsState();
+      state.update([
+        makeFinding({
+          type: 'custom-pattern',
+          value: 'ACME-1234',
+          label: 'Employee ID',
+          customPattern: {
+            id: 'employee-id',
+            severity: 'warning',
+            category: 'hr',
+            templateId: 'employee-id',
+          },
+        }),
+        makeFinding({
+          type: 'custom-pattern',
+          value: 'ACME-1234',
+          label: 'Ticket Reference',
+          customPattern: {
+            id: 'ticket-reference',
+            severity: 'warning',
+            category: 'operations',
+            templateId: 'ticket-reference',
+          },
+        }),
+      ]);
+
+      state.fix(idAt(state.getSnapshot().tracked, 0));
+      state.update([
+        makeFinding({
+          type: 'custom-pattern',
+          value: 'ACME-1234',
+          label: 'Employee ID',
+          customPattern: {
+            id: 'employee-id',
+            severity: 'warning',
+            category: 'hr',
+            templateId: 'employee-id',
+          },
+        }),
+        makeFinding({
+          type: 'custom-pattern',
+          value: 'ACME-1234',
+          label: 'Ticket Reference',
+          customPattern: {
+            id: 'ticket-reference',
+            severity: 'warning',
+            category: 'operations',
+            templateId: 'ticket-reference',
+          },
+        }),
+      ]);
+
+      const snap = state.getSnapshot();
+      expect(snap.tracked[0]?.status).toBe('fixed');
+      expect(snap.tracked[1]?.status).toBe('active');
+    });
   });
 
   describe('fix', () => {

@@ -202,6 +202,28 @@ describe('HoverCard', () => {
     expect(dot).toBeTruthy();
   });
 
+  it('hides Fix and shows detection-only guidance for custom patterns', () => {
+    const finding = makeTracked({
+      finding: makeFinding({
+        type: 'custom-pattern',
+        value: 'EMP-1234',
+        label: 'Employee ID',
+        placeholder: '[company identifier]',
+        customPattern: {
+          id: 'employee-id',
+          severity: 'warning',
+          category: 'hr',
+          templateId: 'employee-id',
+        },
+      }),
+    });
+
+    const { container } = render(<HoverCard {...defaultProps({ finding })} />);
+    expect(container.querySelector('.sb-hover-card__btn--fix')).toBeNull();
+    expect(container.querySelector('.sb-hover-card__masked')).toBeNull();
+    expect(container.querySelector('.sb-hover-card__masked-note')?.textContent).toContain('manual editing');
+  });
+
   it('has position:fixed styling', () => {
     const { container } = render(<HoverCard {...defaultProps()} />);
     const card = container.querySelector('.sb-hover-card') as HTMLElement;

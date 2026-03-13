@@ -1,5 +1,25 @@
 import { describe, it, expect } from 'vitest';
 import { classify } from '../../../src/classifier/engine';
+import type { CompiledCustomPattern } from '../../../src/classifier/custom-patterns';
+
+function makeCustomPattern(
+  overrides: Partial<CompiledCustomPattern> = {},
+): CompiledCustomPattern {
+  return {
+    id: 'employee-id',
+    label: 'Employee ID',
+    description: 'Internal employee reference',
+    enabled: true,
+    severity: 'concern',
+    category: 'hr',
+    sourceMode: 'template',
+    templateId: 'employee-id',
+    pattern: 'EMP-[0-9]{4}',
+    flags: 'gi',
+    regex: /EMP-[0-9]{4}/gi,
+    ...overrides,
+  };
+}
 
 describe('classify', () => {
   describe('empty input', () => {
@@ -155,6 +175,29 @@ describe('classify', () => {
         { keywords: [] },
       );
       expect(result.findings.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('runs custom patterns when enabled', () => {
+      const result = classify('Share EMP-1234 with payroll only', {
+        keywords: [],
+        customPatterns: [makeCustomPattern()],
+        enabledDetectors: new Set(['custom-pattern'] as const),
+      });
+
+      expect(result.findings).toHaveLength(1);
+      expect(result.findings[0]?.type).toBe('custom-pattern');
+      expect(result.findings[0]?.customPattern?.id).toBe('employee-id');
+      expect(result.findings[0]?.confidence).toBe('HIGH');
+    });
+
+    it('skips custom patterns when detector is disabled', () => {
+      const result = classify('Share EMP-1234 with payroll only', {
+        keywords: [],
+        customPatterns: [makeCustomPattern()],
+        enabledDetectors: new Set(['email'] as const),
+      });
+
+      expect(result.findings).toHaveLength(0);
     });
   });
 

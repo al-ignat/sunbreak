@@ -22,6 +22,9 @@ export interface HoverCardProps {
 const CARD_GAP = 6;
 
 function maskingHint(finding: TrackedFinding): string | null {
+  if (finding.finding.type === 'custom-pattern') {
+    return 'Company patterns are detection-only and require manual editing.';
+  }
   if (finding.finding.type !== 'email') return null;
   if (finding.finding.placeholder === '[email]') {
     return 'Shared or ambiguous mailboxes stay generic.';
@@ -118,6 +121,9 @@ export default function HoverCard({
     top: `${top ?? Math.max(8, anchorY + CARD_GAP)}px`,
     width: `${cardWidth}px`,
   };
+  const canFix = onFix != null && finding.finding.type !== 'custom-pattern';
+  const showMaskPreview =
+    finding.finding.placeholder.length > 0 && finding.finding.type !== 'custom-pattern';
 
   return (
     <div
@@ -132,7 +138,7 @@ export default function HoverCard({
       <div class="sb-hover-card__header">
         <span
           class="sb-hover-card__dot"
-          data-severity={findingSeverity(finding.finding.type)}
+          data-severity={findingSeverity(finding.finding)}
           aria-hidden="true"
         />
         {finding.finding.label}
@@ -140,8 +146,12 @@ export default function HoverCard({
 
       <div class="sb-hover-card__body">
         <div class="sb-hover-card__original">{finding.finding.value}</div>
-        <div class="sb-hover-card__arrow" aria-hidden="true"><ArrowDownIcon size={12} /></div>
-        <div class="sb-hover-card__masked">{finding.finding.placeholder}</div>
+        {showMaskPreview && (
+          <>
+            <div class="sb-hover-card__arrow" aria-hidden="true"><ArrowDownIcon size={12} /></div>
+            <div class="sb-hover-card__masked">{finding.finding.placeholder}</div>
+          </>
+        )}
         {maskingHint(finding) && (
           <div class="sb-hover-card__masked-note">
             {maskingHint(finding)}
@@ -155,7 +165,7 @@ export default function HoverCard({
       </div>
 
       <div class="sb-hover-card__actions">
-        {onFix && (
+        {canFix && (
           <button
             class="sb-hover-card__btn sb-hover-card__btn--fix"
             type="button"

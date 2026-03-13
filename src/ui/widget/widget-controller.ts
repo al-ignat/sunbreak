@@ -87,6 +87,10 @@ interface RestoreToastState {
   resolve: (accepted: boolean) => void;
 }
 
+function isMaskableFinding(finding: { type: string }): boolean {
+  return finding.type !== 'custom-pattern';
+}
+
 /**
  * Create and manage the corner widget.
  *
@@ -419,6 +423,7 @@ export function createWidgetController(
     const snap = findingsState.getSnapshot();
     const tf = snap.tracked.find((t) => t.id === id);
     if (!tf || tf.status !== 'active') return;
+    if (!isMaskableFinding(tf.finding)) return;
 
     const input = currentInput?.isConnected ? currentInput : adapter.findInput();
     if (!input) return;
@@ -459,7 +464,7 @@ export function createWidgetController(
     if (!maskingAllowed) return;
 
     const snap = findingsState.getSnapshot();
-    const active = snap.tracked.filter((t) => t.status === 'active');
+    const active = snap.tracked.filter((t) => t.status === 'active' && isMaskableFinding(t.finding));
     if (active.length === 0) return;
 
     const input = currentInput?.isConnected ? currentInput : adapter.findInput();
@@ -627,6 +632,11 @@ export function createWidgetController(
     }
 
     const mountedEditor = currentInput?.isConnected ? currentInput : null;
+    const maskableActiveCount = findingsState
+      .getSnapshot()
+      .tracked
+      .filter((t) => t.status === 'active' && isMaskableFinding(t.finding))
+      .length;
     render(
       h(Widget, {
         findingsState,
@@ -635,7 +645,7 @@ export function createWidgetController(
         panelOpen,
         onFix: maskingAllowed ? handleFix : undefined,
         onIgnore: handleIgnore,
-        onFixAll: maskingAllowed ? handleFixAll : undefined,
+        onFixAll: maskingAllowed && maskableActiveCount > 1 ? handleFixAll : undefined,
         onClose: handleClose,
         onClick: (): void => {
           panelOpen = !panelOpen;

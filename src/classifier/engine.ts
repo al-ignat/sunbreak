@@ -10,6 +10,7 @@ import { DETECTOR_PRIORITY } from './types';
 import { generateDescriptiveToken, createTokenContext } from './smart-tokens';
 import { scoreFindingsWithContext } from './context-scorer';
 import { CONTEXT_SCORERS } from './context-rules';
+import { detectCustomPatterns } from './custom-patterns';
 import {
   detectEmails,
   detectPhones,
@@ -150,7 +151,7 @@ export function classify(text: string, options: ClassifyOptions): Classification
     truncated = true;
   }
 
-  const { keywords, enabledDetectors, excludeRanges } = options;
+  const { keywords, enabledDetectors, excludeRanges, customPatterns = [] } = options;
   const allFindings: Finding[] = [];
 
   // Run pattern detectors
@@ -169,6 +170,11 @@ export function classify(text: string, options: ClassifyOptions): Classification
   const keywordEnabled = enabledDetectors ? enabledDetectors.has('keyword') : true;
   if (keywordEnabled && keywords.length > 0) {
     allFindings.push(...detectKeywords(input, keywords));
+  }
+
+  const customPatternsEnabled = enabledDetectors ? enabledDetectors.has('custom-pattern') : true;
+  if (customPatternsEnabled && customPatterns.length > 0) {
+    allFindings.push(...detectCustomPatterns(input, customPatterns));
   }
 
   // Deduplicate overlapping findings

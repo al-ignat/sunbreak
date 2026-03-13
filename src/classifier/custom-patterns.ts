@@ -1,3 +1,4 @@
+import type { Finding } from './types';
 import type {
   CustomPattern,
   CustomPatternCategory,
@@ -136,4 +137,51 @@ export function compileCustomPatterns(
   }
 
   return compiled;
+}
+
+function severityToConfidence(severity: CustomPatternSeverity): Finding['confidence'] {
+  switch (severity) {
+    case 'warning':
+      return 'MEDIUM';
+    case 'concern':
+    case 'critical':
+      return 'HIGH';
+  }
+}
+
+export function detectCustomPatterns(
+  text: string,
+  patterns: ReadonlyArray<CompiledCustomPattern>,
+): Finding[] {
+  const findings: Finding[] = [];
+
+  for (const pattern of patterns) {
+    pattern.regex.lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = pattern.regex.exec(text)) !== null) {
+      const value = match[0];
+      findings.push({
+        type: 'custom-pattern',
+        value,
+        startIndex: match.index,
+        endIndex: match.index + value.length,
+        confidence: severityToConfidence(pattern.severity),
+        label: pattern.label,
+        placeholder: '',
+        customPattern: {
+          id: pattern.id,
+          severity: pattern.severity,
+          category: pattern.category,
+          templateId: pattern.templateId,
+        },
+      });
+
+      if (value.length === 0) {
+        pattern.regex.lastIndex += 1;
+      }
+    }
+  }
+
+  return findings;
 }

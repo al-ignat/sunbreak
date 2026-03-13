@@ -1,4 +1,5 @@
 import type { SiteAdapter } from '../types';
+import type { CompiledCustomPattern } from '../classifier/custom-patterns';
 import type { FindingType } from '../classifier/types';
 import type { DetectionSettings, ExtensionSettings } from '../storage/types';
 import { classify } from '../classifier/engine';
@@ -11,6 +12,7 @@ const TYPING_DEBOUNCE_MS = 500;
 /** Configuration provided by the orchestrator */
 export interface ScannerConfig {
   getKeywords(): string[];
+  getCustomPatterns(): ReadonlyArray<CompiledCustomPattern>;
   getDetectionSettings(): DetectionSettings;
   getExtensionSettings(): ExtensionSettings;
 }
@@ -67,8 +69,9 @@ export function attachScanner(
     const detectionSettings = config.getDetectionSettings();
     const enabledDetectors: Set<FindingType> = toEnabledDetectors(detectionSettings);
     const keywords = config.getKeywords();
+    const customPatterns = config.getCustomPatterns();
 
-    const result = classify(text, { keywords, enabledDetectors });
+    const result = classify(text, { keywords, enabledDetectors, customPatterns });
 
     // Filter to HIGH and MEDIUM confidence (same as orchestrator)
     const visible = result.findings.filter(

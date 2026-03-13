@@ -82,6 +82,12 @@ export const TOKEN_POLICY_BY_TYPE: Record<FindingType, TokenPolicy> = {
     safeHints: [],
     disclosure: 'generic-only',
   },
+  'custom-pattern': {
+    style: 'static',
+    genericBase: 'company identifier',
+    safeHints: [],
+    disclosure: 'generic-only',
+  },
 };
 
 /** Capitalize first letter, lowercase rest */
@@ -308,6 +314,8 @@ function generateTokenBase(finding: Finding): string {
     case 'ip-address':
       return isPrivateIP(finding.value) ? 'internal IP' : policy.genericBase;
     case 'keyword':
+      return policy.genericBase;
+    case 'custom-pattern':
       return policy.genericBase;
   }
 }

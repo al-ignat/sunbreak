@@ -1,4 +1,4 @@
-import type { FindingType } from '../../classifier/types';
+import type { Finding } from '../../classifier/types';
 import type { TrackedFinding } from '../../content/findings-state';
 
 /** Four-level severity for the widget badge */
@@ -12,9 +12,20 @@ const SEVERITY_ORDER: Record<SeverityLevel, number> = {
   critical: 3,
 };
 
-/** Map a finding type to its severity level */
-export function findingSeverity(type: FindingType): SeverityLevel {
-  switch (type) {
+/** Map a finding to its severity level */
+export function findingSeverity(finding: Finding): SeverityLevel {
+  if (finding.type === 'custom-pattern') {
+    switch (finding.customPattern?.severity) {
+      case 'critical':
+        return 'critical';
+      case 'concern':
+        return 'concern';
+      default:
+        return 'warning';
+    }
+  }
+
+  switch (finding.type) {
     case 'api-key':
       return 'critical';
     case 'ssn':
@@ -37,7 +48,7 @@ export function maxSeverity(tracked: ReadonlyArray<TrackedFinding>): SeverityLev
   let max: SeverityLevel = 'clean';
   for (const f of tracked) {
     if (f.status !== 'active') continue;
-    const level = findingSeverity(f.finding.type);
+    const level = findingSeverity(f.finding);
     if (SEVERITY_ORDER[level] > SEVERITY_ORDER[max]) {
       max = level;
     }

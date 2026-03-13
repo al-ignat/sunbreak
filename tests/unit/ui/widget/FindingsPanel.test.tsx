@@ -92,6 +92,41 @@ describe('FindingsPanel', () => {
       renderPanel({ activeCount: 1 });
       expect(screen.queryByText('Fix All')).toBeNull();
     });
+
+    it('hides Fix All when active findings are detection-only custom patterns', () => {
+      const tracked = [
+        makeTracked({
+          id: 'a',
+          finding: {
+            type: 'custom-pattern',
+            label: 'Employee ID',
+            customPattern: {
+              id: 'employee-id',
+              severity: 'warning',
+              category: 'hr',
+              templateId: 'employee-id',
+            },
+          },
+        }),
+        makeTracked({
+          id: 'b',
+          finding: {
+            type: 'custom-pattern',
+            value: 'EMP-9999',
+            label: 'Employee ID',
+            customPattern: {
+              id: 'employee-id',
+              severity: 'warning',
+              category: 'hr',
+              templateId: 'employee-id',
+            },
+          },
+        }),
+      ];
+
+      renderPanel({ tracked, activeCount: 2 });
+      expect(screen.queryByText('Fix All')).toBeNull();
+    });
   });
 
   describe('finding rows', () => {
@@ -189,6 +224,28 @@ describe('FindingsPanel', () => {
       const { container } = renderPanel({ tracked });
       expect(container.querySelector('.sb-panel__placeholder')?.textContent).toContain('[John S. email]');
     });
+
+    it('does not show token preview for detection-only custom patterns', () => {
+      const tracked = [
+        makeTracked({
+          id: 'a',
+          finding: {
+            type: 'custom-pattern',
+            label: 'Employee ID',
+            placeholder: '[company identifier]',
+            customPattern: {
+              id: 'employee-id',
+              severity: 'warning',
+              category: 'hr',
+              templateId: 'employee-id',
+            },
+          },
+        }),
+      ];
+
+      const { container } = renderPanel({ tracked });
+      expect(container.querySelector('.sb-panel__placeholder')).toBeNull();
+    });
   });
 
   describe('severity colors', () => {
@@ -219,6 +276,26 @@ describe('FindingsPanel', () => {
       ];
       const { container } = renderPanel({ tracked });
       expect(container.querySelector('.sb-panel__dot[data-severity="warning"]')).toBeTruthy();
+    });
+
+    it('uses custom severity metadata for custom patterns', () => {
+      const tracked = [
+        makeTracked({
+          id: 'a',
+          finding: {
+            type: 'custom-pattern',
+            label: 'Security Token',
+            customPattern: {
+              id: 'security-token',
+              severity: 'critical',
+              category: 'security',
+              templateId: null,
+            },
+          },
+        }),
+      ];
+      const { container } = renderPanel({ tracked });
+      expect(container.querySelector('.sb-panel__dot[data-severity="critical"]')).toBeTruthy();
     });
   });
 
@@ -251,6 +328,27 @@ describe('FindingsPanel', () => {
 
       fireEvent.click(screen.getByText('Fix All'));
       expect(onFixAll).toHaveBeenCalledTimes(1);
+    });
+
+    it('hides per-row Fix for custom pattern findings', () => {
+      const tracked = [
+        makeTracked({
+          id: 'a',
+          finding: {
+            type: 'custom-pattern',
+            label: 'Employee ID',
+            customPattern: {
+              id: 'employee-id',
+              severity: 'warning',
+              category: 'hr',
+              templateId: 'employee-id',
+            },
+          },
+        }),
+      ];
+
+      renderPanel({ tracked });
+      expect(screen.queryByText('Fix')).toBeNull();
     });
 
     it('calls onClose when Escape is pressed', () => {

@@ -48,6 +48,7 @@ export const DETECTION_CATEGORIES: ReadonlyArray<{
   { type: 'ip-address', label: 'IP Addresses', description: 'Detects IPv4 and IPv6 addresses' },
   { type: 'api-key', label: 'API Keys & Tokens', description: 'Detects AWS, GitHub, Stripe, OpenAI, and generic API keys' },
   { type: 'keyword', label: 'Custom Keywords', description: 'Matches your custom keyword list' },
+  { type: 'custom-pattern', label: 'Company Patterns', description: 'Runs your company-specific identifier patterns' },
 ];
 
 /** Default detection settings — all categories enabled */
@@ -61,6 +62,7 @@ export const DEFAULT_DETECTION_SETTINGS: DetectionSettings = {
   'ip-address': true,
   'api-key': true,
   'keyword': true,
+  'custom-pattern': true,
 };
 
 /** Default extension settings */

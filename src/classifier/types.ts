@@ -1,3 +1,6 @@
+import type { CompiledCustomPattern } from './custom-patterns';
+import type { CustomPatternCategory, CustomPatternSeverity, CustomPatternTemplateId } from '../storage/types';
+
 /** All supported detection categories */
 export type FindingType =
   | 'email'
@@ -8,7 +11,8 @@ export type FindingType =
   | 'ni-number'
   | 'ip-address'
   | 'api-key'
-  | 'keyword';
+  | 'keyword'
+  | 'custom-pattern';
 
 /** How confident the detector is that this is a real match */
 export type Confidence = 'HIGH' | 'MEDIUM' | 'LOW';
@@ -51,6 +55,13 @@ export interface FindingContext {
   readonly explanation: FindingExplanation | null;
 }
 
+export interface FindingCustomPatternMetadata {
+  readonly id: string;
+  readonly severity: CustomPatternSeverity;
+  readonly category: CustomPatternCategory;
+  readonly templateId: CustomPatternTemplateId | null;
+}
+
 /** A single piece of sensitive data found in the prompt */
 export interface Finding {
   /** What type of sensitive data was found */
@@ -69,6 +80,8 @@ export interface Finding {
   readonly placeholder: string;
   /** Optional context-aware scoring and explanation metadata */
   readonly context?: FindingContext;
+  /** Optional company-specific pattern metadata */
+  readonly customPattern?: FindingCustomPatternMetadata;
 }
 
 /** Result returned by the classification engine */
@@ -100,6 +113,8 @@ export interface ClassifyOptions {
   readonly enabledDetectors?: ReadonlySet<FindingType>;
   /** Character ranges to skip during classification (e.g. already-masked tokens) */
   readonly excludeRanges?: ReadonlyArray<ExcludeRange>;
+  /** Enabled custom company patterns already compiled for runtime execution */
+  readonly customPatterns?: ReadonlyArray<CompiledCustomPattern>;
 }
 
 export interface ContextWindow {
@@ -139,4 +154,5 @@ export const DETECTOR_PRIORITY: Record<FindingType, number> = {
   ssn: 6,
   'credit-card': 7,
   'api-key': 8,
+  'custom-pattern': 9,
 };
