@@ -1,4 +1,4 @@
-import type { Finding } from './types';
+import type { Finding, FindingType } from './types';
 
 /** Well-known role/non-personal email prefixes */
 const ROLE_PREFIXES = new Set([
@@ -8,6 +8,81 @@ const ROLE_PREFIXES = new Set([
   'security', 'feedback', 'newsletter', 'notifications', 'mailer-daemon',
   'hostmaster', 'root', 'sysadmin', 'ops', 'devops', 'engineering',
 ]);
+
+/** Non-personal mailbox suffixes/parts that should never be presented as names */
+const ROLE_QUALIFIERS = new Set([
+  'team', 'desk', 'group', 'shared', 'distribution', 'mailbox', 'inbox',
+  'ops', 'devops', 'engineering', 'support', 'security', 'admin', 'help',
+  'contact', 'office', 'careers', 'billing', 'sales', 'press', 'media',
+]);
+
+export interface TokenPolicy {
+  readonly style: 'identity' | 'trailing-digits' | 'static';
+  readonly genericBase: string;
+  readonly safeHints: ReadonlyArray<'person' | 'last-digits' | 'network-scope' | 'provider-label'>;
+  readonly disclosure: 'generic-only' | 'bounded';
+}
+
+/**
+ * Product-standard token taxonomy.
+ * This is the safety contract for placeholder generation.
+ */
+export const TOKEN_POLICY_BY_TYPE: Record<FindingType, TokenPolicy> = {
+  email: {
+    style: 'identity',
+    genericBase: 'email',
+    safeHints: ['person'],
+    disclosure: 'bounded',
+  },
+  phone: {
+    style: 'trailing-digits',
+    genericBase: 'phone',
+    safeHints: ['last-digits'],
+    disclosure: 'bounded',
+  },
+  'credit-card': {
+    style: 'trailing-digits',
+    genericBase: 'card',
+    safeHints: ['last-digits'],
+    disclosure: 'bounded',
+  },
+  ssn: {
+    style: 'static',
+    genericBase: 'SSN redacted',
+    safeHints: [],
+    disclosure: 'generic-only',
+  },
+  cpr: {
+    style: 'static',
+    genericBase: 'CPR redacted',
+    safeHints: [],
+    disclosure: 'generic-only',
+  },
+  'ni-number': {
+    style: 'static',
+    genericBase: 'NI number redacted',
+    safeHints: [],
+    disclosure: 'generic-only',
+  },
+  'ip-address': {
+    style: 'static',
+    genericBase: 'IP address',
+    safeHints: ['network-scope'],
+    disclosure: 'bounded',
+  },
+  'api-key': {
+    style: 'static',
+    genericBase: 'API key',
+    safeHints: ['provider-label'],
+    disclosure: 'bounded',
+  },
+  keyword: {
+    style: 'static',
+    genericBase: 'custom keyword',
+    safeHints: [],
+    disclosure: 'generic-only',
+  },
+};
 
 /** Capitalize first letter, lowercase rest */
 function capitalize(str: string): string {
@@ -51,6 +126,21 @@ export function extractNameFromEmail(localPart: string): string | null {
   const alphaParts = cleaned.filter(isAlphabetic);
 
   if (alphaParts.length === 0) return null;
+
+  const normalizedAlphaParts = alphaParts.map((part) => part.toLowerCase());
+  const allRoleLike = normalizedAlphaParts.every((part) =>
+    ROLE_PREFIXES.has(part) || ROLE_QUALIFIERS.has(part)
+  );
+  if (allRoleLike) return null;
+
+  const firstAlpha = normalizedAlphaParts[0];
+  if (
+    firstAlpha !== undefined &&
+    ROLE_PREFIXES.has(firstAlpha) &&
+    normalizedAlphaParts.some((part) => ROLE_QUALIFIERS.has(part))
+  ) {
+    return null;
+  }
 
   if (alphaParts.length === 1) {
     const name = alphaParts[0];
@@ -176,35 +266,36 @@ export function generateDescriptiveToken(
 
 /** Generate the base descriptive text (without brackets) for a finding */
 function generateTokenBase(finding: Finding): string {
+  const policy = TOKEN_POLICY_BY_TYPE[finding.type];
   switch (finding.type) {
     case 'email':
-      return generateEmailToken(finding.value);
+      return generateEmailToken(finding.value, policy.genericBase);
     case 'phone':
-      return `phone ending ${lastDigits(finding.value, 2)}`;
+      return `${policy.genericBase} ending ${lastDigits(finding.value, 2)}`;
     case 'credit-card':
-      return `card ending ${lastDigits(finding.value, 4)}`;
+      return `${policy.genericBase} ending ${lastDigits(finding.value, 4)}`;
     case 'ssn':
-      return 'SSN redacted';
+      return policy.genericBase;
     case 'cpr':
-      return 'CPR redacted';
+      return policy.genericBase;
     case 'ni-number':
-      return 'NI number redacted';
+      return policy.genericBase;
     case 'api-key':
-      return generateApiKeyToken(finding.label);
+      return generateApiKeyToken(finding.label, policy.genericBase);
     case 'ip-address':
-      return isPrivateIP(finding.value) ? 'internal IP' : 'IP address';
+      return isPrivateIP(finding.value) ? 'internal IP' : policy.genericBase;
     case 'keyword':
-      return 'custom keyword';
+      return policy.genericBase;
   }
 }
 
 /** Generate email token base from email value */
-function generateEmailToken(value: string): string {
+function generateEmailToken(value: string, genericBase: string): string {
   const localPart = value.split('@')[0] ?? '';
   const name = extractNameFromEmail(localPart);
 
   if (name === null) {
-    return 'email';
+    return genericBase;
   }
 
   // Single-word name: "John's email"
@@ -220,14 +311,14 @@ function generateEmailToken(value: string): string {
 const UPPERCASE_WORDS = new Set(['API', 'AWS', 'SSH', 'SSL', 'TLS']);
 
 /** Generate API key token base from label */
-function generateApiKeyToken(label: string): string {
+function generateApiKeyToken(label: string, genericBase: string): string {
   // Map known labels to concise token bases
-  if (label === 'Possible API Key') return 'API key';
+  if (label === 'Possible API Key') return genericBase;
   // For provider-specific labels, selectively lowercase
   // "OpenAI API Key" -> "OpenAI API key"
   // "AWS Access Key" -> "AWS access key"
   const parts = label.split(' ');
-  if (parts.length <= 1) return 'API key';
+  if (parts.length <= 1) return genericBase;
   // Keep first word as-is (provider name), selectively lowercase the rest
   return parts[0] + ' ' + parts.slice(1).map((p) =>
     UPPERCASE_WORDS.has(p) ? p : p.toLowerCase(),
