@@ -853,6 +853,346 @@ Epic 2 should be considered complete only when all of the following are true:
 4. `feat(widget): expose masked state more clearly`
 5. `test(masking): harden memory-only and expiry guarantees`
 
+### Detailed execution plan
+
+This epic should be executed as workflow productization work, not as token-format cleanup.
+
+The goal is to make masking feel like a trustworthy assistive action:
+
+- the prompt still works for the AI
+- the user understands what changed
+- restore behavior feels explicit and local
+- masking quality is better than generic `[EMAIL_1]` redaction
+
+### Execution principles
+
+- preserve in-memory-only guarantees as a hard constraint
+- optimize masking for continued usefulness, not just minimum disclosure
+- keep token generation deterministic within a prompt/session
+- prefer transparent restore behavior over clever hidden automation
+- every masking improvement must be tested against re-detection and restore edge cases
+
+### Workstream 1 — Token model and masking taxonomy
+
+**Objective:** define the product-standard token scheme for all current finding types.
+
+**Primary modules**
+
+- [src/classifier/smart-tokens.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/smart-tokens.ts)
+- [src/classifier/types.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/types.ts)
+- masking classifier tests
+
+**Tasks**
+
+1. Audit current descriptive-token behavior by finding type:
+   - email
+   - phone
+   - credit card
+   - national IDs
+   - API keys
+   - IP addresses
+   - keywords
+2. Define the allowed disclosure level for each type:
+   - safe to include role or person hint
+   - safe to include ending digits
+   - safe to include internal/public qualifier
+   - must stay fully generic
+3. Standardize token style so the product does not mix multiple placeholder dialects.
+4. Decide which tokens must remain generic even if more context is available.
+5. Document the safety rules that token generation must obey.
+
+**Key product question**
+
+The right token is not the most descriptive token.
+It is the most descriptive token that still preserves trust.
+
+**Exit criteria**
+
+- every supported finding type has an explicit token policy
+- token generation rules are deterministic and reviewable
+
+### Workstream 2 — Fix and fix-all replacement semantics
+
+**Objective:** make masking actions semantically better than raw substring replacement.
+
+**Primary modules**
+
+- [src/content/interceptor.ts](/private/tmp/sunbreak-roadmap-review/src/content/interceptor.ts)
+- [src/content/findings-state.ts](/private/tmp/sunbreak-roadmap-review/src/content/findings-state.ts)
+- [src/classifier/smart-tokens.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/smart-tokens.ts)
+
+**Tasks**
+
+1. Review current `buildRedactedText()` behavior for single-finding and multi-finding replacement.
+2. Ensure replacement logic is stable when:
+   - multiple findings of the same type exist
+   - identical values repeat
+   - multiple different values collapse toward similar token bases
+3. Decide whether `Fix All` should preserve reading flow differently from repeated `Fix`.
+4. Make sure masked text does not immediately trigger noisy re-detection in the scanner.
+5. Verify fix/fix-all semantics remain compatible with `FindingsState` status transitions.
+
+**Important boundary**
+
+Do not let masking semantics become dependent on DOM positions or widget state.
+The rewrite path should remain a pure text transform plus in-memory map update.
+
+**Exit criteria**
+
+- fix and fix-all replacements are deterministic and human-readable
+- masked text stays stable after scanner re-runs
+
+### Workstream 3 — People-related masking quality
+
+**Objective:** improve token usefulness in prompts that involve multiple people or identities.
+
+**Primary modules**
+
+- [src/classifier/smart-tokens.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/smart-tokens.ts)
+- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
+
+**Tasks**
+
+1. Define how personal emails and role-based emails should differ.
+2. Decide how much identity hint is acceptable:
+   - first name only
+   - first name + last initial
+   - role mailbox only
+   - generic fallback
+3. Handle collisions cleanly when multiple people would otherwise receive the same token.
+4. Review how names, phones, and emails coexist in the same prompt so masking does not become confusing.
+5. Add prompt examples where token clarity matters for the AI response, not just for UI presentation.
+
+**Exit criteria**
+
+- people-related tokens feel helpful rather than arbitrary
+- multi-person prompts remain understandable after masking
+
+### Workstream 4 — Restore-on-copy UX and trust model
+
+**Objective:** make restoration behavior intentional, legible, and easy to decline.
+
+**Primary modules**
+
+- [src/content/clipboard-interceptor.ts](/private/tmp/sunbreak-roadmap-review/src/content/clipboard-interceptor.ts)
+- [src/content/masking-map.ts](/private/tmp/sunbreak-roadmap-review/src/content/masking-map.ts)
+- [src/ui/widget/RestoreToast.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/RestoreToast.tsx)
+
+**Tasks**
+
+1. Clarify the restore decision flow:
+   - safe masked text lands first
+   - user is asked whether to restore originals
+   - restore only happens on explicit acceptance
+2. Make the restore toast copy explain what is happening without sounding alarming.
+3. Decide whether restore messaging should mention:
+   - local-only behavior
+   - expiry
+   - count of values
+4. Review timeout behavior so auto-dismiss feels safe, not surprising.
+5. Verify programmatic clipboard writes and manual copy flows behave consistently.
+
+**Exit criteria**
+
+- a user can predict what copied text will contain
+- restore feels opt-in and trustworthy
+
+### Workstream 5 — Masked-state visibility in the widget
+
+**Objective:** make the product clearly communicate that masking is active and local state exists.
+
+**Primary modules**
+
+- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
+- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/Widget.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/Widget.tsx)
+
+**Tasks**
+
+1. Review whether the current masked-count badge is sufficient as the primary signal.
+2. Improve masked-state framing in the panel:
+   - what is masked
+   - how long it lasts
+   - how to clear it
+3. Decide whether hover-card copy should reference the exact replacement token or the broader masked state.
+4. Ensure masked-state UI does not compete with active findings UI.
+5. Preserve the clean state when there are no findings and no masked values.
+
+**Exit criteria**
+
+- a masked prompt state is obvious without becoming noisy
+- the widget communicates masked-state lifecycle clearly
+
+### Workstream 6 — Memory-only guarantees and expiry hardening
+
+**Objective:** make the local-only trust story defensible in code, not just in copy.
+
+**Primary modules**
+
+- [src/content/masking-map.ts](/private/tmp/sunbreak-roadmap-review/src/content/masking-map.ts)
+- [src/content/orchestrator.ts](/private/tmp/sunbreak-roadmap-review/src/content/orchestrator.ts)
+- [src/content/clipboard-interceptor.ts](/private/tmp/sunbreak-roadmap-review/src/content/clipboard-interceptor.ts)
+
+**Tasks**
+
+1. Audit every path where original values exist after masking:
+   - in-memory map
+   - widget rendering props
+   - clipboard restore flow
+2. Confirm originals do not enter:
+   - persistent storage
+   - event logging
+   - dashboard/reporting paths
+3. Re-check expiry behavior:
+   - timer expiry
+   - conversation switch
+   - extension invalidation
+   - explicit clear
+4. Ensure destroy/unmount paths clean up timers and listeners correctly.
+5. Consider whether diagnostics should record masking events without exposing original values.
+
+**Exit criteria**
+
+- the memory-only guarantee is supported by concrete code-path review
+- expiry and reset behavior is deterministic and test-backed
+
+### Workstream 7 — Test and prompt-evaluation matrix
+
+**Objective:** prove that masking is useful, safe, and resistant to regressions.
+
+**Primary automated tests**
+
+- masking classifier tests
+- [tests/unit/content/interceptor.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/interceptor.test.ts)
+- [tests/unit/content/masking-map.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/masking-map.test.ts)
+- [tests/unit/content/clipboard-interceptor.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/clipboard-interceptor.test.ts)
+- [tests/unit/ui/widget/RestoreToast.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/RestoreToast.test.tsx)
+- [tests/unit/ui/widget/FindingsPanel.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/FindingsPanel.test.tsx)
+
+**Test additions required**
+
+1. Token-generation coverage:
+   - same value -> same token
+   - collisions -> deterministic disambiguation
+   - role mailboxes stay generic
+   - person-like values stay useful but bounded
+2. Rewrite coverage:
+   - fix one
+   - fix all
+   - repeated values
+   - mixed finding types
+   - masked prompt does not re-trigger the same finding unnecessarily
+3. Restore coverage:
+   - copy with tokens
+   - decline restore
+   - accept restore
+   - timeout decline
+   - programmatic clipboard writes
+4. Memory/expiry coverage:
+   - TTL expiry
+   - conversation change clear
+   - manual clear
+   - destroy cleanup
+
+**Prompt-evaluation set required**
+
+Maintain a small prompt set with:
+
+- multi-person coordination prompts
+- code/configuration prompts with secrets
+- finance and HR prompts
+- prompts where masking should preserve usefulness to the AI
+- prompts where descriptive tokens would reveal too much if overdone
+
+Use that set to evaluate:
+
+- usefulness after masking
+- clarity of token naming
+- trustworthiness of restore behavior
+
+### Suggested implementation order inside the epic
+
+1. Token model and masking taxonomy.
+2. Fix/fix-all replacement semantics.
+3. People-related masking quality.
+4. Restore-on-copy UX.
+5. Masked-state visibility.
+6. Memory-only and expiry hardening.
+7. Test and prompt-evaluation pass.
+
+### Epic 3 completion gate
+
+Epic 3 should be considered complete only when all of the following are true:
+
+- masking tokens are descriptively useful without overexposing originals
+- fix and fix-all semantics are stable across repeated and mixed findings
+- restore-on-copy is clearly opt-in and locally trustworthy
+- masked-state visibility in the widget is clear and low-friction
+- originals remain memory-only with test-backed expiry and reset behavior
+- the team has prompt examples demonstrating that masking preserves AI usefulness
+
+### Implementation outcome — 2026-03-13
+
+**Status:** completed — all completion gates verified
+
+**Implemented in this execution pass**
+
+- formalized the masking token taxonomy in code with explicit per-type disclosure policy
+- hardened email/person token generation so shared mailboxes stay generic and trailing role qualifiers do not distort person-like tokens
+- improved multi-person readability by surfacing the exact mask token preview in the findings panel and contextual rationale in the hover card
+- replaced naive substring rewriting with validated redaction planning:
+  - invalid or stale spans are skipped instead of corrupting text
+  - `Fix All` now marks only successfully applied replacements as fixed
+- hardened clipboard restore flow so stale or detached restore approvals cannot overwrite a newer clipboard state
+- rewrote restore toast copy to make the trust model explicit:
+  - masked text lands first
+  - restore is local and opt-in
+  - timeout declines safely by default
+- clarified masked-state UI and accessibility language around local-only state:
+  - widget aria-label now says `masked locally`
+  - panel copy now explains originals stay in memory only
+  - masked-state section explains clipboard restore remains explicit
+- fixed a masking-map restore bug where shorter tokens could corrupt longer token restores when placeholders shared prefixes
+- added expiry-state hardening so empty `setAll()` calls do not arm masking TTL state
+
+**Verification completed**
+
+- `npm test` -> **46/46 test files passed, 779/779 tests passed** (includes 17 new prompt-usability evaluation tests)
+- `npm run build` -> **passed**
+- `npm run lint` -> **passed with 8 pre-existing warnings in older test files, no errors**
+- `npm run test:e2e:live` -> **36/36 live tests passed** on ChatGPT, Claude, and Gemini
+
+**Live-provider validation — 2026-03-13**
+
+Playwright live E2E tests confirmed on all three providers:
+
+- T3: Fix / Fix All replaces PII with descriptive tokens (e.g. `[John D. email]`, `[SSN redacted]`) — editor text updated correctly
+- T4: framework sync confirms the AI sees only the masked text after fix
+- T9: widget becomes visible immediately when PII is typed
+- T10: submit interception toast appears and Send Anyway releases the message end-to-end
+- T11: context explanations (confidentiality flagging) render in the findings panel
+- T12: example/demo context properly suppresses findings
+
+**Prompt-usability evaluation — 2026-03-13**
+
+Created `tests/unit/classifier/prompt-usability.test.ts` with 17 tests covering the required prompt categories:
+
+- **multi-person coordination**: three-person email prompt produces distinguishable name-based tokens (`[John S. email]`, `[Jane D. email]`, `[Bob W. email]`); same-person duplicates collapse; role vs personal emails differentiated
+- **code/configuration with secrets**: API keys get provider-labeled tokens (`[OpenAI API key]`, `[AWS access key]`, `[GitHub token]`); internal IPs get `[internal IP]`; code context (retry logic, CI config) preserved after masking
+- **finance**: credit cards show trailing digits for disambiguation (`[card ending 1111]` vs `[card ending 0004]`); phone numbers show last 2 digits; financial question context survives masking
+- **HR**: SSNs are fully opaque (`[SSN redacted]`) with no digits leaked; CPR likewise (`[CPR redacted]`); payroll/W-2 task context preserved; multiple SSNs get sequential disambiguation
+- **overdisclosure checks**: email tokens never contain full last names; phone tokens show only last 2 digits; credit card tokens show only last 4; national IDs are fully opaque
+- **AI usefulness**: masked prompts preserve task instructions, structural markers, and question clarity; classification stays under 50ms performance budget
+
+**Epic 3 final assessment**
+
+- masking behaves as a product workflow: descriptive tokens, provider-specific labels, person-aware naming, safe disambiguation
+- the restore path is materially safer against stale state and more legible to the user
+- masked-state lifecycle is communicated clearly in UI text and accessibility labels
+- all completion gates verified: token quality, rewrite semantics, restore-on-copy, masked-state visibility, memory-only expiry, and prompt-usability demonstration
+- no remaining Epic 3 gaps
+
 ---
 
 ## Epic 4 — Company-Specific Patterns

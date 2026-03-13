@@ -27,14 +27,20 @@ describe('RestoreToast', () => {
   }
 
   describe('display', () => {
-    it('shows masked value count', () => {
+    it('shows original value count in restore prompt', () => {
       renderToast({ count: 3 });
-      expect(screen.getByText('Restore 3 masked values?')).toBeTruthy();
+      expect(screen.getByText('Restore 3 original values locally?')).toBeTruthy();
     });
 
     it('shows singular for one value', () => {
       renderToast({ count: 1 });
-      expect(screen.getByText('Restore 1 masked value?')).toBeTruthy();
+      expect(screen.getByText('Restore 1 original value locally?')).toBeTruthy();
+    });
+
+    it('explains that masked text was already copied safely', () => {
+      renderToast();
+      expect(screen.getByText('Masked text copied')).toBeTruthy();
+      expect(screen.getByText('Safe masked text stays on the clipboard unless you confirm.')).toBeTruthy();
     });
 
     it('shows countdown starting at 8s', () => {

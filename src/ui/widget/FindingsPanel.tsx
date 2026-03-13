@@ -33,6 +33,11 @@ function explanationSummary(tf: TrackedFinding): string | null {
   return tf.finding.context?.explanation?.summary ?? null;
 }
 
+function placeholderPreview(tf: TrackedFinding): string | null {
+  if (tf.finding.placeholder.length === 0) return null;
+  return `Masks to ${tf.finding.placeholder}`;
+}
+
 function formatRemainingTime(expiresAt: number): string {
   const remaining = Math.max(0, expiresAt - Date.now());
   const minutes = Math.ceil(remaining / 60_000);
@@ -141,6 +146,11 @@ export default function FindingsPanel({
                   <span class="sb-panel__value" title={tf.finding.value}>
                     {truncateValue(tf.finding.value, tf.finding.type)}
                   </span>
+                  {placeholderPreview(tf) && (
+                    <span class="sb-panel__placeholder">
+                      {placeholderPreview(tf)}
+                    </span>
+                  )}
                   {explanationSummary(tf) && (
                     <span class="sb-panel__explanation">
                       {explanationSummary(tf)}
@@ -177,7 +187,7 @@ export default function FindingsPanel({
         <div class="sb-panel__masked">
           <div class="sb-panel__masked-header">
             <span class="sb-panel__masked-title">
-              {maskedEntries.length} masked value{maskedEntries.length === 1 ? '' : 's'}
+              {maskedEntries.length} value{maskedEntries.length === 1 ? '' : 's'} masked locally
             </span>
             {onClearMasked && (
               <button
@@ -199,6 +209,9 @@ export default function FindingsPanel({
               </li>
             ))}
           </ul>
+          <div class="sb-panel__masked-note">
+            Originals stay in memory only and never replace the clipboard unless you confirm restore.
+          </div>
           {countdown != null && (
             <div class="sb-panel__masked-ttl">
               <ClockIcon size={12} />

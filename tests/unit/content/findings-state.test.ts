@@ -219,6 +219,37 @@ describe('FindingsState', () => {
     });
   });
 
+  describe('fixMany', () => {
+    it('marks only the specified active findings as fixed', () => {
+      const state = createFindingsState();
+      state.update([
+        makeFinding({ value: 'a@b.com' }),
+        makeFinding({ value: 'c@d.com' }),
+        makeFinding({ value: 'e@f.com' }),
+      ]);
+
+      const tracked = state.getSnapshot().tracked;
+      const fixed = state.fixMany([idAt(tracked, 0), idAt(tracked, 2)]);
+
+      expect(fixed).toHaveLength(2);
+      const snap = state.getSnapshot();
+      expect(snap.tracked[0]?.status).toBe('fixed');
+      expect(snap.tracked[1]?.status).toBe('active');
+      expect(snap.tracked[2]?.status).toBe('fixed');
+    });
+
+    it('does not notify when no matching active findings are provided', () => {
+      const state = createFindingsState();
+      state.update([makeFinding()]);
+      state.fix(idAt(state.getSnapshot().tracked, 0));
+
+      const listener = vi.fn();
+      state.subscribe(listener);
+      state.fixMany(['missing-id']);
+      expect(listener).not.toHaveBeenCalled();
+    });
+  });
+
   describe('ignore', () => {
     it('marks an active finding as ignored', () => {
       const state = createFindingsState();

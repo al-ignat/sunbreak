@@ -27,6 +27,9 @@ export function createClipboardInterceptor(
   maskingMap: MaskingMap,
   callbacks: ClipboardInterceptorCallbacks,
 ): ClipboardInterceptor {
+  let attached = false;
+  let restoreRequestId = 0;
+
   function handleCopy(event: ClipboardEvent): void {
     // 1. Read selection
     const selection = window.getSelection();
@@ -74,7 +77,13 @@ export function createClipboardInterceptor(
   }
 
   function offerRestore(restored: string, count: number): void {
+    restoreRequestId += 1;
+    const requestId = restoreRequestId;
+
     void callbacks.onTokensFound(count).then((accepted) => {
+      if (!attached || requestId !== restoreRequestId) {
+        return;
+      }
       if (accepted) {
         // Overwrite clipboard with restored (original) values
         void navigator.clipboard.writeText(restored).catch(() => {
@@ -86,11 +95,14 @@ export function createClipboardInterceptor(
 
   return {
     attach(): void {
+      attached = true;
       document.addEventListener('copy', handleCopy as EventListener, true);
       window.addEventListener('message', handleMessage);
     },
 
     detach(): void {
+      attached = false;
+      restoreRequestId += 1;
       document.removeEventListener('copy', handleCopy as EventListener, true);
       window.removeEventListener('message', handleMessage);
     },

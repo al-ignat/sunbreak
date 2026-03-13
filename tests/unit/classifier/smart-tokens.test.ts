@@ -3,6 +3,7 @@ import {
   extractNameFromEmail,
   generateDescriptiveToken,
   createTokenContext,
+  TOKEN_POLICY_BY_TYPE,
 } from '../../../src/classifier/smart-tokens';
 import type { Finding } from '../../../src/classifier/types';
 
@@ -95,6 +96,22 @@ describe('extractNameFromEmail', () => {
     it('returns null for "security"', () => {
       expect(extractNameFromEmail('security')).toBeNull();
     });
+
+    it('returns null for multi-part role mailboxes', () => {
+      expect(extractNameFromEmail('support-team')).toBeNull();
+      expect(extractNameFromEmail('security.ops')).toBeNull();
+      expect(extractNameFromEmail('billing_desk')).toBeNull();
+    });
+
+    it('drops trailing role qualifiers from person-like addresses', () => {
+      expect(extractNameFromEmail('john.smith.hr')).toBe('John S.');
+      expect(extractNameFromEmail('j.smith.support')).toBe('J. Smith');
+    });
+
+    it('keeps prefixed shared mailboxes generic even when a name appears later', () => {
+      expect(extractNameFromEmail('support.jane')).toBeNull();
+      expect(extractNameFromEmail('security_alice')).toBeNull();
+    });
   });
 
   describe('digits and non-standard formats', () => {
@@ -134,6 +151,35 @@ describe('extractNameFromEmail', () => {
       // Single alphabetic char, not a role name
       expect(extractNameFromEmail('x')).toBe('X');
     });
+  });
+});
+
+describe('TOKEN_POLICY_BY_TYPE', () => {
+  it('defines explicit policy metadata for every supported finding type', () => {
+    expect(TOKEN_POLICY_BY_TYPE.email).toEqual({
+      style: 'identity',
+      genericBase: 'email',
+      safeHints: ['person'],
+      disclosure: 'bounded',
+    });
+    expect(TOKEN_POLICY_BY_TYPE.phone).toEqual({
+      style: 'trailing-digits',
+      genericBase: 'phone',
+      safeHints: ['last-digits'],
+      disclosure: 'bounded',
+    });
+    expect(TOKEN_POLICY_BY_TYPE['credit-card']).toEqual({
+      style: 'trailing-digits',
+      genericBase: 'card',
+      safeHints: ['last-digits'],
+      disclosure: 'bounded',
+    });
+    expect(TOKEN_POLICY_BY_TYPE.ssn.disclosure).toBe('generic-only');
+    expect(TOKEN_POLICY_BY_TYPE.cpr.disclosure).toBe('generic-only');
+    expect(TOKEN_POLICY_BY_TYPE['ni-number'].disclosure).toBe('generic-only');
+    expect(TOKEN_POLICY_BY_TYPE['ip-address'].safeHints).toEqual(['network-scope']);
+    expect(TOKEN_POLICY_BY_TYPE['api-key'].safeHints).toEqual(['provider-label']);
+    expect(TOKEN_POLICY_BY_TYPE.keyword.disclosure).toBe('generic-only');
   });
 });
 
@@ -182,6 +228,24 @@ describe('generateDescriptiveToken', () => {
         value: 'j.smith@example.com',
       });
       expect(generateDescriptiveToken(finding, ctx)).toBe('[J. Smith email]');
+    });
+
+    it('keeps team mailboxes generic even when they contain readable words', () => {
+      const ctx = createTokenContext();
+      const finding = makeFinding({
+        type: 'email',
+        value: 'security.ops@example.com',
+      });
+      expect(generateDescriptiveToken(finding, ctx)).toBe('[email]');
+    });
+
+    it('preserves person identity when a trailing role qualifier is present', () => {
+      const ctx = createTokenContext();
+      const finding = makeFinding({
+        type: 'email',
+        value: 'john.smith.hr@example.com',
+      });
+      expect(generateDescriptiveToken(finding, ctx)).toBe('[John S. email]');
     });
   });
 

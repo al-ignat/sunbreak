@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   attachSubmissionInterceptor,
   attachFileDetector,
+  applyRedactions,
   buildRedactedText,
 } from '../../../src/content/interceptor';
 import type { SubmitInterceptConfig } from '../../../src/content/interceptor';
@@ -351,6 +352,36 @@ describe('buildRedactedText', () => {
       { startIndex: 1, endIndex: 2, placeholder: '[Y_1]' },
     ]);
     expect(result).toBe('[X_1][Y_1]');
+  });
+
+  it('ignores invalid spans instead of corrupting the text', () => {
+    const result = buildRedactedText('Email: john@example.com', [
+      { startIndex: -1, endIndex: 4, placeholder: '[BAD]' },
+      { startIndex: 7, endIndex: 23, placeholder: '[EMAIL_1]' },
+      { startIndex: 99, endIndex: 120, placeholder: '[BAD_2]' },
+    ]);
+    expect(result).toBe('Email: [EMAIL_1]');
+  });
+
+  it('skips overlapping spans deterministically', () => {
+    const result = buildRedactedText('john@example.com', [
+      { startIndex: 0, endIndex: 16, placeholder: '[EMAIL_FULL]' },
+      { startIndex: 5, endIndex: 16, placeholder: '[EMAIL_PARTIAL]' },
+    ]);
+    expect(result).toBe('[EMAIL_FULL]');
+  });
+});
+
+describe('applyRedactions', () => {
+  it('returns only the spans that were actually applied', () => {
+    const first = { startIndex: 0, endIndex: 4, placeholder: '[A]', id: 'a' };
+    const overlapping = { startIndex: 2, endIndex: 5, placeholder: '[B]', id: 'b' };
+    const second = { startIndex: 4, endIndex: 7, placeholder: '[C]', id: 'c' };
+
+    const result = applyRedactions('ABCDEFG', [first, overlapping, second]);
+
+    expect(result.text).toBe('[A][C]');
+    expect(result.applied).toEqual([first, second]);
   });
 });
 

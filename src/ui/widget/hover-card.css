@@ -91,6 +91,13 @@
   line-height: 1.4;
 }
 
+.sb-hover-card__masked-note {
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--sb-color-text-muted);
+}
+
 .sb-hover-card__explanation {
   margin-top: 8px;
   font-size: 12px;

@@ -21,6 +21,14 @@ export interface HoverCardProps {
 /** Gap between underline and card edge */
 const CARD_GAP = 6;
 
+function maskingHint(finding: TrackedFinding): string | null {
+  if (finding.finding.type !== 'email') return null;
+  if (finding.finding.placeholder === '[email]') {
+    return 'Shared or ambiguous mailboxes stay generic.';
+  }
+  return 'Only a bounded identity hint is kept in the mask token.';
+}
+
 export default function HoverCard({
   finding,
   anchorX,
@@ -134,6 +142,11 @@ export default function HoverCard({
         <div class="sb-hover-card__original">{finding.finding.value}</div>
         <div class="sb-hover-card__arrow" aria-hidden="true"><ArrowDownIcon size={12} /></div>
         <div class="sb-hover-card__masked">{finding.finding.placeholder}</div>
+        {maskingHint(finding) && (
+          <div class="sb-hover-card__masked-note">
+            {maskingHint(finding)}
+          </div>
+        )}
         {finding.finding.context?.explanation?.summary && (
           <div class="sb-hover-card__explanation">
             {finding.finding.context.explanation.summary}

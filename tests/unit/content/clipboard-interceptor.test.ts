@@ -170,6 +170,65 @@ describe('ClipboardInterceptor', () => {
     maskingMap.destroy();
   });
 
+  it('ignores stale restore approvals after a newer copy request', async () => {
+    const maskingMap = createMaskingMap();
+    maskingMap.set('«email-john»', 'john@acme.com');
+
+    let resolveFirst: ((value: boolean) => void) | null = null;
+    let resolveSecond: ((value: boolean) => void) | null = null;
+    const onTokensFound = vi
+      .fn<(...args: [number]) => Promise<boolean>>()
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolveFirst = resolve;
+      }))
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolveSecond = resolve;
+      }));
+
+    const interceptor = createClipboardInterceptor(maskingMap, { onTokensFound });
+    interceptor.attach();
+
+    mockSelection('Contact «email-john» for info');
+    document.dispatchEvent(createCopyEvent());
+    document.dispatchEvent(createCopyEvent());
+
+    resolveFirst?.(true);
+    await Promise.resolve();
+    expect(writeTextMock).not.toHaveBeenCalled();
+
+    resolveSecond?.(false);
+    await Promise.resolve();
+    expect(writeTextMock).not.toHaveBeenCalled();
+
+    interceptor.detach();
+    maskingMap.destroy();
+  });
+
+  it('cancels pending restore approval on detach', async () => {
+    const maskingMap = createMaskingMap();
+    maskingMap.set('«email-john»', 'john@acme.com');
+
+    let resolveRestore: ((value: boolean) => void) | null = null;
+    const onTokensFound = vi
+      .fn<(...args: [number]) => Promise<boolean>>()
+      .mockImplementation(() => new Promise((resolve) => {
+        resolveRestore = resolve;
+      }));
+
+    const interceptor = createClipboardInterceptor(maskingMap, { onTokensFound });
+    interceptor.attach();
+
+    mockSelection('Contact «email-john» for info');
+    document.dispatchEvent(createCopyEvent());
+
+    interceptor.detach();
+    resolveRestore?.(true);
+    await Promise.resolve();
+
+    expect(writeTextMock).not.toHaveBeenCalled();
+    maskingMap.destroy();
+  });
+
   it('detach stops listening for copy events', () => {
     const maskingMap = createMaskingMap();
     maskingMap.set('«email-john»', 'john@acme.com');

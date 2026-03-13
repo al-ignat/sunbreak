@@ -2,7 +2,7 @@ import { render, h } from 'preact';
 import Widget from './Widget';
 import type { FindingsState } from '../../content/findings-state';
 import type { SiteAdapter } from '../../types';
-import { buildRedactedText } from '../../content/interceptor';
+import { applyRedactions } from '../../content/interceptor';
 import { computeWidgetPosition } from './position';
 import type { AnchorConfig } from './position';
 import tokenStyles from './widget-tokens.css?inline';
@@ -424,9 +424,18 @@ export function createWidgetController(
     if (!input) return;
 
     const text = adapter.getText(input);
-    const redacted = buildRedactedText(text, [tf.finding]);
+    const redaction = applyRedactions(text, [tf.finding]);
+    if (redaction.applied.length === 0 || redaction.text === text) {
+      recordLocalDiagnostic('widget-controller', 'write-back-skipped', {
+        adapter: adapter.name,
+        action: 'fix-one',
+        findingType: tf.finding.type,
+        reason: 'stale-or-invalid-range',
+      });
+      return;
+    }
     try {
-      adapter.setText(input, redacted);
+      adapter.setText(input, redaction.text);
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       recordLocalDiagnostic('widget-controller', 'write-back-failed', {
@@ -457,12 +466,27 @@ export function createWidgetController(
     if (!input) return;
 
     const text = adapter.getText(input);
-    const redacted = buildRedactedText(
+    const redaction = applyRedactions(
       text,
-      active.map((t) => t.finding),
+      active.map((t) => ({
+        id: t.id,
+        finding: t.finding,
+        startIndex: t.finding.startIndex,
+        endIndex: t.finding.endIndex,
+        placeholder: t.finding.placeholder,
+      })),
     );
+    if (redaction.applied.length === 0 || redaction.text === text) {
+      recordLocalDiagnostic('widget-controller', 'write-back-skipped', {
+        adapter: adapter.name,
+        action: 'fix-all',
+        findingCount: active.length,
+        reason: 'stale-or-invalid-ranges',
+      });
+      return;
+    }
     try {
-      adapter.setText(input, redacted);
+      adapter.setText(input, redaction.text);
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       recordLocalDiagnostic('widget-controller', 'write-back-failed', {
@@ -475,12 +499,12 @@ export function createWidgetController(
       return;
     }
     maskingMap?.setAll(
-      active.map((t) => ({
-        token: t.finding.placeholder,
-        originalValue: t.finding.value,
+      redaction.applied.map((entry) => ({
+        token: entry.finding.placeholder,
+        originalValue: entry.finding.value,
       })),
     );
-    findingsState.fixAll();
+    findingsState.fixMany(redaction.applied.map((entry) => entry.id));
   }
 
   function handleIgnoreAllOfType(type: string): void {
