@@ -347,6 +347,51 @@ Phase 1 should be considered complete only when all of the following are true:
 - the team has enough local diagnostics to debug provider-specific failures quickly
 - Phase 1 bugs are no longer dominating the perceived product quality of the extension
 
+### Implementation outcome — 2026-03-13
+
+**Status:** substantially completed in code, with live provider verification still pending
+
+**Implemented in this execution pass**
+
+- widget anchor modes are now explicit in runtime state:
+  - `send-button`
+  - `input-box-fallback`
+  - `hidden`
+  - `disabled`
+  - `degraded`
+- widget remounts no longer stack stale subscriptions during re-attach cycles
+- disabling the extension now clears visible runtime UI instead of only hiding the host element
+- re-enabling the extension re-anchors from current findings rather than reviving stale toast/panel state
+- overlay recalculation now responds to editor DOM mutation in addition to scroll and resize
+- hover card positioning is clamped within the viewport rather than relying on a one-way flip state
+- local diagnostics now capture:
+  - observer attach success/failure
+  - health-check reattach
+  - location change and conversation clearing
+  - widget anchor-state transitions
+  - enable/disable transitions
+  - write-back failures
+- cross-provider adapter coverage was extended for hidden/zero-size action-button edge cases
+
+**Verification completed**
+
+- `npm test` -> **43/43 test files passed, 726/726 tests passed**
+- `npm run build` -> **passed**
+- `npm run lint` -> **passed with 8 pre-existing warnings in older test files, no errors**
+
+**Verification not completed yet**
+
+- live manual provider matrix on ChatGPT, Claude, and Gemini was **not** run in this environment
+- no live E2E/browser-session verification was executed as part of this pass
+
+**Current Epic 1 assessment**
+
+- the codebase now has a much clearer anchor/lifecycle model
+- disabled/degraded behavior is materially safer than before
+- overlay and hover positioning are more robust under normal DOM movement
+- local debugging support is now strong enough to investigate provider-specific failures faster
+- the remaining Epic 1 risk is primarily live provider drift, not untested local controller logic
+
 ---
 
 ## Epic 2 — Context-Aware Detection Engine

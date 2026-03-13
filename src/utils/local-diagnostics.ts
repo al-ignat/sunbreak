@@ -25,10 +25,12 @@ function getDiagnosticsGlobal(): DiagnosticsGlobal {
 
 export function getLocalDiagnostics(): DiagnosticEntry[] {
   const root = getDiagnosticsGlobal();
-  if (!root[DIAGNOSTICS_KEY]) {
-    root[DIAGNOSTICS_KEY] = [];
+  let diagnostics = root[DIAGNOSTICS_KEY];
+  if (!diagnostics) {
+    diagnostics = [];
+    root[DIAGNOSTICS_KEY] = diagnostics;
   }
-  return root[DIAGNOSTICS_KEY]!;
+  return diagnostics;
 }
 
 export function clearLocalDiagnostics(): void {
