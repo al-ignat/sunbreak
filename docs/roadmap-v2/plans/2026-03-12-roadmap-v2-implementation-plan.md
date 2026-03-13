@@ -447,6 +447,319 @@ Phase 1 should be considered complete only when all of the following are true:
 4. `feat(widget): surface why-flagged explanations`
 5. `test(classifier): add context scoring and explanation coverage`
 
+### Detailed execution plan
+
+This epic should be executed as the first real classifier capability jump, not as a vague heuristics pass.
+
+The goal is to preserve the current regex engine as the fast span-extraction layer, then add a context-scoring layer that can:
+
+- suppress weak matches in clearly harmless contexts
+- boost otherwise-ambiguous matches in sensitive contexts
+- explain those decisions in language a normal user can understand
+
+### Execution principles
+
+- keep regex detectors responsible for span extraction, not for full contextual reasoning
+- keep context scoring deterministic and local-only
+- attach explanation data as product-facing metadata, not debug-only metadata
+- start with a small number of context categories that are easy to explain
+- measure latency on every major classifier change
+
+### Workstream 1 — Classifier data model extension
+
+**Objective:** extend the current `Finding` model so context scoring and explanation data have a stable home.
+
+**Primary modules**
+
+- [src/classifier/types.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/types.ts)
+- [src/classifier/engine.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/engine.ts)
+- [src/content/findings-state.ts](/private/tmp/sunbreak-roadmap-review/src/content/findings-state.ts)
+
+**Tasks**
+
+1. Introduce explicit context metadata on findings, for example:
+   - context score or confidence adjustment
+   - explanation summary
+   - explanation reasons list
+   - optional context category tags
+2. Keep the existing core `Finding` fields stable so masking, findings-state diffing, and widget flows do not break.
+3. Decide whether explanation metadata belongs directly on `Finding` or on a nested `explanation` object.
+4. Ensure the result model can represent both:
+   - raw detector confidence
+   - final post-context confidence
+5. Keep the shape serializable and small enough for frequent scanner updates.
+
+**Recommended type additions**
+
+- `ContextSignal`
+- `FindingExplanation`
+- `ContextCategory`
+- possibly `rawConfidence` or `baseConfidence` if needed to preserve pre-context scoring
+
+**Exit criteria**
+
+- finding data can carry context explanations without breaking current scanner/widget/masking behavior
+- type changes are backward-compatible enough to roll out incrementally
+
+### Workstream 2 — Context scorer foundation
+
+**Objective:** insert a scoring layer between raw detection and final finding output.
+
+**Primary modules**
+
+- [src/classifier/engine.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/engine.ts)
+- likely new modules under `src/classifier/` such as:
+  - `context-scorer.ts`
+  - `context-signals.ts`
+  - `explanations.ts`
+
+**Tasks**
+
+1. Refactor `classify()` into distinct stages:
+   - raw detection
+   - deduplication
+   - context scoring
+   - confidence/explanation finalization
+   - placeholder assignment
+2. Create a `ContextScorer` abstraction that accepts:
+   - full input text
+   - current candidate finding
+   - nearby text window
+   - optional sibling findings
+3. Define a bounded signal vocabulary instead of open-ended heuristics, for example:
+   - nearby marker words
+   - structural syntax cues
+   - financial/time-period cues
+   - role/identity cues
+   - code/configuration cues
+4. Keep scoring deterministic:
+   - no ML dependency
+   - no network dependency
+   - no hidden provider-specific rules
+5. Establish simple score-to-confidence rules:
+   - promote `LOW -> MEDIUM`
+   - promote `MEDIUM -> HIGH`
+   - suppress weak findings when negative context dominates
+
+**Implementation notes**
+
+- avoid rewriting regex detectors to do context work internally
+- preserve today’s performance profile by using substring windows and simple token checks, not repeated full-text rescans
+- explanation generation should reuse the same signals that changed the score
+
+**Exit criteria**
+
+- the engine has a clear post-detection scoring stage
+- scoring behavior is testable in isolation from regex extraction
+
+### Workstream 3 — Initial contextual categories
+
+**Objective:** deliver the first small set of context-aware categories named in the roadmap.
+
+**Primary modules**
+
+- new classifier modules under `src/classifier/`
+- [src/classifier/engine.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/engine.ts)
+
+**Category rollout order**
+
+1. confidentiality markers
+2. legal privilege markers
+3. HR / compensation indicators
+4. financial indicators with temporal/context clues
+5. code structure and connection-string context
+6. security infrastructure indicators
+
+**Tasks**
+
+1. Define the concrete signal dictionaries and phrase families for each category.
+2. Decide which existing finding types each category can influence:
+   - `keyword`
+   - `email`
+   - `phone`
+   - `credit-card`
+   - `api-key`
+   - `ip-address`
+3. Add category-specific scoring rules, for example:
+   - compensation words near a number or email boosts HR sensitivity
+   - privileged/legal language around names, emails, or attachments boosts legal sensitivity
+   - connection-string or environment-variable syntax around secrets boosts code/security sensitivity
+   - infrastructure words around internal IP-like values boosts `ip-address`
+4. Add negative-context rules where needed so the engine improves precision rather than only boosting more findings.
+5. Keep category logic readable and data-driven enough that future company-pattern work can build on it.
+
+**Important boundary**
+
+This phase should not attempt full semantic understanding.
+It should target high-value, high-explainability contextual wins.
+
+**Exit criteria**
+
+- each roadmap category has at least one meaningful scoring path
+- ambiguous samples show measurable improvement over regex-only behavior
+
+### Workstream 4 — Explanation generation
+
+**Objective:** turn context scoring into concise user-visible explanations.
+
+**Primary modules**
+
+- [src/classifier/types.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/types.ts)
+- likely new explanation helper modules under `src/classifier/`
+- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
+
+**Tasks**
+
+1. Generate one short primary explanation per finding, for example:
+   - "Flagged because this looks like compensation information."
+   - "Flagged because this appears inside a connection string."
+   - "Flagged because nearby wording suggests confidential internal content."
+2. Optionally retain a short list of secondary reasons for richer UI later.
+3. Keep explanations product-facing:
+   - no regex jargon
+   - no score dumps
+   - no implementation detail leakage
+4. Ensure explanations are stable enough that similar prompts produce similar language.
+5. Define fallback language for findings that remain regex-only without useful contextual enrichment.
+
+**Exit criteria**
+
+- every context-boosted finding has understandable explanation text
+- explanation copy is short enough to fit hover-card and panel surfaces
+
+### Workstream 5 — Scanner and findings-state integration
+
+**Objective:** thread the richer finding model through the live scanner pipeline without destabilizing the interaction layer.
+
+**Primary modules**
+
+- [src/content/scanner.ts](/private/tmp/sunbreak-roadmap-review/src/content/scanner.ts)
+- [src/content/findings-state.ts](/private/tmp/sunbreak-roadmap-review/src/content/findings-state.ts)
+- [src/content/orchestrator.ts](/private/tmp/sunbreak-roadmap-review/src/content/orchestrator.ts)
+
+**Tasks**
+
+1. Update scanner filtering rules to use final post-context confidence.
+2. Confirm findings-state diffing still behaves well when explanation text or context metadata changes but the underlying finding is the same.
+3. Decide whether findings-state identity should remain `type + value` for this phase or whether certain categories require stronger identity keys.
+4. Preserve the current no-jank scanning behavior:
+   - same debounce shape
+   - same clean-state behavior
+   - no visible UI churn from unstable explanations
+5. If needed, add lightweight diagnostics for classifier latency and score-stage duration.
+
+**Exit criteria**
+
+- scanner uses context-scored results without UI churn or tracking regressions
+- findings-state remains stable during normal typing
+
+### Workstream 6 — UI explanation surfaces
+
+**Objective:** expose "why flagged" where it adds clarity without making the UI verbose.
+
+**Primary modules**
+
+- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
+
+**Tasks**
+
+1. Add a primary explanation line to the hover card.
+2. Add a compact explanation affordance in the findings panel:
+   - inline explanation under the finding label
+   - or expandable "Why flagged" copy if density becomes a problem
+3. Decide whether confidence should be shown directly in Epic 2 or left implicit through explanation/severity.
+4. Preserve the Phase 1 interaction quality:
+   - no hover-card size explosion
+   - no panel layout instability
+   - no visual overload when multiple findings exist
+5. Verify explanations still work when masking is on and when `Fix` is unavailable.
+
+**Exit criteria**
+
+- users can understand why a finding was flagged from the existing widget surfaces
+- the UI remains compact enough for the in-page workflow
+
+### Workstream 7 — Test and evaluation matrix
+
+**Objective:** prove that Epic 2 creates real detection value, not just more logic.
+
+**Primary automated tests**
+
+- [tests/unit/classifier/engine.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/classifier/engine.test.ts)
+- [tests/unit/content/scanner.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/scanner.test.ts)
+- [tests/unit/content/findings-state.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/findings-state.test.ts)
+- [tests/unit/ui/widget/HoverCard.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/HoverCard.test.tsx)
+- [tests/unit/ui/widget/FindingsPanel.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/FindingsPanel.test.tsx)
+- likely new context-scoring test modules under `tests/unit/classifier/`
+
+**Test additions required**
+
+1. Context scorer unit coverage:
+   - positive signal boosts
+   - negative signal suppression
+   - competing signals
+   - deterministic explanation output
+2. Category coverage:
+   - confidentiality
+   - legal privilege
+   - HR/compensation
+   - financial
+   - code/connection string
+   - security infrastructure
+3. Engine integration coverage:
+   - regex-only finding stays intact when no useful context exists
+   - context changes confidence without breaking placeholder assignment
+   - deduplication still behaves correctly after scoring
+4. UI coverage:
+   - hover card renders explanation text
+   - findings panel renders explanation text without layout breakage
+   - explanation fallback text behaves sensibly
+
+**Evaluation set required**
+
+Build and maintain a small prompt corpus with:
+
+- obvious true positives
+- ambiguous false-positive-prone cases
+- internal/confidential wording cases
+- legal and HR wording cases
+- code/configuration snippets
+- benign prompts that should remain quiet
+
+Use that corpus to compare:
+
+- regex-only behavior
+- Epic 2 behavior
+
+**Performance gate**
+
+- measure classifier duration before and after Epic 2
+- keep typical prompt classification comfortably interactive
+- any noticeable regression must be documented and justified
+
+### Suggested implementation order inside the epic
+
+1. Data model extension.
+2. Context scorer foundation.
+3. First category rollout.
+4. Explanation generation.
+5. Scanner and findings-state integration.
+6. UI explanation surfaces.
+7. Evaluation and performance pass.
+
+### Epic 2 completion gate
+
+Epic 2 should be considered complete only when all of the following are true:
+
+- the classifier has a real post-regex context scoring stage
+- at least the roadmap’s first contextual categories are implemented in a meaningful way
+- explanation text is attached to findings and visible in the widget UI
+- ambiguous examples show better precision than the regex-only baseline
+- latency remains acceptable in normal prompt entry
+- the team has a reusable evaluation corpus for future classifier work
+
 ---
 
 ## Epic 3 — Reversible Masking Productization
