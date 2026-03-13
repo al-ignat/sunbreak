@@ -187,7 +187,7 @@ export default function FindingsPanel({
         <div class="sb-panel__masked">
           <div class="sb-panel__masked-header">
             <span class="sb-panel__masked-title">
-              {maskedEntries.length} masked value{maskedEntries.length === 1 ? '' : 's'}
+              {maskedEntries.length} value{maskedEntries.length === 1 ? '' : 's'} masked locally
             </span>
             {onClearMasked && (
               <button
@@ -209,6 +209,9 @@ export default function FindingsPanel({
               </li>
             ))}
           </ul>
+          <div class="sb-panel__masked-note">
+            Originals stay in memory only and never replace the clipboard unless you confirm restore.
+          </div>
           {countdown != null && (
             <div class="sb-panel__masked-ttl">
               <ClockIcon size={12} />

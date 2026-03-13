@@ -295,14 +295,14 @@ describe('FindingsPanel', () => {
 
     it('shows masked entry count in header', () => {
       renderPanel({ maskedEntries });
-      expect(screen.getByText('2 masked values')).toBeTruthy();
+      expect(screen.getByText('2 values masked locally')).toBeTruthy();
     });
 
     it('shows singular for one masked entry', () => {
       const firstEntry = maskedEntries[0];
       if (!firstEntry) throw new Error('maskedEntries[0] should exist');
       renderPanel({ maskedEntries: [firstEntry] });
-      expect(screen.getByText('1 masked value')).toBeTruthy();
+      expect(screen.getByText('1 value masked locally')).toBeTruthy();
     });
 
     it('shows token names', () => {
@@ -338,6 +338,15 @@ describe('FindingsPanel', () => {
       const expiresAt = Date.now() + 24 * 60_000; // 24 min from now
       renderPanel({ maskedEntries, maskedExpiresAt: expiresAt });
       expect(screen.getByText(/Auto-clears in 24 min/)).toBeTruthy();
+    });
+
+    it('explains that originals stay in memory only', () => {
+      renderPanel({ maskedEntries });
+      expect(
+        screen.getByText(
+          'Originals stay in memory only and never replace the clipboard unless you confirm restore.',
+        ),
+      ).toBeTruthy();
     });
 
     it('does not show TTL countdown when maskedExpiresAt is null', () => {

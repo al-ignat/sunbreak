@@ -109,6 +109,18 @@ describe('MaskingMap', () => {
       expect(result.count).toBe(2);
       mm.destroy();
     });
+
+    it('restores longer tokens before shorter prefix tokens', () => {
+      const mm = createMaskingMap();
+      mm.set('[email]', 'john@acme.com');
+      mm.set('[email 2]', 'jane@acme.com');
+
+      const result = mm.restore('Primary: [email]. Secondary: [email 2].');
+
+      expect(result.restored).toBe('Primary: john@acme.com. Secondary: jane@acme.com.');
+      expect(result.count).toBe(2);
+      mm.destroy();
+    });
   });
 
   describe('subscribe', () => {
@@ -210,6 +222,14 @@ describe('MaskingMap', () => {
 
       vi.advanceTimersByTime(2000);
       expect(mm.size).toBe(0);
+      mm.destroy();
+    });
+
+    it('setAll() with no entries does not arm expiry state', () => {
+      const mm = createMaskingMap({ ttlMs: 5000 });
+      mm.setAll([]);
+      expect(mm.size).toBe(0);
+      expect(mm.expiresAt).toBeNull();
       mm.destroy();
     });
 

@@ -229,7 +229,7 @@ describe('Widget', () => {
     it('includes masked count in aria-label', () => {
       const { container } = renderWidget({ maskedCount: 2 });
       const widget = container.querySelector('.sb-widget');
-      expect(widget?.getAttribute('aria-label')).toBe('Sunbreak: 2 masked');
+      expect(widget?.getAttribute('aria-label')).toBe('Sunbreak: 2 masked locally');
     });
 
     it('includes both findings and masked in aria-label', () => {
@@ -239,7 +239,7 @@ describe('Widget', () => {
       });
       const widget = container.querySelector('.sb-widget');
       expect(widget?.getAttribute('aria-label')).toBe(
-        'Sunbreak: 1 warning finding, 3 masked',
+        'Sunbreak: 1 warning finding, 3 masked locally',
       );
     });
   });

@@ -81,6 +81,7 @@ export function createMaskingMap(options?: MaskingMapOptions): MaskingMap {
     },
 
     setAll(entries: ReadonlyArray<{ token: string; originalValue: string }>): void {
+      if (entries.length === 0) return;
       for (const { token, originalValue } of entries) {
         map.set(token, originalValue);
       }
@@ -97,8 +98,13 @@ export function createMaskingMap(options?: MaskingMapOptions): MaskingMap {
 
       let restored = text;
       let count = 0;
+      const orderedEntries = Array.from(map.entries()).sort((a, b) => {
+        const tokenLengthDiff = b[0].length - a[0].length;
+        if (tokenLengthDiff !== 0) return tokenLengthDiff;
+        return a[0].localeCompare(b[0]);
+      });
 
-      for (const [token, original] of map) {
+      for (const [token, original] of orderedEntries) {
         let idx = restored.indexOf(token);
         while (idx !== -1) {
           restored = restored.slice(0, idx) + original + restored.slice(idx + token.length);

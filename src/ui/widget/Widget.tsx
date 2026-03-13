@@ -66,7 +66,7 @@ function buildAriaLabel(
     parts.push(`${activeCount} ${severity} finding${plural}`);
   }
   if (maskedCount > 0) {
-    parts.push(`${maskedCount} masked`);
+    parts.push(`${maskedCount} masked locally`);
   }
   if (parts.length === 0) return 'Sunbreak: no issues detected';
   return `Sunbreak: ${parts.join(', ')}`;
