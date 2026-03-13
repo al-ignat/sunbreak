@@ -22,6 +22,7 @@ describe('classify', () => {
       expect(result.findings).toHaveLength(1);
       expect(result.findings[0]?.type).toBe('email');
       expect(result.findings[0]?.value).toBe('john@example.com');
+      expect(result.findings[0]?.context?.baseConfidence).toBe('HIGH');
       expect(result.hasHighConfidence).toBe(true);
     });
 
@@ -225,6 +226,20 @@ describe('classify', () => {
       const result = classify('john@example.com', { keywords: [] });
       expect(result.durationMs).toBeGreaterThanOrEqual(0);
       expect(typeof result.durationMs).toBe('number');
+    });
+  });
+
+  describe('context foundation', () => {
+    it('attaches neutral context metadata to classifier findings', () => {
+      const result = classify('Contact john@example.com for details', { keywords: [] });
+      const finding = result.findings[0];
+      expect(finding?.context).toEqual({
+        baseConfidence: 'HIGH',
+        score: 0,
+        categories: [],
+        signals: [],
+        explanation: null,
+      });
     });
   });
 
