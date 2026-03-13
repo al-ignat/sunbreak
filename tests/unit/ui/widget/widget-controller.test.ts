@@ -18,6 +18,7 @@ import { computeWidgetPosition } from '../../../../src/ui/widget/position';
 import type { SiteAdapter } from '../../../../src/types';
 import type { Finding } from '../../../../src/classifier/types';
 import type { WidgetContext } from '../../../../src/ui/widget/widget-controller';
+import { clearLocalDiagnostics, getLocalDiagnostics } from '../../../../src/utils/local-diagnostics';
 
 let wrapperWidth = 140;
 let triggerHeight = 36;
@@ -119,6 +120,7 @@ async function flushAsync(): Promise<void> {
 describe('widget-controller anchor behavior', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    clearLocalDiagnostics();
     wrapperWidth = 140;
     triggerHeight = 36;
     FakeResizeObserver.instances = [];
@@ -360,6 +362,20 @@ describe('widget-controller anchor behavior', () => {
     expect(getWidgetHost().style.display).toBe('');
     expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
     expect(vi.mocked(computeWidgetPosition).mock.calls.length).toBeGreaterThan(callsBeforeDisable);
+    expect(getLocalDiagnostics()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subsystem: 'widget-controller',
+          event: 'enabled-changed',
+          details: expect.objectContaining({ enabled: false }),
+        }),
+        expect.objectContaining({
+          subsystem: 'widget-controller',
+          event: 'anchor-state-changed',
+          details: expect.objectContaining({ mode: 'disabled' }),
+        }),
+      ]),
+    );
   });
 
   it('resolves active send and restore toasts safely when disabled', async () => {
@@ -388,6 +404,7 @@ describe('widget-controller anchor behavior', () => {
 describe('widget-controller capability flags', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    clearLocalDiagnostics();
     wrapperWidth = 140;
     triggerHeight = 36;
     FakeResizeObserver.instances = [];
@@ -528,6 +545,7 @@ describe('widget-controller capability flags', () => {
 describe('widget-controller panel dismissal', () => {
   beforeEach(() => {
     document.body.innerHTML = '';
+    clearLocalDiagnostics();
     wrapperWidth = 140;
     triggerHeight = 36;
     FakeResizeObserver.instances = [];

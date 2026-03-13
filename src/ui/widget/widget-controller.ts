@@ -14,6 +14,7 @@ import overlayStyles from './text-overlay.css?inline';
 import hoverCardStyles from './hover-card.css?inline';
 import type { TextOverlayHandle } from './TextOverlay';
 import type { MaskingMap } from '../../content/masking-map';
+import { recordLocalDiagnostic } from '../../utils/local-diagnostics';
 
 type WidgetAnchorMode =
   | 'send-button'
@@ -177,6 +178,12 @@ export function createWidgetController(
       wrapper.dataset.anchorMode = mode;
       wrapper.dataset.anchorReason = reason;
     }
+
+    recordLocalDiagnostic('widget-controller', 'anchor-state-changed', {
+      adapter: adapter.name,
+      mode,
+      reason,
+    });
   }
 
   function ensureContainer(): ShadowRoot {
@@ -216,6 +223,9 @@ export function createWidgetController(
     shadowRoot = shadow;
     wrapper = w;
     setAnchorState(extensionEnabled ? 'hidden' : 'disabled', extensionEnabled ? 'idle' : 'extension-disabled');
+    recordLocalDiagnostic('widget-controller', 'container-created', {
+      adapter: adapter.name,
+    });
 
     return shadow;
   }
@@ -235,6 +245,12 @@ export function createWidgetController(
     if (resizeObserver && currentSendButton) {
       resizeObserver.observe(currentSendButton);
     }
+
+    recordLocalDiagnostic('widget-controller', 'send-button-tracked', {
+      adapter: adapter.name,
+      present: currentSendButton !== null,
+      mode: currentSendButton ? 'send-button' : 'input-box-fallback',
+    });
 
     return true;
   }
@@ -412,6 +428,13 @@ export function createWidgetController(
     try {
       adapter.setText(input, redacted);
     } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      recordLocalDiagnostic('widget-controller', 'write-back-failed', {
+        adapter: adapter.name,
+        action: 'fix-one',
+        findingType: tf.finding.type,
+        message,
+      });
       console.error('[Sunbreak] setText failed:', e);
       return;
     }
@@ -441,6 +464,13 @@ export function createWidgetController(
     try {
       adapter.setText(input, redacted);
     } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      recordLocalDiagnostic('widget-controller', 'write-back-failed', {
+        adapter: adapter.name,
+        action: 'fix-all',
+        findingCount: active.length,
+        message,
+      });
       console.error('[Sunbreak] setText failed:', e);
       return;
     }
@@ -650,6 +680,9 @@ export function createWidgetController(
     }
 
     currentInput = input;
+    recordLocalDiagnostic('widget-controller', 'mount', {
+      adapter: adapter.name,
+    });
     ensureContainer();
     renderWidget();
     startObserving();
@@ -684,6 +717,11 @@ export function createWidgetController(
   };
 
   function unmount(): void {
+    recordLocalDiagnostic('widget-controller', 'unmount', {
+      adapter: adapter.name,
+      mode: currentAnchorMode,
+      reason: currentAnchorReason,
+    });
     unmountInternal();
     unmountInternal = (): void => {};
 
@@ -724,6 +762,9 @@ export function createWidgetController(
   }
 
   function destroy(): void {
+    recordLocalDiagnostic('widget-controller', 'destroy', {
+      adapter: adapter.name,
+    });
     unmount();
     if (container?.parentNode) {
       container.parentNode.removeChild(container);
@@ -743,6 +784,10 @@ export function createWidgetController(
 
   function setEnabled(enabled: boolean): void {
     extensionEnabled = enabled;
+    recordLocalDiagnostic('widget-controller', 'enabled-changed', {
+      adapter: adapter.name,
+      enabled,
+    });
     if (container) {
       container.style.display = enabled ? '' : 'none';
     }
