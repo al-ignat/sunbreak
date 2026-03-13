@@ -1511,6 +1511,60 @@ Epic 4 should be considered complete only when all of the following are true:
 - import/export is portable and non-destructive
 - performance remains comfortably interactive under realistic pattern counts
 
+### Implementation outcome — 2026-03-14
+
+**Status:** implemented and locally verified
+
+**Implemented in this execution pass**
+
+- added a first-class `custom-pattern` detector path instead of overloading keywords:
+  - dedicated storage schema, runtime compilation contract, and detector metadata
+  - detection settings now include a distinct `Company Patterns` category
+- completed dashboard-to-runtime wiring so enabled custom patterns now flow from storage into live scanner execution without reload
+- integrated custom pattern execution into the classifier pipeline with deterministic overlap handling and stable post-dedup sorting
+- surfaced company-pattern metadata on findings:
+  - stable pattern id
+  - severity
+  - category
+  - template provenance
+- updated findings-state identity so two different company patterns can match the same literal value without collapsing into one tracked item
+- made company-pattern findings explicitly detection-only in the widget layer:
+  - per-row `Fix` is hidden
+  - `Fix All` only appears when there are multiple maskable built-in findings
+  - hover cards explain that company-pattern matches require manual editing
+- updated severity rendering so company-pattern findings honor their configured warning / concern / critical level
+- updated event categorization so logged company findings retain their company bucket (for example `custom-pattern:hr`)
+- extended regression coverage across:
+  - classifier execution
+  - scanner integration
+  - findings-state identity
+  - orchestrator event logging
+  - widget severity and action semantics
+
+**Important product decision captured in code**
+
+- custom patterns are currently **detect-only**, not automatic masking targets
+- this is deliberate:
+  - arbitrary user regexes cannot be safely rewritten with the same guarantees as built-in detectors
+  - allowing automatic masking for broad custom regexes would risk self-retrigger loops and misleading replacement behavior
+
+**Verification completed**
+
+- `npm test` -> **50/50 test files passed, 820/820 tests passed**
+- `npm run build` -> **passed**
+- `npm run lint` -> **passed with 8 pre-existing warnings in older test files, no errors**
+
+**Remaining manual validation**
+
+- live provider verification for company-pattern rendering and dashboard-to-scanner propagation on ChatGPT, Claude, and Gemini was not run in this environment
+
+**Epic 4 final assessment**
+
+- Epic 4 now has the required product backbone: schema, templates, validation, dashboard management, runtime execution, portability, and regression coverage
+- the runtime path is explicit rather than incidental: storage -> compilation -> scanner -> classifier -> findings -> widget/logging
+- company-specific identifiers now surface with predictable labels and configured severity while preserving safe masking boundaries
+- the main remaining follow-up is live-provider verification rather than a local implementation gap
+
 ---
 
 ## Epic 5 — Recovery And Provider Guidance
