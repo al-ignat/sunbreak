@@ -311,7 +311,12 @@ export function createWidgetController(
   }
 
   function updatePosition(): void {
-    if (!wrapper || !currentInput) return;
+    if (!wrapper) return;
+    if (!currentInput) {
+      setAnchorState(extensionEnabled ? 'degraded' : 'disabled', extensionEnabled ? 'missing-input' : 'extension-disabled');
+      setWrapperVisibility(false);
+      return;
+    }
     const anchor = resolveAnchor();
     if (anchor.mode === 'hidden' || anchor.mode === 'disabled' || anchor.mode === 'degraded') {
       setAnchorState(anchor.mode, anchor.reason);
@@ -540,12 +545,38 @@ export function createWidgetController(
     });
   }
 
+  function clearVisibleUiForDisable(): void {
+    panelOpen = false;
+    overlayHandle = null;
+
+    if (toastState) {
+      const { resolve } = toastState;
+      toastState = null;
+      resolve('timeout');
+    }
+
+    if (restoreToastState) {
+      const { resolve } = restoreToastState;
+      restoreToastState = null;
+      resolve(false);
+    }
+  }
+
   function renderWidget(): void {
     if (!wrapper) return;
+    if (!extensionEnabled) {
+      render(null, wrapper);
+      overlayHandle = null;
+      setAnchorState('disabled', 'extension-disabled');
+      setWrapperVisibility(false);
+      return;
+    }
+
+    const mountedEditor = currentInput?.isConnected ? currentInput : null;
     render(
       h(Widget, {
         findingsState,
-        editorEl: currentInput,
+        editorEl: mountedEditor,
         supportsOverlay: adapter.supportsOverlay !== false,
         panelOpen,
         onFix: maskingAllowed ? handleFix : undefined,
@@ -586,13 +617,17 @@ export function createWidgetController(
       wrapper,
     );
     if (!shouldShowFloatingUi()) {
-      setAnchorState(extensionEnabled ? 'hidden' : 'disabled', extensionEnabled ? 'idle' : 'extension-disabled');
+      setAnchorState('hidden', 'idle');
       setWrapperVisibility(false);
       return;
     }
-    if (currentInput) {
+    if (mountedEditor) {
       onScrollOrResize();
+      return;
     }
+
+    setAnchorState('degraded', 'input-detached');
+    setWrapperVisibility(false);
   }
 
   function showToast(activeCount: number): Promise<'send-anyway' | 'timeout'> {
@@ -711,7 +746,11 @@ export function createWidgetController(
     if (container) {
       container.style.display = enabled ? '' : 'none';
     }
+    if (!enabled) {
+      clearVisibleUiForDisable();
+    }
     setAnchorState(enabled ? 'hidden' : 'disabled', enabled ? 'idle' : 'extension-disabled');
+    renderWidget();
   }
 
   return { mount, unmount, destroy, showToast, showRestoreToast, getOverlayHandle, setEnabled };

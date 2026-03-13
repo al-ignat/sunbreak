@@ -329,6 +329,60 @@ describe('widget-controller anchor behavior', () => {
     expect(vi.mocked(computeWidgetPosition).mock.calls).toHaveLength(1);
     expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
   });
+
+  it('suppresses visible UI when disabled and re-anchors when re-enabled', async () => {
+    appendInput();
+    appendSendButton();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
+
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx());
+    activeControllers.push(controller);
+    const input = document.getElementById('editor');
+    if (!input) throw new Error('input not found');
+
+    controller.mount(input);
+    await flushAsync();
+
+    expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
+    const callsBeforeDisable = vi.mocked(computeWidgetPosition).mock.calls.length;
+
+    controller.setEnabled(false);
+
+    expect(getWidgetHost().style.display).toBe('none');
+    expect(getWidgetHost().dataset.anchorMode).toBe('disabled');
+    expect(getWidgetHost().dataset.anchorReason).toBe('extension-disabled');
+    expect(vi.mocked(computeWidgetPosition).mock.calls).toHaveLength(callsBeforeDisable);
+
+    controller.setEnabled(true);
+    await flushAsync();
+
+    expect(getWidgetHost().style.display).toBe('');
+    expect(getWidgetHost().dataset.anchorMode).toBe('send-button');
+    expect(vi.mocked(computeWidgetPosition).mock.calls.length).toBeGreaterThan(callsBeforeDisable);
+  });
+
+  it('resolves active send and restore toasts safely when disabled', async () => {
+    appendInput();
+    appendSendButton();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
+
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx(), createMaskingMap());
+    activeControllers.push(controller);
+    const input = document.getElementById('editor');
+    if (!input) throw new Error('input not found');
+
+    controller.mount(input);
+    const sendPromise = controller.showToast(1);
+    const restorePromise = controller.showRestoreToast(2);
+
+    controller.setEnabled(false);
+
+    await expect(sendPromise).resolves.toBe('timeout');
+    await expect(restorePromise).resolves.toBe(false);
+    expect(getWidgetHost().dataset.anchorMode).toBe('disabled');
+  });
 });
 
 describe('widget-controller capability flags', () => {
