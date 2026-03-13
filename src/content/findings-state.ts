@@ -51,6 +51,8 @@ export interface FindingsState {
   getSnapshot(): FindingsSnapshot;
   /** Mark a finding as fixed */
   fix(id: string): void;
+  /** Mark multiple findings as fixed. Returns the list that were fixed. */
+  fixMany(ids: ReadonlyArray<string>): ReadonlyArray<TrackedFinding>;
   /** Mark a finding as ignored */
   ignore(id: string): void;
   /** Fix all active findings. Returns the list that were fixed. */
@@ -135,6 +137,27 @@ export function createFindingsState(): FindingsState {
     notify();
   }
 
+  function fixMany(ids: ReadonlyArray<string>): ReadonlyArray<TrackedFinding> {
+    if (ids.length === 0) return [];
+
+    const idSet = new Set(ids);
+    const fixed: TrackedFinding[] = [];
+
+    tracked = tracked.map((tf) => {
+      if (tf.status === 'active' && idSet.has(tf.id)) {
+        fixed.push(tf);
+        return { ...tf, status: 'fixed' as const };
+      }
+      return tf;
+    });
+
+    if (fixed.length > 0) {
+      notify();
+    }
+
+    return fixed;
+  }
+
   function ignore(id: string): void {
     const idx = tracked.findIndex((t) => t.id === id);
     if (idx === -1) return;
@@ -185,7 +208,7 @@ export function createFindingsState(): FindingsState {
     notify();
   }
 
-  return { update, getSnapshot, fix, ignore, fixAll, ignoreAllOfType, subscribe, clear };
+  return { update, getSnapshot, fix, fixMany, ignore, fixAll, ignoreAllOfType, subscribe, clear };
 
   function getSnapshot(): FindingsSnapshot {
     return snapshot();

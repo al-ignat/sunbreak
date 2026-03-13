@@ -191,23 +191,74 @@ export function attachSubmissionInterceptor(
  * Safe because the classification engine guarantees no overlapping findings
  * (Phase 3, Design Decision D1).
  */
+export interface RedactionSpan {
+  readonly startIndex: number;
+  readonly endIndex: number;
+  readonly placeholder: string;
+}
+
+export interface RedactionResult<T extends RedactionSpan> {
+  readonly text: string;
+  readonly applied: ReadonlyArray<T>;
+}
+
+function isValidRedactionSpan(
+  originalLength: number,
+  finding: RedactionSpan,
+): boolean {
+  return Number.isInteger(finding.startIndex) &&
+    Number.isInteger(finding.endIndex) &&
+    finding.startIndex >= 0 &&
+    finding.endIndex <= originalLength &&
+    finding.startIndex < finding.endIndex;
+}
+
+export function applyRedactions<T extends RedactionSpan>(
+  original: string,
+  findings: ReadonlyArray<T>,
+): RedactionResult<T> {
+  if (findings.length === 0) {
+    return { text: original, applied: [] };
+  }
+
+  const accepted: T[] = [];
+  const sorted = [...findings].sort((a, b) => {
+    const startDiff = a.startIndex - b.startIndex;
+    if (startDiff !== 0) return startDiff;
+    const endDiff = b.endIndex - a.endIndex;
+    if (endDiff !== 0) return endDiff;
+    return a.placeholder.localeCompare(b.placeholder);
+  });
+
+  for (const finding of sorted) {
+    if (!isValidRedactionSpan(original.length, finding)) {
+      continue;
+    }
+
+    const previous = accepted[accepted.length - 1];
+    if (previous && finding.startIndex < previous.endIndex) {
+      continue;
+    }
+
+    accepted.push(finding);
+  }
+
+  let text = original;
+  for (const finding of [...accepted].sort((a, b) => b.startIndex - a.startIndex)) {
+    text =
+      text.slice(0, finding.startIndex) +
+      finding.placeholder +
+      text.slice(finding.endIndex);
+  }
+
+  return { text, applied: accepted };
+}
+
 export function buildRedactedText(
   original: string,
-  findings: ReadonlyArray<{
-    readonly startIndex: number;
-    readonly endIndex: number;
-    readonly placeholder: string;
-  }>,
+  findings: ReadonlyArray<RedactionSpan>,
 ): string {
-  let result = original;
-  const sorted = [...findings].sort((a, b) => b.startIndex - a.startIndex);
-  for (const finding of sorted) {
-    result =
-      result.slice(0, finding.startIndex) +
-      finding.placeholder +
-      result.slice(finding.endIndex);
-  }
-  return result;
+  return applyRedactions(original, findings).text;
 }
 
 /**
