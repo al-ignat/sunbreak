@@ -69,6 +69,18 @@ describe('HoverCard', () => {
     expect(masked.textContent).toBe('[EMAIL_1]');
   });
 
+  it('explains why generic email tokens stay generic for shared mailboxes', () => {
+    const finding = makeTracked({
+      finding: makeFinding({
+        value: 'support@example.com',
+        placeholder: '[email]',
+      }),
+    });
+
+    const { container } = render(<HoverCard {...defaultProps({ finding })} />);
+    expect(container.querySelector('.sb-hover-card__masked-note')?.textContent).toContain('stay generic');
+  });
+
   it('renders explanation summary when context metadata is present', () => {
     const finding = makeTracked({
       finding: makeFinding({

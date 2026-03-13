@@ -147,6 +147,15 @@
   color: var(--sb-color-text-primary);
 }
 
+.sb-panel__placeholder {
+  font-family: var(--sb-font-mono);
+  font-size: 11px;
+  color: var(--sb-color-cta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sb-panel__explanation {
   font-size: 11px;
   line-height: 1.4;

@@ -102,6 +102,16 @@ describe('extractNameFromEmail', () => {
       expect(extractNameFromEmail('security.ops')).toBeNull();
       expect(extractNameFromEmail('billing_desk')).toBeNull();
     });
+
+    it('drops trailing role qualifiers from person-like addresses', () => {
+      expect(extractNameFromEmail('john.smith.hr')).toBe('John S.');
+      expect(extractNameFromEmail('j.smith.support')).toBe('J. Smith');
+    });
+
+    it('keeps prefixed shared mailboxes generic even when a name appears later', () => {
+      expect(extractNameFromEmail('support.jane')).toBeNull();
+      expect(extractNameFromEmail('security_alice')).toBeNull();
+    });
   });
 
   describe('digits and non-standard formats', () => {
@@ -227,6 +237,15 @@ describe('generateDescriptiveToken', () => {
         value: 'security.ops@example.com',
       });
       expect(generateDescriptiveToken(finding, ctx)).toBe('[email]');
+    });
+
+    it('preserves person identity when a trailing role qualifier is present', () => {
+      const ctx = createTokenContext();
+      const finding = makeFinding({
+        type: 'email',
+        value: 'john.smith.hr@example.com',
+      });
+      expect(generateDescriptiveToken(finding, ctx)).toBe('[John S. email]');
     });
   });
 

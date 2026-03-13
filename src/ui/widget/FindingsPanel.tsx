@@ -33,6 +33,11 @@ function explanationSummary(tf: TrackedFinding): string | null {
   return tf.finding.context?.explanation?.summary ?? null;
 }
 
+function placeholderPreview(tf: TrackedFinding): string | null {
+  if (tf.finding.placeholder.length === 0) return null;
+  return `Masks to ${tf.finding.placeholder}`;
+}
+
 function formatRemainingTime(expiresAt: number): string {
   const remaining = Math.max(0, expiresAt - Date.now());
   const minutes = Math.ceil(remaining / 60_000);
@@ -141,6 +146,11 @@ export default function FindingsPanel({
                   <span class="sb-panel__value" title={tf.finding.value}>
                     {truncateValue(tf.finding.value, tf.finding.type)}
                   </span>
+                  {placeholderPreview(tf) && (
+                    <span class="sb-panel__placeholder">
+                      {placeholderPreview(tf)}
+                    </span>
+                  )}
                   {explanationSummary(tf) && (
                     <span class="sb-panel__explanation">
                       {explanationSummary(tf)}

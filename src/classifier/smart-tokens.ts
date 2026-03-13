@@ -101,6 +101,22 @@ function isAlphabetic(str: string): boolean {
   return /^[a-zA-Z]+$/.test(str);
 }
 
+function trimTrailingRoleQualifiers(parts: ReadonlyArray<string>): string[] {
+  let end = parts.length;
+  while (end > 1) {
+    const part = parts[end - 1];
+    const lower = part?.toLowerCase();
+    if (
+      lower === undefined ||
+      (!ROLE_QUALIFIERS.has(lower) && !ROLE_PREFIXES.has(lower))
+    ) {
+      break;
+    }
+    end--;
+  }
+  return parts.slice(0, end);
+}
+
 /**
  * Extract a human name from an email local part.
  * Returns null if no name can be extracted (role address, all digits, etc).
@@ -128,12 +144,19 @@ export function extractNameFromEmail(localPart: string): string | null {
   if (alphaParts.length === 0) return null;
 
   const normalizedAlphaParts = alphaParts.map((part) => part.toLowerCase());
+  const firstAlpha = normalizedAlphaParts[0];
+
+  if (firstAlpha !== undefined && ROLE_PREFIXES.has(firstAlpha) && normalizedAlphaParts.length > 1) {
+    return null;
+  }
+
+  const trimmedAlphaParts = trimTrailingRoleQualifiers(alphaParts);
+  const normalizedTrimmedAlphaParts = trimmedAlphaParts.map((part) => part.toLowerCase());
   const allRoleLike = normalizedAlphaParts.every((part) =>
     ROLE_PREFIXES.has(part) || ROLE_QUALIFIERS.has(part)
   );
   if (allRoleLike) return null;
 
-  const firstAlpha = normalizedAlphaParts[0];
   if (
     firstAlpha !== undefined &&
     ROLE_PREFIXES.has(firstAlpha) &&
@@ -142,17 +165,17 @@ export function extractNameFromEmail(localPart: string): string | null {
     return null;
   }
 
-  if (alphaParts.length === 1) {
-    const name = alphaParts[0];
+  if (trimmedAlphaParts.length === 1) {
+    const name = trimmedAlphaParts[0];
     if (name === undefined) return null;
     // Check role again after splitting (e.g., "support-team" splits to "support", "team")
     if (ROLE_PREFIXES.has(name.toLowerCase())) return null;
     return capitalize(name);
   }
 
-  if (alphaParts.length === 2) {
-    const first = alphaParts[0];
-    const last = alphaParts[1];
+  if (trimmedAlphaParts.length === 2) {
+    const first = trimmedAlphaParts[0];
+    const last = trimmedAlphaParts[1];
     if (first === undefined || last === undefined) return null;
 
     // Single-char first name = treat as initial + full last name
@@ -167,8 +190,8 @@ export function extractNameFromEmail(localPart: string): string | null {
   }
 
   // 3+ parts: use first + last initial
-  const first = alphaParts[0];
-  const last = alphaParts[alphaParts.length - 1];
+  const first = trimmedAlphaParts[0];
+  const last = normalizedTrimmedAlphaParts[normalizedTrimmedAlphaParts.length - 1];
   if (first === undefined || last === undefined) return null;
   const lastChar = last[0];
   if (lastChar === undefined) return null;

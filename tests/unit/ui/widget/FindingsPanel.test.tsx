@@ -175,6 +175,20 @@ describe('FindingsPanel', () => {
       const { container } = renderPanel({ tracked });
       expect(container.querySelector('.sb-panel__explanation')?.textContent).toContain('confidential');
     });
+
+    it('shows the token preview that Fix will apply', () => {
+      const tracked = [
+        makeTracked({
+          id: 'a',
+          finding: {
+            placeholder: '[John S. email]',
+          },
+        }),
+      ];
+
+      const { container } = renderPanel({ tracked });
+      expect(container.querySelector('.sb-panel__placeholder')?.textContent).toContain('[John S. email]');
+    });
   });
 
   describe('severity colors', () => {
