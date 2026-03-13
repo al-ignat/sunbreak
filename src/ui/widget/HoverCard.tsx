@@ -34,18 +34,34 @@ export default function HoverCard({
 }: HoverCardProps): JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const [flipped, setFlipped] = useState(false);
+  const [top, setTop] = useState<number | null>(null);
 
-  // After first render, measure card and decide above/below
   useEffect(() => {
-    const el = cardRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    // If card would overflow above viewport, flip below
-    if (anchorY - rect.height - CARD_GAP < 0) {
-      setFlipped(true);
+    setMenuOpen(false);
+  }, [finding.id]);
+
+  useEffect(() => {
+    function updateTop(): void {
+      const el = cardRef.current;
+      if (!el) return;
+
+      const rect = el.getBoundingClientRect();
+      const minTop = 8;
+      const maxTop = Math.max(minTop, window.innerHeight - rect.height - 8);
+      const aboveTop = anchorY - rect.height - CARD_GAP;
+      const belowTop = anchorY + CARD_GAP;
+      const preferredTop = aboveTop >= minTop ? aboveTop : belowTop;
+
+      setTop(Math.min(Math.max(preferredTop, minTop), maxTop));
     }
-  }, [anchorY]);
+
+    updateTop();
+    window.addEventListener('resize', updateTop);
+
+    return (): void => {
+      window.removeEventListener('resize', updateTop);
+    };
+  }, [anchorY, finding.id, menuOpen]);
 
   const handleFix = useCallback((): void => {
     onFix?.(finding.id);
@@ -91,16 +107,9 @@ export default function HoverCard({
 
   const style: Record<string, string> = {
     left: `${left}px`,
+    top: `${top ?? Math.max(8, anchorY + CARD_GAP)}px`,
     width: `${cardWidth}px`,
   };
-
-  if (flipped) {
-    // Position below the underline
-    style.top = `${anchorY + CARD_GAP}px`;
-  } else {
-    // Position above the underline
-    style.bottom = `${window.innerHeight - anchorY + CARD_GAP}px`;
-  }
 
   return (
     <div

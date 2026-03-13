@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, cleanup, act } from '@testing-library/preact';
+import { render, cleanup, act, fireEvent } from '@testing-library/preact';
 import TextOverlay from '../../../../src/ui/widget/TextOverlay';
 import type { TextOverlayHandle } from '../../../../src/ui/widget/TextOverlay';
 import { createFindingsState } from '../../../../src/content/findings-state';
@@ -323,5 +323,95 @@ describe('TextOverlay', () => {
     expect(overlay.style.width).toBe('200px');
     expect(overlay.style.height).toBe('80px');
     expect(underlines).toHaveLength(1);
+  });
+
+  it('recalculates underline placement when the editor DOM mutates', async () => {
+    editor = createEditorWithText('john@example.com is here');
+
+    let underlineRect = {
+      top: 10,
+      left: 20,
+      width: 100,
+      height: 14,
+      bottom: 24,
+      right: 120,
+      x: 20,
+      y: 10,
+    };
+
+    Range.prototype.getClientRects = vi.fn(
+      () => [{ ...underlineRect, toJSON: vi.fn() }] as unknown as DOMRectList,
+    );
+    editor.getBoundingClientRect = vi.fn(() => ({
+      top: 0,
+      left: 0,
+      width: 400,
+      height: 200,
+      bottom: 200,
+      right: 400,
+      x: 0,
+      y: 0,
+      toJSON: vi.fn(),
+    }));
+
+    findingsState.update([makeFinding()]);
+
+    const { container } = render(
+      <TextOverlay
+        findingsState={findingsState}
+        editorEl={editor}
+      />,
+    );
+
+    const underlineBefore = container.querySelector('.sb-underline') as HTMLElement;
+    expect(underlineBefore.style.top).toBe('24px');
+
+    underlineRect = {
+      ...underlineRect,
+      top: 42,
+      bottom: 56,
+      y: 42,
+    };
+
+    await act(async () => {
+      editor.textContent = 'john@example.com is here now';
+      await Promise.resolve();
+    });
+
+    const underlineAfter = container.querySelector('.sb-underline') as HTMLElement;
+    expect(underlineAfter.style.top).toBe('56px');
+  });
+
+  it('clears the hover card when the hovered finding becomes inactive', () => {
+    editor = createEditorWithText('john@example.com is here');
+
+    const mockRect = { top: 10, left: 20, width: 100, height: 14, bottom: 24, right: 120, x: 20, y: 10, toJSON: vi.fn() };
+    Range.prototype.getClientRects = vi.fn(() => [mockRect] as unknown as DOMRectList);
+    editor.getBoundingClientRect = vi.fn(() => ({ top: 0, left: 0, width: 400, height: 200, bottom: 200, right: 400, x: 0, y: 0, toJSON: vi.fn() }));
+
+    findingsState.update([makeFinding()]);
+
+    const { container } = render(
+      <TextOverlay
+        findingsState={findingsState}
+        editorEl={editor}
+        onFix={vi.fn()}
+        onIgnore={vi.fn()}
+        onIgnoreAllOfType={vi.fn()}
+        onDisableType={vi.fn()}
+      />,
+    );
+
+    fireEvent.mouseMove(editor, { clientX: 60, clientY: 24 });
+    expect(container.querySelector('.sb-hover-card')).toBeTruthy();
+
+    const hoveredId = findingsState.getSnapshot().tracked[0]?.id;
+    if (!hoveredId) throw new Error('hovered finding missing');
+
+    act(() => {
+      findingsState.fix(hoveredId);
+    });
+
+    expect(container.querySelector('.sb-hover-card')).toBeNull();
   });
 });

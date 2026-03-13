@@ -52,6 +52,13 @@ export default function TextOverlay({
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hoverFindingIdRef = useRef<string | null>(null);
 
+  const clearHoverTimer = useCallback((): void => {
+    if (hoverTimerRef.current !== null) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+  }, []);
+
   function getAnchorForFinding(
     findingId: string,
   ): Pick<HoverState, 'anchorX' | 'anchorY'> | null {
@@ -136,6 +143,15 @@ export default function TextOverlay({
     resizeObserver.observe(editorEl);
     resizeObserver.observe(document.body);
 
+    const mutationObserver = new MutationObserver(() => {
+      scheduleRecalculate();
+    });
+    mutationObserver.observe(editorEl, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
     const onViewportChange = (): void => {
       scheduleRecalculate();
     };
@@ -145,6 +161,7 @@ export default function TextOverlay({
 
     return (): void => {
       resizeObserver.disconnect();
+      mutationObserver.disconnect();
       window.removeEventListener('resize', onViewportChange);
       window.removeEventListener('scroll', onViewportChange, true);
     };
@@ -156,8 +173,9 @@ export default function TextOverlay({
         cancelAnimationFrame(recalcRafRef.current);
         recalcRafRef.current = null;
       }
+      clearHoverTimer();
     };
-  }, []);
+  }, [clearHoverTimer]);
 
   // Clear hover when the hovered finding is no longer active
   useEffect(() => {
@@ -173,13 +191,6 @@ export default function TextOverlay({
   useEffect(() => {
     if (!editorEl) return;
 
-    function cancelHoverTimer(): void {
-      if (hoverTimerRef.current !== null) {
-        clearTimeout(hoverTimerRef.current);
-        hoverTimerRef.current = null;
-      }
-    }
-
     function onMouseMove(e: MouseEvent): void {
       const found = findingAtPointUtil(
         segmentsRef.current,
@@ -189,7 +200,7 @@ export default function TextOverlay({
       );
 
       if (found) {
-        cancelHoverTimer();
+        clearHoverTimer();
         if (hoverFindingIdRef.current !== found.id) {
           hoverFindingIdRef.current = found.id;
           const anchor = getAnchorForFinding(found.id);
@@ -200,7 +211,7 @@ export default function TextOverlay({
       } else {
         // Mouse moved off underline — start leave timer
         if (hoverFindingIdRef.current !== null) {
-          cancelHoverTimer();
+          clearHoverTimer();
           hoverTimerRef.current = setTimeout(() => {
             setHover(null);
             hoverFindingIdRef.current = null;
@@ -210,7 +221,7 @@ export default function TextOverlay({
     }
 
     function onMouseLeave(): void {
-      cancelHoverTimer();
+      clearHoverTimer();
       hoverTimerRef.current = setTimeout(() => {
         setHover(null);
         hoverFindingIdRef.current = null;
@@ -222,24 +233,22 @@ export default function TextOverlay({
     return (): void => {
       editorEl.removeEventListener('mousemove', onMouseMove);
       editorEl.removeEventListener('mouseleave', onMouseLeave);
-      cancelHoverTimer();
+      clearHoverTimer();
     };
-  }, [editorEl]);
+  }, [editorEl, clearHoverTimer]);
 
   // Hover card mouse enter/leave — cancels or starts the leave timer
   const handleHoverCardEnter = useCallback((): void => {
-    if (hoverTimerRef.current !== null) {
-      clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
-  }, []);
+    clearHoverTimer();
+  }, [clearHoverTimer]);
 
   const handleHoverCardLeave = useCallback((): void => {
+    clearHoverTimer();
     hoverTimerRef.current = setTimeout(() => {
       setHover(null);
       hoverFindingIdRef.current = null;
     }, HOVER_LEAVE_DELAY);
-  }, []);
+  }, [clearHoverTimer]);
 
   // Expose findingAtPoint handle for Phase 6
   useEffect(() => {

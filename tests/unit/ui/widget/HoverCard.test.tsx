@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, cleanup, fireEvent } from '@testing-library/preact';
+import { render, cleanup, fireEvent, waitFor } from '@testing-library/preact';
 import HoverCard from '../../../../src/ui/widget/HoverCard';
 import type { TrackedFinding } from '../../../../src/content/findings-state';
 import type { Finding } from '../../../../src/classifier/types';
@@ -44,6 +44,7 @@ function defaultProps(overrides: Record<string, unknown> = {}): Parameters<typeo
 describe('HoverCard', () => {
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
   });
 
   it('renders with finding type label', () => {
@@ -178,5 +179,43 @@ describe('HoverCard', () => {
     const card = container.querySelector('.sb-hover-card') as HTMLElement;
     fireEvent.keyDown(card, { key: 'Escape' });
     expect(container.querySelector('.sb-hover-card__menu')).toBeNull();
+  });
+
+  it('positions below the underline when there is not enough room above', async () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function getBoundingClientRect(this: HTMLElement): DOMRect {
+      if (this.classList.contains('sb-hover-card')) {
+        return {
+          top: 0,
+          left: 0,
+          right: 280,
+          bottom: 120,
+          width: 280,
+          height: 120,
+          x: 0,
+          y: 0,
+          toJSON: vi.fn(),
+        } as DOMRect;
+      }
+
+      return {
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0,
+        toJSON: vi.fn(),
+      } as DOMRect;
+    });
+
+    const { container } = render(<HoverCard {...defaultProps({ anchorY: 40 })} />);
+    const card = container.querySelector('.sb-hover-card') as HTMLElement;
+    if (!card) throw new Error('Card should exist');
+
+    await waitFor(() => {
+      expect(card.style.top).toBe('46px');
+    });
   });
 });
