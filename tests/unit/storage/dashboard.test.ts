@@ -9,12 +9,17 @@ import {
   removeKeyword,
   importKeywords,
   exportKeywords,
+  getCustomPatterns,
+  upsertCustomPattern,
+  removeCustomPattern,
+  importCustomPatterns,
+  exportCustomPatterns,
   pruneOldStats,
   toEnabledDetectors,
   getExtensionSettings,
   setExtensionSettings,
 } from '../../../src/storage/dashboard';
-import type { FlaggedEvent, DailyStats } from '../../../src/storage/types';
+import type { CustomPattern, FlaggedEvent, DailyStats } from '../../../src/storage/types';
 import { DEFAULT_DETECTION_SETTINGS } from '../../../src/storage/types';
 
 function dateKey(daysAgo: number): string {
@@ -46,6 +51,28 @@ function makeFlaggedEvent(
     categories: ['email'],
     findingCount: 1,
     action: 'redacted',
+    ...overrides,
+  };
+}
+
+function makeCustomPattern(overrides: Partial<CustomPattern> = {}): CustomPattern {
+  return {
+    id: 'pattern-1',
+    label: 'Employee ID',
+    description: 'Matches EMP-12345 style references',
+    enabled: true,
+    severity: 'warning',
+    category: 'internal-identifier',
+    sourceMode: 'template',
+    templateId: 'employee-id',
+    pattern: 'EMP-[0-9]{5}',
+    flags: 'gi',
+    samples: {
+      positive: ['Employee ID EMP-12345'],
+      negative: ['No company identifier here'],
+    },
+    createdAt: '2026-03-14T00:00:00.000Z',
+    updatedAt: '2026-03-14T00:00:00.000Z',
     ...overrides,
   };
 }
@@ -318,6 +345,112 @@ describe('dashboard storage wrapper', () => {
       storageData['keywords'] = ['alpha', 'beta', 'gamma'];
       const exported = await exportKeywords();
       expect(exported).toBe('alpha\nbeta\ngamma');
+    });
+  });
+
+  describe('custom pattern storage', () => {
+    it('returns empty array when no custom patterns exist', async () => {
+      const patterns = await getCustomPatterns();
+      expect(patterns).toHaveLength(0);
+    });
+
+    it('normalizes stored custom patterns with defaults', async () => {
+      storageData['customPatterns'] = [
+        {
+          id: 'pattern-1',
+          label: 'Invoice',
+          pattern: 'INV-[0-9]{6}',
+        },
+      ];
+
+      const patterns = await getCustomPatterns();
+      expect(patterns).toHaveLength(1);
+      expect(patterns[0]).toEqual(expect.objectContaining({
+        id: 'pattern-1',
+        label: 'Invoice',
+        pattern: 'INV-[0-9]{6}',
+        enabled: true,
+        severity: 'warning',
+        category: 'other',
+        sourceMode: 'advanced-regex',
+        templateId: null,
+        flags: 'gi',
+      }));
+    });
+
+    it('creates a new custom pattern with normalized defaults', async () => {
+      const created = await upsertCustomPattern({
+        label: 'Project Code',
+        pattern: 'PROJ-[A-Z]{3}',
+      });
+
+      const stored = storageData['customPatterns'] as CustomPattern[];
+      expect(stored).toHaveLength(1);
+      expect(created.id.length).toBeGreaterThan(0);
+      expect(created.flags).toBe('gi');
+      expect(created.enabled).toBe(true);
+    });
+
+    it('updates an existing custom pattern while preserving createdAt', async () => {
+      storageData['customPatterns'] = [makeCustomPattern()];
+
+      const updated = await upsertCustomPattern({
+        id: 'pattern-1',
+        label: 'Employee Badge ID',
+        pattern: 'EMP-[0-9]{5}',
+        severity: 'concern',
+      });
+
+      expect(updated.label).toBe('Employee Badge ID');
+      expect(updated.severity).toBe('concern');
+      expect(updated.createdAt).toBe('2026-03-14T00:00:00.000Z');
+    });
+
+    it('removes a custom pattern by id', async () => {
+      storageData['customPatterns'] = [
+        makeCustomPattern(),
+        makeCustomPattern({ id: 'pattern-2', label: 'Invoice ID' }),
+      ];
+
+      await removeCustomPattern('pattern-1');
+
+      expect(storageData['customPatterns']).toEqual([
+        expect.objectContaining({ id: 'pattern-2' }),
+      ]);
+    });
+
+    it('imports versioned custom pattern bundles', async () => {
+      storageData['customPatterns'] = [makeCustomPattern()];
+
+      const result = await importCustomPatterns(JSON.stringify({
+        version: 1,
+        exportedAt: '2026-03-14T00:00:00.000Z',
+        patterns: [
+          makeCustomPattern({ id: 'pattern-1', label: 'Employee Identifier' }),
+          makeCustomPattern({ id: 'pattern-2', label: 'Invoice ID', templateId: 'invoice-number' }),
+        ],
+      }));
+
+      expect(result).toEqual({ added: 1, updated: 1, skipped: 0 });
+      const stored = storageData['customPatterns'] as CustomPattern[];
+      expect(stored).toHaveLength(2);
+      expect(stored[0]?.label).toBe('Employee Identifier');
+    });
+
+    it('exports custom patterns as versioned JSON', async () => {
+      storageData['customPatterns'] = [makeCustomPattern()];
+
+      const exported = await exportCustomPatterns();
+      const parsed = JSON.parse(exported) as {
+        version: number;
+        exportedAt: string;
+        patterns: CustomPattern[];
+      };
+
+      expect(parsed.version).toBe(1);
+      expect(parsed.exportedAt).toMatch(/^2026-/);
+      expect(parsed.patterns).toHaveLength(1);
+      expect(parsed.patterns[0]?.label).toBe('Employee ID');
     });
   });
 

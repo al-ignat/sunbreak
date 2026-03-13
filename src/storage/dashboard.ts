@@ -1,4 +1,5 @@
 import type { FindingType } from '../classifier/types';
+import { normalizeCustomPattern, normalizeCustomPatterns } from '../classifier/custom-patterns';
 import type {
   FlaggedEvent,
   DailyStats,
@@ -6,6 +7,8 @@ import type {
   DetectionSettings,
   EventFilter,
   AggregatedStats,
+  CustomPattern,
+  CustomPatternBundle,
 } from './types';
 import {
   DEFAULT_DETECTION_SETTINGS,
@@ -184,6 +187,7 @@ const MAX_KEYWORDS = 500;
 
 /** Maximum length of a single keyword */
 const MAX_KEYWORD_LENGTH = 100;
+const CUSTOM_PATTERNS_KEY = 'customPatterns';
 
 /** Add a single keyword. Returns error string on failure, null on success. */
 export async function addKeyword(
@@ -266,6 +270,99 @@ export async function exportKeywords(): Promise<string> {
   return keywords.join('\n');
 }
 
+/** Get stored company-specific custom patterns. */
+export async function getCustomPatterns(): Promise<ReadonlyArray<CustomPattern>> {
+  const data = await chrome.storage.local.get(CUSTOM_PATTERNS_KEY);
+  return normalizeCustomPatterns(data[CUSTOM_PATTERNS_KEY]);
+}
+
+/** Create or update a company-specific custom pattern. */
+export async function upsertCustomPattern(
+  input: Partial<CustomPattern> & Pick<CustomPattern, 'label' | 'pattern'>,
+): Promise<CustomPattern> {
+  const existing = await getCustomPatterns();
+  const current = input.id
+    ? existing.find((pattern) => pattern.id === input.id)
+    : undefined;
+
+  const next = normalizeCustomPattern({
+    ...current,
+    ...input,
+    label: input.label,
+    pattern: input.pattern,
+    createdAt: current?.createdAt,
+  });
+
+  const updated = current
+    ? existing.map((pattern) => pattern.id === next.id ? next : pattern)
+    : [...existing, next];
+
+  await chrome.storage.local.set({ [CUSTOM_PATTERNS_KEY]: updated });
+  return next;
+}
+
+/** Remove a company-specific custom pattern by id. */
+export async function removeCustomPattern(id: string): Promise<void> {
+  const existing = await getCustomPatterns();
+  const filtered = existing.filter((pattern) => pattern.id !== id);
+  await chrome.storage.local.set({ [CUSTOM_PATTERNS_KEY]: filtered });
+}
+
+/** Import custom patterns from a JSON bundle. */
+export async function importCustomPatterns(
+  json: string,
+): Promise<{ added: number; updated: number; skipped: number }> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    return { added: 0, updated: 0, skipped: 1 };
+  }
+
+  const incoming = Array.isArray(parsed)
+    ? normalizeCustomPatterns(parsed)
+    : normalizeCustomPatterns((parsed as CustomPatternBundle | null)?.patterns);
+
+  const existing = await getCustomPatterns();
+  const byId = new Map(existing.map((pattern) => [pattern.id, pattern] as const));
+
+  let added = 0;
+  let updated = 0;
+  let skipped = 0;
+
+  for (const pattern of incoming) {
+    if (pattern.label.length === 0 || pattern.pattern.length === 0) {
+      skipped++;
+      continue;
+    }
+
+    if (byId.has(pattern.id)) {
+      byId.set(pattern.id, pattern);
+      updated++;
+    } else {
+      byId.set(pattern.id, pattern);
+      added++;
+    }
+  }
+
+  await chrome.storage.local.set({
+    [CUSTOM_PATTERNS_KEY]: Array.from(byId.values()),
+  });
+
+  return { added, updated, skipped };
+}
+
+/** Export custom patterns as a versioned JSON bundle. */
+export async function exportCustomPatterns(): Promise<string> {
+  const patterns = await getCustomPatterns();
+  const bundle: CustomPatternBundle = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    patterns,
+  };
+  return JSON.stringify(bundle, null, 2);
+}
+
 /** Clear all flagged events from storage */
 export async function clearFlaggedEvents(): Promise<void> {
   await chrome.storage.local.set({ flaggedEvents: [] });
@@ -277,6 +374,7 @@ export async function resetToDefaults(): Promise<void> {
     detectionSettings: DEFAULT_DETECTION_SETTINGS,
     settings: DEFAULT_EXTENSION_SETTINGS,
     keywords: [],
+    [CUSTOM_PATTERNS_KEY]: [],
   });
 }
 

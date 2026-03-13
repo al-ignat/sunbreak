@@ -96,3 +96,52 @@ export interface AggregatedStats {
   }>;
   readonly complianceRate: number | null;
 }
+
+export type CustomPatternSeverity = 'warning' | 'concern' | 'critical';
+
+export type CustomPatternCategory =
+  | 'internal-identifier'
+  | 'finance'
+  | 'hr'
+  | 'legal'
+  | 'security'
+  | 'operations'
+  | 'other';
+
+export type CustomPatternSourceMode = 'template' | 'advanced-regex';
+
+export type CustomPatternTemplateId =
+  | 'employee-id'
+  | 'customer-id'
+  | 'invoice-number'
+  | 'project-code'
+  | 'ticket-reference'
+  | 'matter-reference';
+
+export interface CustomPatternSamples {
+  readonly positive: ReadonlyArray<string>;
+  readonly negative: ReadonlyArray<string>;
+}
+
+/** Stored editable company-specific pattern definition */
+export interface CustomPattern {
+  readonly id: string;
+  readonly label: string;
+  readonly description: string;
+  readonly enabled: boolean;
+  readonly severity: CustomPatternSeverity;
+  readonly category: CustomPatternCategory;
+  readonly sourceMode: CustomPatternSourceMode;
+  readonly templateId: CustomPatternTemplateId | null;
+  readonly pattern: string;
+  readonly flags: string;
+  readonly samples: CustomPatternSamples;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface CustomPatternBundle {
+  readonly version: 1;
+  readonly exportedAt: string;
+  readonly patterns: ReadonlyArray<CustomPattern>;
+}
