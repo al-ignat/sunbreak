@@ -77,6 +77,7 @@ describe('ActivityLog', () => {
       }),
       makeEvent({
         id: 'e2',
+        tool: 'claude',
         action: 'sent-anyway',
         maskingUsed: false,
         needsAttention: true,
@@ -93,6 +94,7 @@ describe('ActivityLog', () => {
 
     expect(container.textContent).toContain('Sensitive content was detected, but the prompt was still sent');
     expect(container.textContent).toContain('Rotate any exposed credential, token, or security identifier');
+    expect(container.textContent).toContain('Claude recovery path');
   });
 
   it('shows file-upload limitation guidance for file events', () => {

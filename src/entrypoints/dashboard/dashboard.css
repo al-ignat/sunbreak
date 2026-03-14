@@ -652,6 +652,12 @@ body {
   line-height: 1.5;
 }
 
+.recovery-detail__source-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
 /* === Shared Pill Badge === */
 .pill {
   display: inline-flex;
@@ -1293,6 +1299,35 @@ body {
   color: var(--color-text-muted);
   margin: 0;
   line-height: 1.5;
+}
+
+.report-card__sources {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.report-card__verified {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.report-card__source-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.report-card__source-link {
+  color: var(--color-warning);
+  text-decoration: none;
+}
+
+.report-card__source-link:hover {
+  text-decoration: underline;
 }
 
 /* === Tab Panel Transition === */

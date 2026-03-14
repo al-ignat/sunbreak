@@ -1,11 +1,5 @@
 import type { JSX } from 'preact';
-
-/** Brand dot colors for each tool */
-const TOOL_ACCENT: Record<string, string> = {
-  ChatGPT: '#10A37F',
-  Claude: '#D97706',
-  Gemini: '#4285F4',
-};
+import { PROVIDER_GUIDANCE } from '../../provider/guidance';
 
 export function ReportCards(): JSX.Element {
   return (
@@ -15,57 +9,16 @@ export function ReportCards(): JSX.Element {
       </p>
 
       <div className="reports-grid">
-        <ReportCard
-          name="ChatGPT"
-          sections={[
-            {
-              title: 'Data Retention',
-              content: 'Prompts retained for 30 days by default. Opt-out available in settings.',
-            },
-            {
-              title: 'Training Usage',
-              content: 'Free tier data may be used for training. Plus/Team/Enterprise excluded.',
-            },
-            {
-              title: 'Privacy Mode',
-              content: 'Temporary Chat disables history and training. API usage has separate terms.',
-            },
-          ]}
-        />
-        <ReportCard
-          name="Claude"
-          sections={[
-            {
-              title: 'Data Retention',
-              content: 'Conversations retained during session. No long-term storage by default.',
-            },
-            {
-              title: 'Training Usage',
-              content: 'Free tier may contribute to training. Pro plan excludes data from training.',
-            },
-            {
-              title: 'Privacy Mode',
-              content: 'API usage has zero-retention policy. Enterprise offers full data isolation.',
-            },
-          ]}
-        />
-        <ReportCard
-          name="Gemini"
-          sections={[
-            {
-              title: 'Data Retention',
-              content: 'Google retains conversations for up to 18 months. Workspace admins configure.',
-            },
-            {
-              title: 'Training Usage',
-              content: 'Free conversations used to improve products. Google Workspace excluded.',
-            },
-            {
-              title: 'Enterprise Features',
-              content: 'Workspace plans offer data residency controls and admin privacy settings.',
-            },
-          ]}
-        />
+        {Object.values(PROVIDER_GUIDANCE).map((guidance) => (
+          <ReportCard
+            key={guidance.tool}
+            name={guidance.displayName}
+            accent={guidance.accent}
+            sections={guidance.overview}
+            lastVerified={guidance.lastVerified}
+            sources={guidance.sources}
+          />
+        ))}
       </div>
     </div>
   );
@@ -73,15 +26,19 @@ export function ReportCards(): JSX.Element {
 
 interface ReportCardProps {
   readonly name: string;
+  readonly accent: string;
   readonly sections: ReadonlyArray<{
     readonly title: string;
     readonly content: string;
   }>;
+  readonly lastVerified: string;
+  readonly sources: ReadonlyArray<{
+    readonly label: string;
+    readonly url: string;
+  }>;
 }
 
-function ReportCard({ name, sections }: ReportCardProps): JSX.Element {
-  const accent = TOOL_ACCENT[name] ?? 'var(--color-text-muted)';
-
+function ReportCard({ name, accent, sections, lastVerified, sources }: ReportCardProps): JSX.Element {
   return (
     <div className="report-card">
       <div className="report-card__accent" style={{ background: accent }} />
@@ -96,6 +53,23 @@ function ReportCard({ name, sections }: ReportCardProps): JSX.Element {
             <p className="report-card__section-text">{section.content}</p>
           </div>
         ))}
+        <div className="report-card__sources">
+          <p className="report-card__verified">Verified against official sources on {lastVerified}</p>
+          <ul className="report-card__source-list">
+            {sources.map((source) => (
+              <li key={source.url}>
+                <a
+                  className="report-card__source-link"
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {source.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

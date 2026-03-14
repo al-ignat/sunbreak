@@ -1,4 +1,5 @@
 import type { JSX } from 'preact';
+import { getProviderGuidance } from '../../provider/guidance';
 import type { FlaggedEvent } from '../../storage/types';
 import {
   actionLabel,
@@ -87,6 +88,7 @@ function attentionLabel(event: FlaggedEvent): string {
 
 export function RecoveryDetail({ event }: RecoveryDetailProps): JSX.Element {
   const recommendations = buildRecommendations(event);
+  const providerGuidance = getProviderGuidance(event.tool);
 
   return (
     <section className="recovery-detail" aria-label="Recovery detail">
@@ -151,6 +153,21 @@ export function RecoveryDetail({ event }: RecoveryDetailProps): JSX.Element {
             : 'Local masking was not available for this event path.'}
         </p>
       </div>
+
+      {providerGuidance && (
+        <div className="recovery-detail__block">
+          <h4 className="recovery-detail__block-title">{providerGuidance.recovery.title}</h4>
+          <ul className="recovery-detail__list">
+            {providerGuidance.recovery.steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ul>
+          <p className="recovery-detail__note">{providerGuidance.recovery.caveat}</p>
+          <p className="recovery-detail__source-note">
+            Verified against official provider sources on {providerGuidance.lastVerified}.
+          </p>
+        </div>
+      )}
     </section>
   );
 }
