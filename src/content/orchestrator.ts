@@ -1,4 +1,6 @@
 import type { SiteAdapter, SiteName, FileCallback } from '../types';
+import { compileCustomPatterns } from '../classifier/custom-patterns';
+import type { CompiledCustomPattern } from '../classifier/custom-patterns';
 import type { Finding } from '../classifier/types';
 import type { SubmitInterceptConfig } from './interceptor';
 import { clearKeywordCache } from '../classifier/keywords';
@@ -16,6 +18,7 @@ import {
   getDetectionSettings,
   getExtensionSettings,
   getKeywords,
+  getCustomPatterns,
 } from '../storage/dashboard';
 import { createFindingsState } from './findings-state';
 import type { FindingsState } from './findings-state';
@@ -46,7 +49,11 @@ function generateEventId(): string {
 
 /** Get unique finding type categories from findings */
 function getCategories(findings: ReadonlyArray<Finding>): string[] {
-  return [...new Set(findings.map((f) => f.type))];
+  return [...new Set(findings.map((f) => (
+    f.type === 'custom-pattern'
+      ? `custom-pattern:${f.customPattern?.category ?? 'other'}`
+      : f.type
+  )))];
 }
 
 /**
@@ -72,6 +79,7 @@ export function createOrchestrator(
 } {
   // Cache keywords from chrome.storage.local
   let cachedKeywords: string[] = [];
+  let cachedCustomPatterns: CompiledCustomPattern[] = [];
   let cachedDetectionSettings: DetectionSettings = {
     ...DEFAULT_DETECTION_SETTINGS,
   };
@@ -88,6 +96,7 @@ export function createOrchestrator(
   // ScannerConfig: exposes cached settings to the scanner without duplication
   const scannerConfig: ScannerConfig = {
     getKeywords: () => cachedKeywords,
+    getCustomPatterns: () => cachedCustomPatterns,
     getDetectionSettings: () => cachedDetectionSettings,
     getExtensionSettings: () => cachedExtensionSettings,
   };
@@ -122,6 +131,11 @@ export function createOrchestrator(
             (changes['keywords'].newValue as string[] | undefined) ?? [];
           clearKeywordCache();
         }
+        if (changes['customPatterns']) {
+          const nextPatterns =
+            (changes['customPatterns'].newValue as Parameters<typeof compileCustomPatterns>[0] | undefined) ?? [];
+          cachedCustomPatterns = compileCustomPatterns(nextPatterns);
+        }
         if (changes['detectionSettings']) {
           cachedDetectionSettings =
             (changes['detectionSettings'].newValue as
@@ -141,17 +155,20 @@ export function createOrchestrator(
 
   async function fetchAllSettings(): Promise<void> {
     try {
-      const [kw, ds, es] = await Promise.all([
+      const [kw, ds, es, patterns] = await Promise.all([
         getKeywords(),
         getDetectionSettings(),
         getExtensionSettings(),
+        getCustomPatterns(),
       ]);
       cachedKeywords = [...kw];
       cachedDetectionSettings = ds;
       cachedExtensionSettings = es;
+      cachedCustomPatterns = compileCustomPatterns(patterns);
       widgetController.setEnabled(es.enabled);
     } catch {
       cachedKeywords = [];
+      cachedCustomPatterns = [];
       cachedDetectionSettings = { ...DEFAULT_DETECTION_SETTINGS };
       cachedExtensionSettings = { ...DEFAULT_EXTENSION_SETTINGS };
     }

@@ -10,6 +10,7 @@ async function initializeDefaults(): Promise<void> {
       'detectionSettings',
       'settings',
       'keywords',
+      'customPatterns',
     ]);
     const defaults: Record<string, unknown> = {};
 
@@ -21,6 +22,9 @@ async function initializeDefaults(): Promise<void> {
     }
     if (!data['keywords']) {
       defaults['keywords'] = [];
+    }
+    if (!data['customPatterns']) {
+      defaults['customPatterns'] = [];
     }
 
     if (Object.keys(defaults).length > 0) {

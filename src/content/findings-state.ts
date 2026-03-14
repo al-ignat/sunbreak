@@ -31,7 +31,8 @@ function generateId(): string {
 
 /** Build a stable key for diffing: type + value */
 function findingKey(f: Finding): string {
-  return `${f.type}:${f.value}`;
+  const discriminator = f.customPattern?.id ?? '';
+  return `${f.type}:${discriminator}:${f.value}`;
 }
 
 /**

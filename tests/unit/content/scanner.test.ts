@@ -22,6 +22,7 @@ function makeAdapter(getText: () => string): SiteAdapter {
 function makeConfig(overrides?: Partial<ScannerConfig>): ScannerConfig {
   return {
     getKeywords: (): string[] => [],
+    getCustomPatterns: () => [],
     getDetectionSettings: () => ({ ...DEFAULT_DETECTION_SETTINGS }),
     getExtensionSettings: () => ({ ...DEFAULT_EXTENSION_SETTINGS }),
     ...overrides,
@@ -305,5 +306,39 @@ describe('attachScanner', () => {
     expect(snap.tracked).toHaveLength(1);
     expect(snap.tracked[0]?.finding.confidence).toBe('HIGH');
     expect(snap.tracked[0]?.finding.context?.explanation?.summary).toContain('confidential');
+  });
+
+  it('runs custom patterns from config', () => {
+    let text = '';
+    const adapter = makeAdapter(() => text);
+    const input = adapter.findInput();
+    if (!input) throw new Error('no input');
+    const state = createFindingsState();
+    const config = makeConfig({
+      getCustomPatterns: () => [
+        {
+          id: 'employee-id',
+          label: 'Employee ID',
+          description: 'Internal employee reference',
+          enabled: true,
+          severity: 'warning',
+          category: 'hr',
+          sourceMode: 'template',
+          templateId: 'employee-id',
+          pattern: 'EMP-[0-9]{4}',
+          flags: 'gi',
+          regex: /EMP-[0-9]{4}/gi,
+        },
+      ],
+    });
+    const ctx = makeCtx();
+
+    attachScanner(input, adapter, config, state, ctx);
+
+    text = 'Reference EMP-1234 in the payroll update';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    vi.advanceTimersByTime(500);
+
+    expect(state.getSnapshot().tracked[0]?.finding.type).toBe('custom-pattern');
   });
 });

@@ -27,6 +27,7 @@ vi.mock('../../../src/storage/dashboard', async (importOriginal) => {
   return {
     ...actual,
     getKeywords: vi.fn().mockResolvedValue([]),
+    getCustomPatterns: vi.fn().mockResolvedValue([]),
     getDetectionSettings: vi.fn().mockResolvedValue(undefined),
     getExtensionSettings: vi.fn().mockResolvedValue(undefined),
   };
@@ -34,7 +35,11 @@ vi.mock('../../../src/storage/dashboard', async (importOriginal) => {
 
 import { createWidgetController } from '../../../src/ui/widget/widget-controller';
 import { logFlaggedEvent, logCleanPrompt } from '../../../src/storage/events';
-import { getExtensionSettings, getDetectionSettings } from '../../../src/storage/dashboard';
+import {
+  getExtensionSettings,
+  getDetectionSettings,
+  getCustomPatterns,
+} from '../../../src/storage/dashboard';
 import {
   DEFAULT_DETECTION_SETTINGS,
   DEFAULT_EXTENSION_SETTINGS,
@@ -96,6 +101,7 @@ describe('createOrchestrator', () => {
     document.body.innerHTML = '';
     vi.mocked(getExtensionSettings).mockResolvedValue({ ...DEFAULT_EXTENSION_SETTINGS });
     vi.mocked(getDetectionSettings).mockResolvedValue({ ...DEFAULT_DETECTION_SETTINGS });
+    vi.mocked(getCustomPatterns).mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -188,6 +194,39 @@ describe('createOrchestrator', () => {
           tool: 'chatgpt',
           action: 'sent-anyway',
           categories: expect.arrayContaining(['email']),
+        }),
+      );
+    });
+
+    it('logs custom pattern categories with their company bucket', async () => {
+      vi.mocked(getExtensionSettings).mockResolvedValue({
+        ...DEFAULT_EXTENSION_SETTINGS,
+        interventionMode: 'log-only',
+      });
+
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
+
+      findingsState.update([
+        makeFinding({
+          type: 'custom-pattern',
+          value: 'EMP-1234',
+          label: 'Employee ID',
+          customPattern: {
+            id: 'employee-id',
+            severity: 'warning',
+            category: 'hr',
+            templateId: 'employee-id',
+          },
+        }),
+      ]);
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          categories: expect.arrayContaining(['custom-pattern:hr']),
         }),
       );
     });

@@ -30,39 +30,51 @@ function makeTracked(overrides: Partial<TrackedFinding> = {}): TrackedFinding {
 
 describe('findingSeverity', () => {
   it('maps api-key to critical', () => {
-    expect(findingSeverity('api-key')).toBe('critical');
+    expect(findingSeverity(makeFinding({ type: 'api-key' }))).toBe('critical');
   });
 
   it('maps ssn to concern', () => {
-    expect(findingSeverity('ssn')).toBe('concern');
+    expect(findingSeverity(makeFinding({ type: 'ssn' }))).toBe('concern');
   });
 
   it('maps cpr to concern', () => {
-    expect(findingSeverity('cpr')).toBe('concern');
+    expect(findingSeverity(makeFinding({ type: 'cpr' }))).toBe('concern');
   });
 
   it('maps ni-number to concern', () => {
-    expect(findingSeverity('ni-number')).toBe('concern');
+    expect(findingSeverity(makeFinding({ type: 'ni-number' }))).toBe('concern');
   });
 
   it('maps credit-card to concern', () => {
-    expect(findingSeverity('credit-card')).toBe('concern');
+    expect(findingSeverity(makeFinding({ type: 'credit-card' }))).toBe('concern');
   });
 
   it('maps email to warning', () => {
-    expect(findingSeverity('email')).toBe('warning');
+    expect(findingSeverity(makeFinding({ type: 'email' }))).toBe('warning');
   });
 
   it('maps phone to warning', () => {
-    expect(findingSeverity('phone')).toBe('warning');
+    expect(findingSeverity(makeFinding({ type: 'phone' }))).toBe('warning');
   });
 
   it('maps ip-address to warning', () => {
-    expect(findingSeverity('ip-address')).toBe('warning');
+    expect(findingSeverity(makeFinding({ type: 'ip-address' }))).toBe('warning');
   });
 
   it('maps keyword to warning', () => {
-    expect(findingSeverity('keyword')).toBe('warning');
+    expect(findingSeverity(makeFinding({ type: 'keyword' }))).toBe('warning');
+  });
+
+  it('maps custom-pattern severity from finding metadata', () => {
+    expect(findingSeverity(makeFinding({
+      type: 'custom-pattern',
+      customPattern: {
+        id: 'security-token',
+        severity: 'critical',
+        category: 'security',
+        templateId: null,
+      },
+    }))).toBe('critical');
   });
 });
 
