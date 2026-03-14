@@ -8,6 +8,9 @@
   color: #f8f3ea;
   box-shadow: 0 14px 32px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(14px);
+  box-sizing: border-box;
+  font-family: var(--sb-font-body);
+  font-size: 13px;
 }
 
 .sb-file-warning__message {
@@ -75,6 +78,7 @@
   color: #fbbf24;
   font-size: 12px;
   font-weight: 700;
+  font-family: inherit;
   cursor: pointer;
 }
 
