@@ -1,5 +1,6 @@
 import type { JSX } from 'preact';
 import { getProviderGuidance } from '../../provider/guidance';
+import type { ProviderGuidanceSettings } from '../../storage/types';
 import type { FlaggedEvent } from '../../storage/types';
 import {
   actionLabel,
@@ -9,6 +10,7 @@ import {
 
 export interface RecoveryDetailProps {
   readonly event: FlaggedEvent;
+  readonly providerGuidance: ProviderGuidanceSettings;
 }
 
 function sourceLabel(source: FlaggedEvent['source']): string {
@@ -86,9 +88,9 @@ function attentionLabel(event: FlaggedEvent): string {
   return event.needsAttention ? 'Needs follow-up' : 'Informational';
 }
 
-export function RecoveryDetail({ event }: RecoveryDetailProps): JSX.Element {
+export function RecoveryDetail({ event, providerGuidance }: RecoveryDetailProps): JSX.Element {
   const recommendations = buildRecommendations(event);
-  const providerGuidance = getProviderGuidance(event.tool);
+  const resolvedGuidance = getProviderGuidance(event.tool, providerGuidance[event.tool] ?? 'general');
 
   return (
     <section className="recovery-detail" aria-label="Recovery detail">
@@ -154,17 +156,20 @@ export function RecoveryDetail({ event }: RecoveryDetailProps): JSX.Element {
         </p>
       </div>
 
-      {providerGuidance && (
+      {resolvedGuidance && (
         <div className="recovery-detail__block">
-          <h4 className="recovery-detail__block-title">{providerGuidance.recovery.title}</h4>
+          <h4 className="recovery-detail__block-title">{resolvedGuidance.recovery.title}</h4>
           <ul className="recovery-detail__list">
-            {providerGuidance.recovery.steps.map((step) => (
+            {resolvedGuidance.recovery.steps.map((step) => (
               <li key={step}>{step}</li>
             ))}
           </ul>
-          <p className="recovery-detail__note">{providerGuidance.recovery.caveat}</p>
+          <p className="recovery-detail__note">{resolvedGuidance.recovery.caveat}</p>
+          {resolvedGuidance.modeNote && (
+            <p className="recovery-detail__note">{resolvedGuidance.modeNote}</p>
+          )}
           <p className="recovery-detail__source-note">
-            Verified against official provider sources on {providerGuidance.lastVerified}.
+            Verified against official provider sources on {resolvedGuidance.lastVerified}.
           </p>
         </div>
       )}

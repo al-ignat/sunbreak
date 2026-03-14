@@ -1,4 +1,5 @@
 import type { SiteName } from '../types';
+import type { ProviderGuidanceMode } from '../storage/types';
 
 export interface ProviderGuidanceSource {
   readonly label: string;
@@ -25,6 +26,12 @@ export interface ProviderGuidance {
   readonly overview: ReadonlyArray<ProviderGuidanceSection>;
   readonly recovery: ProviderRecoveryGuidance;
   readonly sources: ReadonlyArray<ProviderGuidanceSource>;
+  readonly modeNotes: Partial<Record<ProviderGuidanceMode, string>>;
+}
+
+export interface ResolvedProviderGuidance extends ProviderGuidance {
+  readonly configuredMode: ProviderGuidanceMode;
+  readonly modeNote: string | null;
 }
 
 const VERIFIED_AT = '2026-03-14';
@@ -75,6 +82,12 @@ export const PROVIDER_GUIDANCE: Record<SiteName, ProviderGuidance> = {
         verifiedAt: VERIFIED_AT,
       },
     ],
+    modeNotes: {
+      consumer: 'Configured as consumer ChatGPT guidance. Data Controls and Temporary Chat are the primary privacy levers.',
+      business: 'Configured as ChatGPT Business guidance. OpenAI says business data is not used to train by default, and retention can follow workspace policy.',
+      enterprise: 'Configured as ChatGPT Enterprise guidance. Retention and administrative controls can be organization-specific.',
+      api: 'Configured as OpenAI API guidance. API data is not used to train by default, and retention can differ by contract or zero-retention agreement.',
+    },
   },
   claude: {
     tool: 'claude',
@@ -126,6 +139,12 @@ export const PROVIDER_GUIDANCE: Record<SiteName, ProviderGuidance> = {
         verifiedAt: VERIFIED_AT,
       },
     ],
+    modeNotes: {
+      consumer: 'Configured as consumer Claude guidance. Consumer privacy controls and deletion behavior apply.',
+      business: 'Configured as Claude Team/Business guidance. Anthropic says commercial data is not used to train by default.',
+      enterprise: 'Configured as Claude enterprise guidance. Organization-level retention and controls may differ from consumer defaults.',
+      api: 'Configured as Claude API guidance. Anthropic says commercial/API data is not used to train by default, and API deletion options are narrower.',
+    },
   },
   gemini: {
     tool: 'gemini',
@@ -172,12 +191,25 @@ export const PROVIDER_GUIDANCE: Record<SiteName, ProviderGuidance> = {
         verifiedAt: VERIFIED_AT,
       },
     ],
+    modeNotes: {
+      consumer: 'Configured as consumer Gemini guidance. Gemini Apps activity and personal Google-account controls apply.',
+      workspace: 'Configured as Google Workspace guidance. Workspace administrators may manage activity, retention, and access controls.',
+      enterprise: 'Configured as enterprise/work guidance. Retention and data controls can be admin-managed and may differ from personal Gemini defaults.',
+    },
   },
 };
 
-export function getProviderGuidance(tool: string): ProviderGuidance | null {
+export function getProviderGuidance(
+  tool: string,
+  mode: ProviderGuidanceMode = 'general',
+): ResolvedProviderGuidance | null {
   if (tool === 'chatgpt' || tool === 'claude' || tool === 'gemini') {
-    return PROVIDER_GUIDANCE[tool];
+    const guidance = PROVIDER_GUIDANCE[tool];
+    return {
+      ...guidance,
+      configuredMode: mode,
+      modeNote: guidance.modeNotes[mode] ?? null,
+    };
   }
   return null;
 }

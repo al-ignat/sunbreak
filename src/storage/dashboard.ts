@@ -171,9 +171,23 @@ export async function getExtensionSettings(): Promise<ExtensionSettings> {
     | Partial<ExtensionSettings>
     | undefined;
 
-  if (!stored) return { ...DEFAULT_EXTENSION_SETTINGS };
+  if (!stored) {
+    return {
+      ...DEFAULT_EXTENSION_SETTINGS,
+      providerGuidance: {
+        ...DEFAULT_EXTENSION_SETTINGS.providerGuidance,
+      },
+    };
+  }
 
-  return { ...DEFAULT_EXTENSION_SETTINGS, ...stored };
+  return {
+    ...DEFAULT_EXTENSION_SETTINGS,
+    ...stored,
+    providerGuidance: {
+      ...DEFAULT_EXTENSION_SETTINGS.providerGuidance,
+      ...(stored.providerGuidance ?? {}),
+    },
+  };
 }
 
 /** Update extension settings */
@@ -182,7 +196,14 @@ export async function setExtensionSettings(
 ): Promise<void> {
   const current = await getExtensionSettings();
   await chrome.storage.local.set({
-    settings: { ...current, ...settings },
+    settings: {
+      ...current,
+      ...settings,
+      providerGuidance: {
+        ...current.providerGuidance,
+        ...(settings.providerGuidance ?? {}),
+      },
+    },
   });
 }
 

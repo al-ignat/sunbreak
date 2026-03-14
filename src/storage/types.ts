@@ -1,4 +1,5 @@
 import type { FindingType } from '../classifier/types';
+import type { SiteName } from '../types';
 
 /** A flagged event record — metadata only, NEVER stores prompt text */
 export type FlaggedEventSource = 'prompt' | 'file-upload';
@@ -121,10 +122,21 @@ export interface DailyStats {
 }
 
 /** Extension-level on/off and mode settings */
+export type ProviderGuidanceMode =
+  | 'general'
+  | 'consumer'
+  | 'business'
+  | 'enterprise'
+  | 'api'
+  | 'workspace';
+
+export type ProviderGuidanceSettings = Record<SiteName, ProviderGuidanceMode>;
+
 export interface ExtensionSettings {
   readonly enabled: boolean;
   readonly interventionMode: 'warn' | 'log-only';
   readonly maskingEnabled: boolean;
+  readonly providerGuidance: ProviderGuidanceSettings;
 }
 
 /** Per-category detection toggles */
@@ -167,6 +179,11 @@ export const DEFAULT_EXTENSION_SETTINGS: ExtensionSettings = {
   enabled: true,
   interventionMode: 'warn',
   maskingEnabled: true,
+  providerGuidance: {
+    chatgpt: 'general',
+    claude: 'general',
+    gemini: 'general',
+  },
 };
 
 /** Filter options for querying flagged events */

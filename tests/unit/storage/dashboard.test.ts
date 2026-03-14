@@ -295,6 +295,11 @@ describe('dashboard storage wrapper', () => {
       expect(settings.enabled).toBe(true);
       expect(settings.interventionMode).toBe('warn');
       expect(settings.maskingEnabled).toBe(true);
+      expect(settings.providerGuidance).toEqual({
+        chatgpt: 'general',
+        claude: 'general',
+        gemini: 'general',
+      });
     });
 
     it('partially updates settings', async () => {
@@ -303,6 +308,7 @@ describe('dashboard storage wrapper', () => {
       expect(settings.enabled).toBe(true);
       expect(settings.interventionMode).toBe('log-only');
       expect(settings.maskingEnabled).toBe(true);
+      expect(settings.providerGuidance.chatgpt).toBe('general');
     });
 
     it('toggles masking setting independently', async () => {
@@ -310,6 +316,44 @@ describe('dashboard storage wrapper', () => {
       const settings = await getExtensionSettings();
       expect(settings.enabled).toBe(true);
       expect(settings.maskingEnabled).toBe(false);
+    });
+
+    it('merges stored provider guidance with defaults', async () => {
+      storageData['settings'] = {
+        providerGuidance: {
+          chatgpt: 'business',
+        },
+      };
+
+      const settings = await getExtensionSettings();
+      expect(settings.providerGuidance).toEqual({
+        chatgpt: 'business',
+        claude: 'general',
+        gemini: 'general',
+      });
+    });
+
+    it('merges partial provider guidance updates without dropping other tools', async () => {
+      await setExtensionSettings({
+        providerGuidance: {
+          chatgpt: 'business',
+          claude: 'general',
+          gemini: 'general',
+        },
+      });
+
+      await setExtensionSettings({
+        providerGuidance: {
+          claude: 'enterprise',
+        },
+      });
+
+      const settings = await getExtensionSettings();
+      expect(settings.providerGuidance).toEqual({
+        chatgpt: 'business',
+        claude: 'enterprise',
+        gemini: 'general',
+      });
     });
   });
 

@@ -172,7 +172,10 @@ export default function App(): JSX.Element {
             <BarChart stats7={stats7} stats30={stats30} />
           )}
           {activeTab === 'activity' && (
-            <ActivityLog events={events} />
+            <ActivityLog
+              events={events}
+              providerGuidance={extensionSettings.providerGuidance}
+            />
           )}
           {activeTab === 'settings' && (
             <SettingsPanel
@@ -193,7 +196,9 @@ export default function App(): JSX.Element {
               />
             </>
           )}
-          {activeTab === 'reports' && <ReportCards />}
+          {activeTab === 'reports' && (
+            <ReportCards providerGuidance={extensionSettings.providerGuidance} />
+          )}
         </div>
       </main>
     </div>

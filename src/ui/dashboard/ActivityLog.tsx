@@ -1,7 +1,7 @@
 import type { JSX } from 'preact';
 import { useState, useMemo } from 'preact/hooks';
 import { ChevronDown } from 'lucide-preact';
-import type { FlaggedEvent } from '../../storage/types';
+import type { FlaggedEvent, ProviderGuidanceSettings } from '../../storage/types';
 import { RecoveryDetail } from './RecoveryDetail';
 import {
   toolLabel, toolColor, toolBgColor,
@@ -11,11 +11,12 @@ import {
 
 export interface ActivityLogProps {
   readonly events: ReadonlyArray<FlaggedEvent>;
+  readonly providerGuidance: ProviderGuidanceSettings;
 }
 
 type DatePreset = '7d' | '30d' | 'all';
 
-export function ActivityLog({ events }: ActivityLogProps): JSX.Element {
+export function ActivityLog({ events, providerGuidance }: ActivityLogProps): JSX.Element {
   const [datePreset, setDatePreset] = useState<DatePreset>('all');
   const [toolFilter, setToolFilter] = useState<string>('all');
   const [selectedEventId, setSelectedEventId] = useState<string | null>(events[0]?.id ?? null);
@@ -162,7 +163,7 @@ export function ActivityLog({ events }: ActivityLogProps): JSX.Element {
         )}
       </div>
 
-      {selectedEvent && <RecoveryDetail event={selectedEvent} />}
+      {selectedEvent && <RecoveryDetail event={selectedEvent} providerGuidance={providerGuidance} />}
     </div>
   );
 }

@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { render, fireEvent } from '@testing-library/preact';
 import { ActivityLog } from '../../../../src/ui/dashboard/ActivityLog';
-import type { FlaggedEvent } from '../../../../src/storage/types';
+import type { FlaggedEvent, ProviderGuidanceSettings } from '../../../../src/storage/types';
+
+const providerGuidance: ProviderGuidanceSettings = {
+  chatgpt: 'general',
+  claude: 'business',
+  gemini: 'workspace',
+};
 
 function makeEvent(overrides: Partial<FlaggedEvent> = {}): FlaggedEvent {
   return {
@@ -22,7 +28,7 @@ function makeEvent(overrides: Partial<FlaggedEvent> = {}): FlaggedEvent {
 
 describe('ActivityLog', () => {
   it('shows empty state when no events', () => {
-    const { container } = render(<ActivityLog events={[]} />);
+    const { container } = render(<ActivityLog events={[]} providerGuidance={providerGuidance} />);
     expect(container.textContent).toContain('No flagged events yet');
   });
 
@@ -31,7 +37,7 @@ describe('ActivityLog', () => {
       makeEvent({ id: 'e1', tool: 'chatgpt', categories: ['email'], action: 'redacted' }),
       makeEvent({ id: 'e2', tool: 'claude', categories: ['api-key'], action: 'sent-anyway' }),
     ];
-    const { container } = render(<ActivityLog events={events} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
     expect(container.textContent).toContain('ChatGPT');
     expect(container.textContent).toContain('Claude');
     expect(container.textContent).toContain('Redacted');
@@ -40,7 +46,7 @@ describe('ActivityLog', () => {
 
   it('shows event count', () => {
     const events = [makeEvent({ id: 'e1' }), makeEvent({ id: 'e2' })];
-    const { container } = render(<ActivityLog events={events} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
     expect(container.textContent).toContain('2 events');
   });
 
@@ -49,7 +55,7 @@ describe('ActivityLog', () => {
       makeEvent({ id: 'e1', tool: 'chatgpt' }),
       makeEvent({ id: 'e2', tool: 'claude' }),
     ];
-    const { container } = render(<ActivityLog events={events} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
 
     const select = container.querySelector('select') as HTMLSelectElement;
     fireEvent.change(select, { target: { value: 'claude' } });
@@ -63,7 +69,7 @@ describe('ActivityLog', () => {
     const events = [
       makeEvent({ id: 'e1', categories: ['email', 'api_key'] }),
     ];
-    const { container } = render(<ActivityLog events={events} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
     expect(container.textContent).toContain('Email');
     expect(container.textContent).toContain('API Key');
   });
@@ -84,7 +90,7 @@ describe('ActivityLog', () => {
         categories: ['api-key'],
       }),
     ];
-    const { container } = render(<ActivityLog events={events} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
 
     expect(container.textContent).toContain('Recovery detail');
     expect(container.textContent).toContain('Sensitive content was masked before the prompt was sent');
@@ -107,7 +113,7 @@ describe('ActivityLog', () => {
         maskingUsed: false,
       }),
     ];
-    const { container } = render(<ActivityLog events={events} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
     expect(container.textContent).toContain('A file was shared in a risky flow and should be reviewed manually');
     expect(container.textContent).toContain('Sunbreak can detect the upload event, but it cannot inspect file contents');
   });
@@ -120,7 +126,7 @@ describe('ActivityLog', () => {
         needsAttention: true,
       }),
     ];
-    const { container } = render(<ActivityLog events={events} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
     expect(container.textContent).toContain('Company Pattern: Hr');
     expect(container.textContent).toContain('company-specific identifiers');
   });
