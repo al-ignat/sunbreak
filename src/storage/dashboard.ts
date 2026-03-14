@@ -13,6 +13,7 @@ import type {
 import {
   DEFAULT_DETECTION_SETTINGS,
   DEFAULT_EXTENSION_SETTINGS,
+  normalizeFlaggedEvent,
 } from './types';
 
 /**
@@ -103,8 +104,11 @@ export async function getFlaggedEvents(
   filter?: EventFilter,
 ): Promise<ReadonlyArray<FlaggedEvent>> {
   const data = await chrome.storage.local.get('flaggedEvents');
-  let events =
-    (data['flaggedEvents'] as FlaggedEvent[] | undefined) ?? [];
+  let events = Array.isArray(data['flaggedEvents'])
+    ? (data['flaggedEvents'] as unknown[])
+      .map((event) => normalizeFlaggedEvent(event))
+      .filter((event): event is FlaggedEvent => event !== null)
+    : [];
 
   if (filter?.days) {
     const cutoff = new Date();
@@ -119,6 +123,12 @@ export async function getFlaggedEvents(
 
   // Return newest first
   return [...events].reverse();
+}
+
+/** Get a single flagged event by id, normalized for current recovery consumers. */
+export async function getFlaggedEventById(id: string): Promise<FlaggedEvent | null> {
+  const events = await getFlaggedEvents();
+  return events.find((event) => event.id === id) ?? null;
 }
 
 /** Get current detection settings */

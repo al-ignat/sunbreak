@@ -1,6 +1,21 @@
 import type { FindingType } from '../classifier/types';
 
 /** A flagged event record — metadata only, NEVER stores prompt text */
+export type FlaggedEventSource = 'prompt' | 'file-upload';
+
+export const FLAGGED_EVENT_ACTIONS = [
+  'redacted',
+  'sent-anyway',
+  'cancelled',
+  'edited',
+  'fixed',
+  'ignored',
+] as const;
+
+export const FLAGGED_EVENT_SOURCES = ['prompt', 'file-upload'] as const;
+
+export const FLAGGED_EVENT_GUIDANCE_VERSION = 1 as const;
+
 export interface FlaggedEvent {
   readonly id: string;
   readonly timestamp: string;
@@ -8,6 +23,87 @@ export interface FlaggedEvent {
   readonly categories: ReadonlyArray<string>;
   readonly findingCount: number;
   readonly action: 'redacted' | 'sent-anyway' | 'cancelled' | 'edited' | 'fixed' | 'ignored';
+  readonly source: FlaggedEventSource;
+  readonly maskingAvailable: boolean;
+  readonly maskingUsed: boolean;
+  readonly needsAttention: boolean;
+  readonly guidanceVersion: typeof FLAGGED_EVENT_GUIDANCE_VERSION;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isFlaggedEventAction(value: unknown): value is FlaggedEvent['action'] {
+  return typeof value === 'string' &&
+    (FLAGGED_EVENT_ACTIONS as ReadonlyArray<string>).includes(value);
+}
+
+function isFlaggedEventSource(value: unknown): value is FlaggedEventSource {
+  return typeof value === 'string' &&
+    (FLAGGED_EVENT_SOURCES as ReadonlyArray<string>).includes(value);
+}
+
+function normalizeCategories(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<string>();
+  const categories: string[] = [];
+  for (const entry of value) {
+    if (typeof entry !== 'string') continue;
+    const normalized = entry.trim();
+    if (normalized.length === 0 || seen.has(normalized)) continue;
+    seen.add(normalized);
+    categories.push(normalized);
+  }
+  return categories;
+}
+
+function normalizeFindingCount(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? Math.floor(value)
+    : 0;
+}
+
+function defaultNeedsAttention(action: FlaggedEvent['action']): boolean {
+  return action === 'sent-anyway' || action === 'cancelled' || action === 'edited';
+}
+
+/** Normalize stored flagged-event metadata and supply safe defaults for legacy records. */
+export function normalizeFlaggedEvent(input: unknown): FlaggedEvent | null {
+  if (!isRecord(input)) return null;
+
+  const { id, timestamp, tool, action } = input;
+  if (
+    typeof id !== 'string' ||
+    id.trim().length === 0 ||
+    typeof timestamp !== 'string' ||
+    timestamp.trim().length === 0 ||
+    typeof tool !== 'string' ||
+    tool.trim().length === 0 ||
+    !isFlaggedEventAction(action)
+  ) {
+    return null;
+  }
+
+  return {
+    id,
+    timestamp,
+    tool,
+    categories: normalizeCategories(input['categories']),
+    findingCount: normalizeFindingCount(input['findingCount']),
+    action,
+    source: isFlaggedEventSource(input['source']) ? input['source'] : 'prompt',
+    maskingAvailable: typeof input['maskingAvailable'] === 'boolean' ? input['maskingAvailable'] : false,
+    maskingUsed: typeof input['maskingUsed'] === 'boolean' ? input['maskingUsed'] : action === 'redacted',
+    needsAttention: typeof input['needsAttention'] === 'boolean'
+      ? input['needsAttention']
+      : defaultNeedsAttention(action),
+    guidanceVersion:
+      input['guidanceVersion'] === FLAGGED_EVENT_GUIDANCE_VERSION
+        ? FLAGGED_EVENT_GUIDANCE_VERSION
+        : FLAGGED_EVENT_GUIDANCE_VERSION,
+  };
 }
 
 /** Daily interaction counter */

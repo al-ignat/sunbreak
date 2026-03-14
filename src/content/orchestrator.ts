@@ -197,6 +197,11 @@ export function createOrchestrator(
         categories: getCategories(active.map((t) => t.finding)),
         findingCount: snap.activeCount,
         action: 'sent-anyway',
+        source: 'prompt',
+        maskingAvailable: cachedExtensionSettings.maskingEnabled && adapter.capabilities?.reliableSetText !== false,
+        maskingUsed: false,
+        needsAttention: true,
+        guidanceVersion: 1,
       };
       logFlaggedEvent(logOnlyEvent);
       return false;
@@ -222,6 +227,11 @@ export function createOrchestrator(
       categories: getCategories(active.map((t) => t.finding)),
       findingCount: snap.activeCount,
       action: 'sent-anyway',
+      source: 'prompt',
+      maskingAvailable: cachedExtensionSettings.maskingEnabled && adapter.capabilities?.reliableSetText !== false,
+      maskingUsed: false,
+      needsAttention: true,
+      guidanceVersion: 1,
     };
 
     // If the user clicked "Send Anyway" explicitly, it's 'sent-anyway'

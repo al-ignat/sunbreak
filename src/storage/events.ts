@@ -1,3 +1,4 @@
+import { normalizeFlaggedEvent } from './types';
 import type { FlaggedEvent, DailyStats } from './types';
 
 /** Maximum number of flagged events to keep in storage */
@@ -30,7 +31,9 @@ export function logFlaggedEvent(event: FlaggedEvent): void {
   enqueue(async () => {
     const data = await chrome.storage.local.get('flaggedEvents');
     const events = (data['flaggedEvents'] as FlaggedEvent[] | undefined) ?? [];
-    events.push(event);
+    const normalized = normalizeFlaggedEvent(event);
+    if (!normalized) return;
+    events.push(normalized);
 
     // FIFO: trim oldest events if over cap
     while (events.length > MAX_FLAGGED_EVENTS) {
@@ -40,7 +43,7 @@ export function logFlaggedEvent(event: FlaggedEvent): void {
     await chrome.storage.local.set({ flaggedEvents: events });
 
     // Update daily stats within the same serialized chain
-    await doIncrementDailyStat(event.action, event.tool);
+    await doIncrementDailyStat(normalized.action, normalized.tool);
   });
 }
 

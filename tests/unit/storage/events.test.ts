@@ -12,6 +12,11 @@ function createMockEvent(
     categories: ['email'],
     findingCount: 1,
     action: 'redacted',
+    source: 'prompt',
+    maskingAvailable: true,
+    maskingUsed: true,
+    needsAttention: false,
+    guidanceVersion: 1,
     ...overrides,
   };
 }
@@ -47,6 +52,7 @@ describe('logFlaggedEvent', () => {
       expect(events).toBeDefined();
       expect(events).toHaveLength(1);
       expect(events[0]?.id).toBe('test-id-1');
+      expect(events[0]?.guidanceVersion).toBe(1);
     });
   });
 

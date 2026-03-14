@@ -11,6 +11,11 @@ function makeEvent(overrides: Partial<FlaggedEvent> = {}): FlaggedEvent {
     categories: ['email'],
     findingCount: 1,
     action: 'redacted',
+    source: 'prompt',
+    maskingAvailable: true,
+    maskingUsed: true,
+    needsAttention: false,
+    guidanceVersion: 1,
     ...overrides,
   };
 }

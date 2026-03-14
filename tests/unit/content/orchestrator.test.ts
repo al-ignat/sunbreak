@@ -194,6 +194,9 @@ describe('createOrchestrator', () => {
           tool: 'chatgpt',
           action: 'sent-anyway',
           categories: expect.arrayContaining(['email']),
+          source: 'prompt',
+          guidanceVersion: 1,
+          needsAttention: true,
         }),
       );
     });
@@ -227,6 +230,7 @@ describe('createOrchestrator', () => {
       expect(logFlaggedEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           categories: expect.arrayContaining(['custom-pattern:hr']),
+          source: 'prompt',
         }),
       );
     });
@@ -294,6 +298,9 @@ describe('createOrchestrator', () => {
           action: 'sent-anyway',
           categories: expect.arrayContaining(['email']),
           findingCount: 1,
+          source: 'prompt',
+          guidanceVersion: 1,
+          needsAttention: true,
         }),
       );
     });
