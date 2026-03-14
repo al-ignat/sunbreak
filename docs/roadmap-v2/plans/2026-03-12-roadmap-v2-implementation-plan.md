@@ -1513,7 +1513,7 @@ Epic 4 should be considered complete only when all of the following are true:
 
 ### Implementation outcome — 2026-03-14
 
-**Status:** implemented and locally verified
+**Status:** completed — implementation and live validation verified
 
 **Implemented in this execution pass**
 
@@ -1554,16 +1554,18 @@ Epic 4 should be considered complete only when all of the following are true:
 - `npm run build` -> **passed**
 - `npm run lint` -> **passed with 8 pre-existing warnings in older test files, no errors**
 
-**Remaining manual validation**
+**Live-provider validation — 2026-03-14**
 
-- live provider verification for company-pattern rendering and dashboard-to-scanner propagation on ChatGPT, Claude, and Gemini was not run in this environment
+- `48/48` live test paths passed across supported providers
+- validation included `12` new company-pattern live paths covering `CP1`, `CP2`, `CP3`, and `CP4`
+- dashboard-to-scanner propagation, widget rendering, and company-pattern execution all held under live provider conditions
 
 **Epic 4 final assessment**
 
 - Epic 4 now has the required product backbone: schema, templates, validation, dashboard management, runtime execution, portability, and regression coverage
 - the runtime path is explicit rather than incidental: storage -> compilation -> scanner -> classifier -> findings -> widget/logging
 - company-specific identifiers now surface with predictable labels and configured severity while preserving safe masking boundaries
-- the main remaining follow-up is live-provider verification rather than a local implementation gap
+- all Epic 4 workstreams are now executed and verified end-to-end
 
 ---
 
@@ -1581,12 +1583,14 @@ Epic 4 should be considered complete only when all of the following are true:
 
 ### Likely files/modules
 
-- [src/storage/events.ts](/private/tmp/sunbreak-roadmap-review/src/storage/events.ts)
-- [src/storage/dashboard.ts](/private/tmp/sunbreak-roadmap-review/src/storage/dashboard.ts)
-- [src/ui/dashboard/ActivityLog.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/dashboard/ActivityLog.tsx)
-- [src/ui/dashboard/ReportCards.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/dashboard/ReportCards.tsx)
-- [src/entrypoints/dashboard/App.tsx](/private/tmp/sunbreak-roadmap-review/src/entrypoints/dashboard/App.tsx)
-- [src/content/interceptor.ts](/private/tmp/sunbreak-roadmap-review/src/content/interceptor.ts)
+- [src/storage/events.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/events.ts)
+- [src/storage/dashboard.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/dashboard.ts)
+- [src/storage/types.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/types.ts)
+- [src/ui/dashboard/ActivityLog.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/ActivityLog.tsx)
+- [src/ui/dashboard/ReportCards.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/ReportCards.tsx)
+- [src/entrypoints/dashboard/App.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/entrypoints/dashboard/App.tsx)
+- [src/content/interceptor.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/content/interceptor.ts)
+- [src/content/orchestrator.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/content/orchestrator.ts)
 - possibly new provider data modules under `src/`
 
 ### Risks
@@ -1601,13 +1605,274 @@ Epic 4 should be considered complete only when all of the following are true:
 - provider guidance is concise and clearly useful
 - file upload warning creates awareness without becoming annoying
 
+### Detailed execution plan
+
+Epic 5 should be executed as a response-and-guidance epic, not as a generic analytics improvement.
+
+The product job here is very specific:
+
+- when Sunbreak flags or misses something important, the user needs immediate next-step help
+- the dashboard should explain recent risky events in human terms, not only counts and categories
+- provider-specific advice must be actionable without pretending Sunbreak can fully infer account or retention state
+- file upload detection needs to move from silent plumbing into visible companion guidance
+
+### Execution principles
+
+- keep all recovery flows metadata-only; never store prompt bodies or uploaded file contents
+- prefer next-step guidance over retrospective blame
+- make provider guidance structured and auditable so stale facts are easy to replace
+- keep account-mode guidance narrow and confidence-bounded; do not over-infer enterprise vs consumer state
+- treat recovery as a time-sensitive help surface, not a permanent compliance log
+
+### Workstream 1 — Recovery event model and storage contract
+
+**Objective:** evolve the event model from simple counters into a recovery-ready metadata record without storing sensitive content.
+
+**Primary modules**
+
+- [src/storage/types.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/types.ts)
+- [src/storage/events.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/events.ts)
+- [src/storage/dashboard.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/dashboard.ts)
+
+**Tasks**
+
+1. Extend `FlaggedEvent` with the metadata needed to drive recovery details:
+   - provider/tool
+   - action taken
+   - categories
+   - finding count
+   - whether masking was available or used
+   - whether the event involved file upload or prompt text only
+   - stable recovery state fields such as `needsAttention`, `guidanceVersion`, or equivalent
+2. Define which event details are computed at read time versus persisted at write time.
+3. Add migration-safe defaults for older stored events.
+4. Preserve FIFO trimming and write serialization guarantees in `events.ts`.
+5. Add read helpers that support event detail retrieval without coupling UI directly to raw storage.
+
+**Important boundary**
+
+Recovery detail must stay metadata-only.
+Do not add prompt excerpts, masked values, filenames beyond the minimum already surfaced, or any original content payloads to persistent storage.
+
+**Exit criteria**
+
+- event records can power a recovery detail view without storing prompt content
+- older events remain readable after schema expansion
+
+### Workstream 2 — Activity detail and accidental-send recovery UX
+
+**Objective:** turn the activity log from a flat table into a place where a user can understand what happened and what to do next.
+
+**Primary modules**
+
+- [src/ui/dashboard/ActivityLog.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/ActivityLog.tsx)
+- [src/entrypoints/dashboard/App.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/entrypoints/dashboard/App.tsx)
+- likely new recovery detail components under `src/ui/dashboard/`
+
+**Tasks**
+
+1. Add row selection and a focused event detail surface:
+   - drawer, side panel, or in-place expansion
+2. Show event context in product language:
+   - what Sunbreak detected
+   - what action the user took
+   - whether follow-up is recommended
+3. Provide clear next-step CTA blocks such as:
+   - review the sent conversation
+   - delete or edit the message if the provider supports it
+   - rotate exposed credential if the category implies secret exposure
+   - notify an internal owner if the event maps to company-specific identifiers
+4. Distinguish between events that are informational and events that need urgent follow-up.
+5. Keep the empty state and list filtering simple; do not let the detail view become a generic admin console.
+
+**Exit criteria**
+
+- a flagged event can be opened and understood as a recovery story, not just a row in a table
+- next steps are visible without requiring the user to infer them from category labels
+
+### Workstream 3 — Provider guidance data model and maintenance boundary
+
+**Objective:** replace static report-card text with a structured provider guidance layer that can power both reports and recovery detail.
+
+**Primary modules**
+
+- [src/ui/dashboard/ReportCards.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/ReportCards.tsx)
+- likely new provider metadata modules under `src/`
+- [src/ui/format.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/format.ts)
+
+**Tasks**
+
+1. Define a provider metadata schema with sections for:
+   - deletion/edit availability
+   - retention framing
+   - training/privacy guidance
+   - admin or workspace caveats
+   - source/update provenance
+2. Split evergreen provider descriptions from recovery-time instructions.
+3. Decide which provider facts are safe to render as strong statements versus hedged guidance.
+4. Move `ReportCards` off hard-coded inline copy onto the new metadata source.
+5. Make guidance blocks reusable from both the reports tab and the event detail view.
+
+**Important boundary**
+
+Provider guidance must stay concise and maintainable.
+Do not ship brittle long-form policy summaries that will go stale immediately.
+
+**Exit criteria**
+
+- provider guidance exists as structured data, not scattered dashboard copy
+- the same source powers both overview/report surfaces and recovery detail
+
+### Workstream 4 — Narrow provider/account guidance layer
+
+**Objective:** give users the right provider help without pretending Sunbreak knows more than it actually does about their account state.
+
+**Primary modules**
+
+- likely new provider resolution helpers under `src/`
+- [src/storage/types.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/types.ts)
+- [src/ui/dashboard/ReportCards.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/ReportCards.tsx)
+
+**Tasks**
+
+1. Define the supported guidance states:
+   - provider-known only
+   - provider plus limited user-selected plan/account context
+   - unknown/ambiguous fallback
+2. Decide whether any account context is inferred automatically or selected manually in settings.
+3. Keep the first implementation intentionally narrow:
+   - consumer/general guidance by provider
+   - optional stronger notes for API, workspace, or enterprise modes only if the user explicitly configures them
+4. Ensure all ambiguous cases degrade to safe generic guidance instead of false certainty.
+5. Add copy rules so the UI distinguishes:
+   - “this provider usually allows...”
+   - vs “your configured mode suggests...”
+
+**Exit criteria**
+
+- provider guidance feels relevant without overclaiming account awareness
+- ambiguous account state does not produce misleading advice
+
+### Workstream 5 — File upload warning productization
+
+**Objective:** upgrade file upload detection from background plumbing into a user-facing warning and recovery signal.
+
+**Primary modules**
+
+- [src/content/interceptor.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/content/interceptor.ts)
+- [src/content/orchestrator.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/content/orchestrator.ts)
+- widget/toast modules under `src/ui/widget/`
+- dashboard recovery/detail modules
+
+**Tasks**
+
+1. Define a first-class event type or event metadata path for file-related detections.
+2. Decide where file warnings appear:
+   - immediate in-content notice
+   - dashboard recovery feed
+   - both
+3. Differentiate file-upload awareness from text-detection awareness:
+   - “you attached a file”
+   - “Sunbreak cannot inspect its contents”
+   - “review whether the file itself is appropriate to share”
+4. Ensure drag-and-drop, file input, and clipboard-file paths all feed the same recovery model.
+5. Keep warnings non-blocking but visible enough to change behavior.
+
+**Exit criteria**
+
+- file uploads are surfaced as a real product signal
+- users understand the limit: Sunbreak can detect the attachment event, not inspect the file body
+
+### Workstream 6 — Dashboard report and recovery surface integration
+
+**Objective:** make the reports tab and recovery surfaces support each other instead of duplicating disconnected content.
+
+**Primary modules**
+
+- [src/ui/dashboard/ReportCards.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/ReportCards.tsx)
+- [src/ui/dashboard/ActivityLog.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/ActivityLog.tsx)
+- [src/entrypoints/dashboard/App.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/entrypoints/dashboard/App.tsx)
+
+**Tasks**
+
+1. Decide how reports and activity link together:
+   - report cards as evergreen guidance
+   - activity detail as event-specific action center
+2. Add affordances from flagged events into relevant provider guidance.
+3. Clarify the reports tab so it feels like companion help, not policy wallpaper.
+4. Revisit export/share surfaces so they do not suggest sensitive event data portability unless explicitly intended.
+5. Make sure the dashboard hierarchy still feels lightweight after adding detail views.
+
+**Exit criteria**
+
+- recovery guidance and provider guidance reinforce each other
+- the dashboard remains comprehensible and task-oriented
+
+### Workstream 7 — Test and verification matrix
+
+**Objective:** prove that recovery and guidance flows are trustworthy, actionable, and low-noise.
+
+**Primary automated tests**
+
+- event model migration and storage tests
+- activity detail rendering tests
+- provider guidance selection tests
+- file-upload warning tests
+- event-to-guidance integration tests
+
+**Test additions required**
+
+1. Event model:
+   - older events still read after schema expansion
+   - queue serialization still prevents clobber
+   - recovery metadata never stores prompt bodies
+2. Recovery detail:
+   - event opens with the right severity and next-step blocks
+   - provider-specific CTAs render for ChatGPT, Claude, and Gemini
+   - generic fallback renders when provider/account state is ambiguous
+3. File uploads:
+   - drag/drop, file input, and clipboard-file paths all create the same warning semantics
+   - warning copy is visible but non-blocking
+4. Trust:
+   - no recovery surface implies Sunbreak can inspect or undo provider-side state automatically
+
+**Manual verification matrix**
+
+1. Trigger a flagged prompt event and confirm the dashboard explains what happened and what to do next.
+2. Open recovery detail for ChatGPT, Claude, and Gemini and confirm the provider guidance is concise and plausible.
+3. Trigger a file upload on each supported provider and confirm awareness messaging appears without blocking normal workflow.
+4. Verify ambiguous account state falls back to generic provider guidance rather than confident enterprise-specific advice.
+5. Confirm no stored event payload includes prompt text, tokens, or file contents.
+
+### Suggested implementation order inside the epic
+
+1. Recovery event model and storage contract.
+2. Activity detail and accidental-send recovery UX.
+3. Provider guidance data model.
+4. Narrow provider/account guidance layer.
+5. File upload warning productization.
+6. Dashboard report and recovery integration.
+7. Test and verification pass.
+
+### Epic 5 completion gate
+
+Epic 5 should be considered complete only when all of the following are true:
+
+- flagged events can power a useful recovery detail flow without storing prompt content
+- activity history helps the user decide what to do next after a risky send
+- provider guidance is structured, concise, and reusable across reports and recovery detail
+- account-mode guidance stays narrow and does not overclaim certainty
+- file upload detection is visible as a real product warning with clear scope limits
+- automated and manual verification show the recovery flow is actionable rather than noisy
+
 ### Recommended commit sequence
 
 1. `feat(recovery): add flagged-event recovery model`
 2. `feat(dashboard): add recovery-focused activity detail view`
-3. `feat(provider): add provider guidance data and report card improvements`
-4. `feat(content): surface file upload warning and next-step guidance`
-5. `test(recovery): cover event-to-guidance flows`
+3. `feat(provider): add provider guidance data model`
+4. `feat(content): surface file upload warning and recovery signal`
+5. `refactor(dashboard): connect reports and recovery guidance`
+6. `test(recovery): cover event-to-guidance flows`
 
 ---
 
