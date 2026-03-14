@@ -23,6 +23,8 @@ function renderWidget(
     onClick?: () => void;
     panelOpen?: boolean;
     maskedCount?: number;
+    fileWarningState?: { count: number; visible: boolean; generation: number } | null;
+    onFileWarningDismiss?: () => void;
   } = {},
 ): ReturnType<typeof render> {
   const state = createFindingsState();
@@ -37,6 +39,8 @@ function renderWidget(
       onClick={overrides.onClick ?? vi.fn()}
       panelOpen={overrides.panelOpen ?? false}
       maskedCount={overrides.maskedCount}
+      fileWarningState={overrides.fileWarningState}
+      onFileWarningDismiss={overrides.onFileWarningDismiss}
     />,
   );
 }
@@ -241,6 +245,29 @@ describe('Widget', () => {
       expect(widget?.getAttribute('aria-label')).toBe(
         'Sunbreak: 1 warning finding, 3 masked locally',
       );
+    });
+  });
+
+  describe('file warning toast', () => {
+    it('renders a visible file warning toast when fileWarningState is provided', () => {
+      const { container } = renderWidget({
+        fileWarningState: { count: 2, visible: true, generation: 1 },
+        onFileWarningDismiss: vi.fn(),
+      });
+
+      expect(container.textContent).toContain('File upload detected');
+      expect(container.textContent).toContain('Review 2 attachments manually before sending');
+    });
+
+    it('calls dismiss handler when the file warning is dismissed', () => {
+      const onFileWarningDismiss = vi.fn();
+      renderWidget({
+        fileWarningState: { count: 1, visible: true, generation: 1 },
+        onFileWarningDismiss,
+      });
+
+      fireEvent.click(screen.getByText('Dismiss'));
+      expect(onFileWarningDismiss).toHaveBeenCalledTimes(1);
     });
   });
 

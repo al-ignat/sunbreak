@@ -26,6 +26,7 @@ const ACTION_LABELS: Record<string, string> = {
   edited: 'Edited',
   fixed: 'Fixed',
   ignored: 'Ignored',
+  'file-warning': 'File Warning',
 };
 
 const ACTION_COLORS: Record<string, string> = {
@@ -35,6 +36,7 @@ const ACTION_COLORS: Record<string, string> = {
   edited: '#1565C0',
   fixed: '#2E7D32',
   ignored: '#6B6869',
+  'file-warning': '#E65100',
 };
 
 /** Lighter action colors for dark backgrounds (WCAG AA on #1E1D21) */
@@ -45,6 +47,7 @@ const ACTION_COLORS_DARK: Record<string, string> = {
   edited: '#60A5FA',
   fixed: '#34D399',
   ignored: '#9B9898',
+  'file-warning': '#F59E0B',
 };
 
 /** Tinted background for tool pill badges */
@@ -68,6 +71,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   keyword: '#6B7280',
   custom_keyword: '#6B7280',
   'custom-pattern': '#14B8A6',
+  'file-upload': '#F59E0B',
   danish_cpr: '#EF4444',
   uk_ni: '#EF4444',
   cpr: '#EF4444',
@@ -88,6 +92,7 @@ const CATEGORY_COLORS_DARK: Record<string, string> = {
   keyword: '#60A5FA',
   custom_keyword: '#60A5FA',
   'custom-pattern': '#2DD4BF',
+  'file-upload': '#FBBF24',
   danish_cpr: '#FB923C',
   uk_ni: '#FB923C',
   cpr: '#FB923C',
@@ -108,6 +113,7 @@ const CATEGORY_BG: Record<string, string> = {
   keyword: '#101828',
   custom_keyword: '#101828',
   'custom-pattern': '#0E2325',
+  'file-upload': '#2A2010',
   danish_cpr: '#2A2010',
   uk_ni: '#2A2010',
   cpr: '#2A2010',
@@ -127,6 +133,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   api_key: 'API Key',
   keyword: 'Keyword',
   custom_keyword: 'Keyword',
+  'file-upload': 'File Upload',
   danish_cpr: 'CPR',
   uk_ni: 'NI Number',
   cpr: 'CPR',

@@ -10,6 +10,7 @@ import widgetStyles from './widget.css?inline';
 import panelStyles from './findings-panel.css?inline';
 import toastStyles from './send-toast.css?inline';
 import restoreToastStyles from './restore-toast.css?inline';
+import fileWarningStyles from './file-warning.css?inline';
 import overlayStyles from './text-overlay.css?inline';
 import hoverCardStyles from './hover-card.css?inline';
 import type { TextOverlayHandle } from './TextOverlay';
@@ -59,6 +60,7 @@ const sheets = [
   createSheet(panelStyles),
   createSheet(toastStyles),
   createSheet(restoreToastStyles),
+  createSheet(fileWarningStyles),
   createSheet(overlayStyles),
   createSheet(hoverCardStyles),
 ];
@@ -87,6 +89,12 @@ interface RestoreToastState {
   resolve: (accepted: boolean) => void;
 }
 
+interface FileWarningState {
+  visible: boolean;
+  count: number;
+  generation: number;
+}
+
 function isMaskableFinding(finding: { type: string }): boolean {
   return finding.type !== 'custom-pattern';
 }
@@ -108,6 +116,7 @@ export function createWidgetController(
   destroy(): void;
   showToast(activeCount: number): Promise<'send-anyway' | 'timeout'>;
   showRestoreToast(count: number): Promise<boolean>;
+  showFileWarning(count: number): void;
   getOverlayHandle(): TextOverlayHandle | null;
   setEnabled(enabled: boolean): void;
 } {
@@ -122,6 +131,7 @@ export function createWidgetController(
   let panelOpen = false;
   let toastState: ToastState | null = null;
   let restoreToastState: RestoreToastState | null = null;
+  let fileWarningState: FileWarningState | null = null;
   let overlayHandle: TextOverlayHandle | null = null;
   let currentSendButton: HTMLElement | null = null;
   let currentAnchorMode: WidgetAnchorMode = 'hidden';
@@ -146,7 +156,8 @@ export function createWidgetController(
       (maskingMap?.size ?? 0) > 0 ||
       panelOpen ||
       toastState?.visible === true ||
-      restoreToastState?.visible === true
+      restoreToastState?.visible === true ||
+      fileWarningState?.visible === true
     );
   }
 
@@ -585,6 +596,7 @@ export function createWidgetController(
   }
 
   let restoreGeneration = 0;
+  let fileWarningGeneration = 0;
 
   function showRestoreToast(count: number): Promise<boolean> {
     // If a toast is already showing, resolve the old one as declined (safe default)
@@ -604,6 +616,22 @@ export function createWidgetController(
     });
   }
 
+  function handleFileWarningDismiss(): void {
+    if (!fileWarningState) return;
+    fileWarningState = null;
+    renderWidget();
+  }
+
+  function showFileWarning(count: number): void {
+    fileWarningGeneration++;
+    fileWarningState = {
+      visible: true,
+      count,
+      generation: fileWarningGeneration,
+    };
+    renderWidget();
+  }
+
   function clearVisibleUiForDisable(): void {
     panelOpen = false;
     overlayHandle = null;
@@ -619,6 +647,8 @@ export function createWidgetController(
       restoreToastState = null;
       resolve(false);
     }
+
+    fileWarningState = null;
   }
 
   function renderWidget(): void {
@@ -677,6 +707,10 @@ export function createWidgetController(
           : null,
         onRestoreAccept: handleRestoreAccept,
         onRestoreDecline: handleRestoreDecline,
+        fileWarningState: fileWarningState
+          ? { count: fileWarningState.count, visible: fileWarningState.visible, generation: fileWarningState.generation }
+          : null,
+        onFileWarningDismiss: handleFileWarningDismiss,
       }),
       wrapper,
     );
@@ -787,6 +821,8 @@ export function createWidgetController(
       resolve(false);
     }
 
+    fileWarningState = null;
+
     currentInput = null;
     currentAnchorMode = extensionEnabled ? 'hidden' : 'disabled';
     currentAnchorReason = extensionEnabled ? 'idle' : 'extension-disabled';
@@ -832,5 +868,5 @@ export function createWidgetController(
     renderWidget();
   }
 
-  return { mount, unmount, destroy, showToast, showRestoreToast, getOverlayHandle, setEnabled };
+  return { mount, unmount, destroy, showToast, showRestoreToast, showFileWarning, getOverlayHandle, setEnabled };
 }

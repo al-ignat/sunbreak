@@ -10,6 +10,7 @@ export const FLAGGED_EVENT_ACTIONS = [
   'edited',
   'fixed',
   'ignored',
+  'file-warning',
 ] as const;
 
 export const FLAGGED_EVENT_SOURCES = ['prompt', 'file-upload'] as const;
@@ -22,7 +23,7 @@ export interface FlaggedEvent {
   readonly tool: string;
   readonly categories: ReadonlyArray<string>;
   readonly findingCount: number;
-  readonly action: 'redacted' | 'sent-anyway' | 'cancelled' | 'edited' | 'fixed' | 'ignored';
+  readonly action: 'redacted' | 'sent-anyway' | 'cancelled' | 'edited' | 'fixed' | 'ignored' | 'file-warning';
   readonly source: FlaggedEventSource;
   readonly maskingAvailable: boolean;
   readonly maskingUsed: boolean;
@@ -66,7 +67,7 @@ function normalizeFindingCount(value: unknown): number {
 }
 
 function defaultNeedsAttention(action: FlaggedEvent['action']): boolean {
-  return action === 'sent-anyway' || action === 'cancelled' || action === 'edited';
+  return action === 'sent-anyway' || action === 'cancelled' || action === 'edited' || action === 'file-warning';
 }
 
 /** Normalize stored flagged-event metadata and supply safe defaults for legacy records. */

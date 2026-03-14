@@ -29,6 +29,7 @@ import { createMaskingMap } from './masking-map';
 import type { MaskingMap } from './masking-map';
 import { createClipboardInterceptor } from './clipboard-interceptor';
 import type { ClipboardInterceptor } from './clipboard-interceptor';
+import { recordLocalDiagnostic } from '../utils/local-diagnostics';
 
 /**
  * Context for the orchestrator.
@@ -246,9 +247,27 @@ export function createOrchestrator(
   };
 
   function onFileDetected(filename: string, adapterName: SiteName): void {
-    console.log(
-      `[Sunbreak] File detected on ${adapterName}: ${filename}`,
-    );
+    recordLocalDiagnostic('orchestrator', 'file-detected', {
+      adapter: adapterName,
+      filename,
+    });
+
+    if (!cachedExtensionSettings.enabled) return;
+
+    widgetController.showFileWarning(1);
+    logFlaggedEvent({
+      id: generateEventId(),
+      timestamp: new Date().toISOString(),
+      tool: adapterName,
+      categories: ['file-upload'],
+      findingCount: 0,
+      action: 'file-warning',
+      source: 'file-upload',
+      maskingAvailable: false,
+      maskingUsed: false,
+      needsAttention: true,
+      guidanceVersion: 1,
+    });
   }
 
   return { submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor };

@@ -11,6 +11,7 @@ vi.mock('../../../src/ui/widget/widget-controller', () => ({
     destroy: vi.fn(),
     showToast: vi.fn().mockResolvedValue('timeout'),
     showRestoreToast: vi.fn().mockResolvedValue(false),
+    showFileWarning: vi.fn(),
     setEnabled: vi.fn(),
   })),
 }));
@@ -261,6 +262,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: mockShowToast,
         showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -282,6 +284,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: mockShowToast,
         showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -313,6 +316,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: mockShowToast,
         showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -346,6 +350,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: vi.fn().mockResolvedValue('timeout'),
         showRestoreToast: mockShowRestoreToast,
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -398,6 +403,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: vi.fn().mockResolvedValue('timeout'),
         showRestoreToast: mockShowRestoreToast,
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -433,6 +439,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: vi.fn().mockResolvedValue('timeout'),
         showRestoreToast: mockShowRestoreToast,
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -458,16 +465,32 @@ describe('createOrchestrator', () => {
   });
 
   describe('file detection', () => {
-    it('logs file detection to console', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    it('shows a file warning and logs a recovery event', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
       const adapter = createMockAdapter();
       const ctx = createMockContext();
       const { onFileDetected } = createOrchestrator(adapter, ctx);
 
       onFileDetected('secret.pdf', 'chatgpt');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('File detected'),
+      expect(showFileWarning).toHaveBeenCalledWith(1);
+      expect(logFlaggedEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: 'chatgpt',
+          source: 'file-upload',
+          action: 'file-warning',
+          categories: ['file-upload'],
+          needsAttention: true,
+        }),
       );
     });
   });
