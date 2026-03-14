@@ -31,8 +31,6 @@ import { createClipboardInterceptor } from './clipboard-interceptor';
 import type { ClipboardInterceptor } from './clipboard-interceptor';
 import { recordLocalDiagnostic } from '../utils/local-diagnostics';
 
-const FILE_WARNING_BATCH_MS = 1500;
-
 /**
  * Context for the orchestrator.
  * In production this comes from WXT's ContentScriptContext.
@@ -89,7 +87,6 @@ export function createOrchestrator(
   let cachedExtensionSettings: ExtensionSettings = {
     ...DEFAULT_EXTENSION_SETTINGS,
   };
-  let fileWarningTimer: ReturnType<typeof setTimeout> | null = null;
   let pendingFileWarningNames = new Set<string>();
 
   // FindingsState for the continuous scanner
@@ -189,11 +186,15 @@ export function createOrchestrator(
     const snap = findingsState.getSnapshot();
 
     if (snap.activeCount === 0) {
-      logCleanPrompt(adapter.name);
+      const hasVerifiedPendingAttachments = maybeLogPendingAttachmentSend(adapter.name);
+      if (!hasVerifiedPendingAttachments) {
+        logCleanPrompt(adapter.name);
+      }
       return false;
     }
 
     if (cachedExtensionSettings.interventionMode === 'log-only') {
+      maybeLogPendingAttachmentSend(adapter.name);
       const active = snap.tracked.filter((t) => t.status === 'active');
       const logOnlyEvent: FlaggedEvent = {
         id: generateEventId(),
@@ -242,13 +243,23 @@ export function createOrchestrator(
     // If the user clicked "Send Anyway" explicitly, it's 'sent-anyway'
     // Timeout also results in release — same action
     void action; // both 'send-anyway' and 'timeout' result in 'sent-anyway'
+    maybeLogPendingAttachmentSend(adapter.name);
     logFlaggedEvent(event);
   }
 
-  function flushPendingFileWarning(adapterName: SiteName): void {
-    if (pendingFileWarningNames.size === 0) return;
+  function maybeLogPendingAttachmentSend(adapterName: SiteName): boolean {
+    if (pendingFileWarningNames.size === 0) return false;
 
-    const attachmentCount = pendingFileWarningNames.size;
+    const attachmentCount = adapter.getPendingAttachmentCount?.() ?? 0;
+    if (attachmentCount <= 0) {
+      recordLocalDiagnostic('orchestrator', 'file-send-check-cleared', {
+        adapter: adapterName,
+        pendingCount: pendingFileWarningNames.size,
+      });
+      pendingFileWarningNames = new Set<string>();
+      return false;
+    }
+
     pendingFileWarningNames = new Set<string>();
 
     logFlaggedEvent({
@@ -264,6 +275,7 @@ export function createOrchestrator(
       needsAttention: true,
       guidanceVersion: 1,
     });
+    return true;
   }
 
   const submitConfig: SubmitInterceptConfig = {
@@ -292,22 +304,9 @@ export function createOrchestrator(
 
     pendingFileWarningNames.add(normalizedFileName);
     widgetController.showFileWarning(pendingFileWarningNames.size);
-
-    if (fileWarningTimer) {
-      clearTimeout(fileWarningTimer);
-    }
-
-    fileWarningTimer = setTimeout(() => {
-      fileWarningTimer = null;
-      flushPendingFileWarning(adapterName);
-    }, FILE_WARNING_BATCH_MS);
   }
 
   ctx.onInvalidated(() => {
-    if (fileWarningTimer) {
-      clearTimeout(fileWarningTimer);
-      fileWarningTimer = null;
-    }
     pendingFileWarningNames = new Set<string>();
   });
 

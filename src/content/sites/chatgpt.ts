@@ -137,4 +137,13 @@ export const chatgptAdapter: SiteAdapter = {
     const input = this.findInput();
     return input?.closest('form') ?? null;
   },
+
+  getPendingAttachmentCount(): number {
+    const root = this.findInput()?.closest('form');
+    if (!root) return 0;
+
+    return Array.from(root.querySelectorAll('input[type="file"]'))
+      .filter((input): input is HTMLInputElement => input instanceof HTMLInputElement)
+      .reduce((count, input) => count + (input.files?.length ?? 0), 0);
+  },
 };

@@ -31,8 +31,8 @@ function hasCustomPatternCategory(categories: ReadonlyArray<string>): boolean {
 function buildSummary(event: FlaggedEvent): string {
   if (event.source === 'file-upload') {
     return event.needsAttention
-      ? 'A file was shared in a risky flow and should be reviewed manually.'
-      : 'A file upload was detected. Review whether the attachment itself was appropriate to share.';
+      ? 'A file was sent and should be reviewed manually.'
+      : 'A file attachment event was recorded. Review whether the attachment itself was appropriate to share.';
   }
 
   if (event.action === 'sent-anyway') {

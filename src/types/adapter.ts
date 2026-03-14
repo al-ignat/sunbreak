@@ -33,6 +33,12 @@ export interface SiteAdapter {
   /** Find the file drop zone element, if any */
   getDropZone(): HTMLElement | null;
 
+  /**
+   * Count attachments that are still present in the composer right now.
+   * Used to decide whether an uploaded file was actually still attached at send time.
+   */
+  readonly getPendingAttachmentCount?: () => number;
+
   /** Whether this site supports inline text overlay underlines (default: true) */
   readonly supportsOverlay?: boolean;
 

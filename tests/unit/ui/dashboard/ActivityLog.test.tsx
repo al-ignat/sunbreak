@@ -136,7 +136,7 @@ describe('ActivityLog', () => {
       }),
     ];
     const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
-    expect(container.textContent).toContain('A file was shared in a risky flow and should be reviewed manually');
+    expect(container.textContent).toContain('A file was sent and should be reviewed manually');
     expect(container.textContent).toContain('Sunbreak can detect the upload event, but it cannot inspect file contents');
   });
 
