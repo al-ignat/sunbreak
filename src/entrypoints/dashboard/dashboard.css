@@ -476,6 +476,14 @@ body {
   align-items: center;
   padding: 14px 20px;
   border-bottom: 1px solid var(--color-border-subtle);
+  width: 100%;
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
   transition: background var(--transition-fast);
 }
 
@@ -485,6 +493,10 @@ body {
 
 .activity-row:hover {
   background: var(--color-bg-hover);
+}
+
+.activity-row--selected {
+  background: rgba(245, 158, 11, 0.08);
 }
 
 .activity-cell--date {
@@ -526,6 +538,118 @@ body {
   text-align: center;
   color: var(--color-text-muted);
   font-size: 13px;
+}
+
+.recovery-detail {
+  margin-top: 20px;
+  padding: 24px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.recovery-detail__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.recovery-detail__eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-warning);
+}
+
+.recovery-detail__title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4;
+  color: var(--color-text-primary);
+}
+
+.recovery-detail__status {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.recovery-detail__status--attention {
+  background: rgba(245, 158, 11, 0.14);
+  color: var(--color-warning);
+}
+
+.recovery-detail__meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.recovery-detail__meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+}
+
+.recovery-detail__meta-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.recovery-detail__block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recovery-detail__block-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.recovery-detail__categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recovery-detail__category {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.recovery-detail__list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--color-text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recovery-detail__note {
+  margin: 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
 }
 
 /* === Shared Pill Badge === */

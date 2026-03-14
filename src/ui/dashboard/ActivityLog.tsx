@@ -2,6 +2,7 @@ import type { JSX } from 'preact';
 import { useState, useMemo } from 'preact/hooks';
 import { ChevronDown } from 'lucide-preact';
 import type { FlaggedEvent } from '../../storage/types';
+import { RecoveryDetail } from './RecoveryDetail';
 import {
   toolLabel, toolColor, toolBgColor,
   actionLabel, actionColor,
@@ -17,6 +18,7 @@ type DatePreset = '7d' | '30d' | 'all';
 export function ActivityLog({ events }: ActivityLogProps): JSX.Element {
   const [datePreset, setDatePreset] = useState<DatePreset>('all');
   const [toolFilter, setToolFilter] = useState<string>('all');
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(events[0]?.id ?? null);
 
   const filteredEvents = useMemo(() => {
     let filtered = [...events];
@@ -35,6 +37,11 @@ export function ActivityLog({ events }: ActivityLogProps): JSX.Element {
 
     return filtered;
   }, [events, datePreset, toolFilter]);
+
+  const selectedEvent = useMemo(() => {
+    const current = filteredEvents.find((event) => event.id === selectedEventId);
+    return current ?? filteredEvents[0] ?? null;
+  }, [filteredEvents, selectedEventId]);
 
   if (events.length === 0) {
     return (
@@ -107,7 +114,12 @@ export function ActivityLog({ events }: ActivityLogProps): JSX.Element {
           </div>
         ) : (
           filteredEvents.map((event) => (
-            <div key={event.id} className="activity-row">
+            <button
+              key={event.id}
+              type="button"
+              className={`activity-row ${selectedEvent?.id === event.id ? 'activity-row--selected' : ''}`}
+              onClick={(): void => setSelectedEventId(event.id)}
+            >
               <span className="activity-cell activity-cell--date">
                 {formatDateTime(event.timestamp)}
               </span>
@@ -145,10 +157,12 @@ export function ActivityLog({ events }: ActivityLogProps): JSX.Element {
               >
                 {actionLabel(event.action)}
               </span>
-            </div>
+            </button>
           ))
         )}
       </div>
+
+      {selectedEvent && <RecoveryDetail event={selectedEvent} />}
     </div>
   );
 }
