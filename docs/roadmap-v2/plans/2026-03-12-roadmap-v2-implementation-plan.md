@@ -1874,6 +1874,86 @@ Epic 5 should be considered complete only when all of the following are true:
 5. `refactor(dashboard): connect reports and recovery guidance`
 6. `test(recovery): cover event-to-guidance flows`
 
+### Implementation outcome — 2026-03-14
+
+**Status:** completed for implementation and local verification scope; live provider validation still pending
+
+**Implemented in this execution pass**
+
+- expanded `FlaggedEvent` into a recovery-ready metadata contract:
+  - source (`prompt` vs `file-upload`)
+  - masking availability and usage
+  - attention state
+  - guidance versioning
+  - backward-compatible normalization for older stored events
+- added dashboard-side recovery detail with event selection, next-step guidance, masking context, and provider-specific recovery instructions
+- replaced hard-coded provider copy with structured provider guidance data:
+  - verified sources
+  - recovery steps
+  - caveats
+  - reusable overview sections
+- added explicit provider guidance modes in settings for narrow account-context selection:
+  - general
+  - consumer
+  - business
+  - enterprise
+  - api
+  - workspace
+- kept account awareness intentionally bounded:
+  - no automatic enterprise inference
+  - ambiguous cases degrade to generic provider guidance
+- productized file upload awareness:
+  - visible widget toast
+  - recovery-log event path
+  - explicit copy that Sunbreak can detect the attachment event but cannot inspect file contents
+- connected recovery and reports surfaces so they reinforce each other:
+  - recovery detail links back to provider guidance
+  - report cards summarize recent provider-specific flagged activity
+  - report cards deep-link into filtered activity history
+- extended regression coverage for:
+  - event normalization and metadata-only guarantees
+  - recovery detail rendering
+  - provider guidance selection
+  - guidance-mode settings updates
+  - report/activity integration behavior
+
+**Important product decisions captured in code**
+
+- recovery storage remains metadata-only:
+  - no prompt text
+  - no token payloads
+  - no file contents
+- provider guidance is source-backed but intentionally concise rather than a long-lived policy encyclopedia
+- account-mode specificity is only enabled through explicit user configuration, not guesswork
+- file upload detection remains non-blocking by design; the warning is an awareness and recovery aid, not a content scanner
+
+**Verification completed**
+
+- `npm test` -> **53/53 test files passed, 840/840 tests passed**
+- `npm run build` -> **passed**
+- `npm run lint` -> **passed with 8 pre-existing warnings in older test files, no errors**
+
+**Verification not completed yet**
+
+- the Epic 5 manual/live matrix in this plan was not run by me in this environment yet:
+  - live risky-send recovery checks on ChatGPT, Claude, and Gemini
+  - live file-upload warning behavior across supported providers
+  - end-to-end review of ambiguous account-mode fallback behavior in real product flows
+
+**Epic 5 final assessment**
+
+- Epic 5 now has the full product backbone required by the plan:
+  - recovery-ready event metadata
+  - user-facing activity detail
+  - reusable provider guidance
+  - bounded account-mode controls
+  - file-upload warning productization
+  - report/recovery integration
+- the dashboard now explains flagged events as actionable recovery stories instead of static audit rows
+- provider guidance is now auditable and reusable from one structured source rather than scattered copy
+- the remaining gap is external live verification, not missing implementation work
+
+---
 ---
 
 ## Epic 6 — Onboarding And Trust UX
