@@ -465,7 +465,8 @@ describe('createOrchestrator', () => {
   });
 
   describe('file detection', () => {
-    it('shows a file warning and logs a recovery event', () => {
+    it('shows a file warning and logs a batched recovery event', () => {
+      vi.useFakeTimers();
       const showFileWarning = vi.fn();
       vi.mocked(createWidgetController).mockReturnValue({
         mount: vi.fn(),
@@ -483,15 +484,95 @@ describe('createOrchestrator', () => {
       onFileDetected('secret.pdf', 'chatgpt');
 
       expect(showFileWarning).toHaveBeenCalledWith(1);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(1500);
+
       expect(logFlaggedEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           tool: 'chatgpt',
           source: 'file-upload',
           action: 'file-warning',
           categories: ['file-upload'],
+          findingCount: 1,
           needsAttention: true,
         }),
       );
+
+      vi.useRealTimers();
+    });
+
+    it('suppresses duplicate detections for the same file inside the batch window', () => {
+      vi.useFakeTimers();
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { onFileDetected } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'chatgpt');
+      onFileDetected('SECRET.pdf', 'chatgpt');
+      onFileDetected(' secret.pdf ', 'chatgpt');
+
+      expect(showFileWarning).toHaveBeenCalledTimes(1);
+      expect(showFileWarning).toHaveBeenCalledWith(1);
+
+      vi.advanceTimersByTime(1500);
+
+      expect(logFlaggedEvent).toHaveBeenCalledTimes(1);
+      expect(logFlaggedEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          source: 'file-upload',
+          action: 'file-warning',
+          findingCount: 1,
+        }),
+      );
+
+      vi.useRealTimers();
+    });
+
+    it('batches multiple different files into a single recovery event', () => {
+      vi.useFakeTimers();
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { onFileDetected } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'chatgpt');
+      onFileDetected('roadmap.docx', 'chatgpt');
+
+      expect(showFileWarning).toHaveBeenNthCalledWith(1, 1);
+      expect(showFileWarning).toHaveBeenNthCalledWith(2, 2);
+
+      vi.advanceTimersByTime(1500);
+
+      expect(logFlaggedEvent).toHaveBeenCalledTimes(1);
+      expect(logFlaggedEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          source: 'file-upload',
+          action: 'file-warning',
+          findingCount: 2,
+        }),
+      );
+
+      vi.useRealTimers();
     });
   });
 

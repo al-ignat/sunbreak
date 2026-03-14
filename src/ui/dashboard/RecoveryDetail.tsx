@@ -91,6 +91,7 @@ function attentionLabel(event: FlaggedEvent): string {
 export function RecoveryDetail({ event, providerGuidance }: RecoveryDetailProps): JSX.Element {
   const recommendations = buildRecommendations(event);
   const resolvedGuidance = getProviderGuidance(event.tool, providerGuidance[event.tool] ?? 'general');
+  const countLabel = event.source === 'file-upload' ? 'Attachments' : 'Findings';
 
   return (
     <section className="recovery-detail" aria-label="Recovery detail">
@@ -120,7 +121,7 @@ export function RecoveryDetail({ event, providerGuidance }: RecoveryDetailProps)
           <span>{sourceLabel(event.source)}</span>
         </div>
         <div className="recovery-detail__meta-item">
-          <span className="recovery-detail__meta-label">Findings</span>
+          <span className="recovery-detail__meta-label">{countLabel}</span>
           <span>{event.findingCount}</span>
         </div>
       </div>

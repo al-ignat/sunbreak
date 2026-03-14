@@ -109,6 +109,15 @@ export function ActivityLog({ events, providerGuidance }: ActivityLogProps): JSX
         </span>
       </div>
 
+      <div className="activity-table-meta">
+        <div>
+          <p className="activity-table-meta__title">Recent flagged events</p>
+          <p className="activity-table-meta__hint">
+            Select a row to open recovery detail and next-step guidance.
+          </p>
+        </div>
+      </div>
+
       {/* Table card */}
       <div className="activity-table-card">
         <div className="activity-thead">
@@ -130,6 +139,8 @@ export function ActivityLog({ events, providerGuidance }: ActivityLogProps): JSX
               type="button"
               className={`activity-row ${selectedEvent?.id === event.id ? 'activity-row--selected' : ''}`}
               onClick={(): void => setSelectedEventId(event.id)}
+              aria-label={`Open recovery detail for ${toolLabel(event.tool)} on ${formatDateTime(event.timestamp)}`}
+              aria-pressed={selectedEvent?.id === event.id}
             >
               <span className="activity-cell activity-cell--date">
                 {formatDateTime(event.timestamp)}

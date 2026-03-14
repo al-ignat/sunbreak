@@ -31,6 +31,8 @@ import { createClipboardInterceptor } from './clipboard-interceptor';
 import type { ClipboardInterceptor } from './clipboard-interceptor';
 import { recordLocalDiagnostic } from '../utils/local-diagnostics';
 
+const FILE_WARNING_BATCH_MS = 1500;
+
 /**
  * Context for the orchestrator.
  * In production this comes from WXT's ContentScriptContext.
@@ -87,6 +89,8 @@ export function createOrchestrator(
   let cachedExtensionSettings: ExtensionSettings = {
     ...DEFAULT_EXTENSION_SETTINGS,
   };
+  let fileWarningTimer: ReturnType<typeof setTimeout> | null = null;
+  let pendingFileWarningNames = new Set<string>();
 
   // FindingsState for the continuous scanner
   const findingsState = createFindingsState();
@@ -241,6 +245,27 @@ export function createOrchestrator(
     logFlaggedEvent(event);
   }
 
+  function flushPendingFileWarning(adapterName: SiteName): void {
+    if (pendingFileWarningNames.size === 0) return;
+
+    const attachmentCount = pendingFileWarningNames.size;
+    pendingFileWarningNames = new Set<string>();
+
+    logFlaggedEvent({
+      id: generateEventId(),
+      timestamp: new Date().toISOString(),
+      tool: adapterName,
+      categories: ['file-upload'],
+      findingCount: attachmentCount,
+      action: 'file-warning',
+      source: 'file-upload',
+      maskingAvailable: false,
+      maskingUsed: false,
+      needsAttention: true,
+      guidanceVersion: 1,
+    });
+  }
+
   const submitConfig: SubmitInterceptConfig = {
     shouldBlock,
     onBlocked,
@@ -254,21 +279,37 @@ export function createOrchestrator(
 
     if (!cachedExtensionSettings.enabled) return;
 
-    widgetController.showFileWarning(1);
-    logFlaggedEvent({
-      id: generateEventId(),
-      timestamp: new Date().toISOString(),
-      tool: adapterName,
-      categories: ['file-upload'],
-      findingCount: 0,
-      action: 'file-warning',
-      source: 'file-upload',
-      maskingAvailable: false,
-      maskingUsed: false,
-      needsAttention: true,
-      guidanceVersion: 1,
-    });
+    const normalizedFileName = filename.trim().toLowerCase();
+    if (normalizedFileName.length === 0) return;
+
+    if (pendingFileWarningNames.has(normalizedFileName)) {
+      recordLocalDiagnostic('orchestrator', 'file-detected-duplicate-suppressed', {
+        adapter: adapterName,
+        filename,
+      });
+      return;
+    }
+
+    pendingFileWarningNames.add(normalizedFileName);
+    widgetController.showFileWarning(pendingFileWarningNames.size);
+
+    if (fileWarningTimer) {
+      clearTimeout(fileWarningTimer);
+    }
+
+    fileWarningTimer = setTimeout(() => {
+      fileWarningTimer = null;
+      flushPendingFileWarning(adapterName);
+    }, FILE_WARNING_BATCH_MS);
   }
+
+  ctx.onInvalidated(() => {
+    if (fileWarningTimer) {
+      clearTimeout(fileWarningTimer);
+      fileWarningTimer = null;
+    }
+    pendingFileWarningNames = new Set<string>();
+  });
 
   return { submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor };
 }
