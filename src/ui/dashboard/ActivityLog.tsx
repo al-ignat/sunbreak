@@ -133,58 +133,68 @@ export function ActivityLog({ events, providerGuidance }: ActivityLogProps): JSX
             No events match the current filters.
           </div>
         ) : (
-          filteredEvents.map((event) => (
-            <button
-              key={event.id}
-              type="button"
-              className={`activity-row ${selectedEvent?.id === event.id ? 'activity-row--selected' : ''}`}
-              onClick={(): void => setSelectedEventId(event.id)}
-              aria-label={`Open recovery detail for ${toolLabel(event.tool)} on ${formatDateTime(event.timestamp)}`}
-              aria-pressed={selectedEvent?.id === event.id}
-            >
-              <span className="activity-cell activity-cell--date">
-                {formatDateTime(event.timestamp)}
-              </span>
-              <span className="activity-cell activity-cell--tool">
-                <span
-                  className="pill"
-                  style={{ background: toolBgColor(event.tool) }}
+          filteredEvents.map((event) => {
+            const isSelected = selectedEvent?.id === event.id;
+
+            return (
+              <div key={event.id} className="activity-entry">
+                <button
+                  type="button"
+                  className={`activity-row ${isSelected ? 'activity-row--selected' : ''}`}
+                  onClick={(): void => setSelectedEventId(event.id)}
+                  aria-label={`Open recovery detail for ${toolLabel(event.tool)} on ${formatDateTime(event.timestamp)}`}
+                  aria-expanded={isSelected}
+                  aria-pressed={isSelected}
                 >
-                  <span className="pill__dot" style={{ background: toolColor(event.tool) }} />
-                  <span style={{ color: toolColor(event.tool) }}>
-                    {toolLabel(event.tool)}
+                  <span className="activity-cell activity-cell--date">
+                    {formatDateTime(event.timestamp)}
                   </span>
-                </span>
-              </span>
-              <span className="activity-cell activity-cell--cat">
-                {event.categories.map((cat) => (
-                  <span
-                    key={cat}
-                    className="pill"
-                    style={{ background: categoryBgColor(cat) }}
-                  >
-                    <span className="pill__dot" style={{ background: categoryColor(cat, true) }} />
-                    <span style={{ color: categoryColor(cat, true) }}>
-                      {categoryLabel(cat)}
+                  <span className="activity-cell activity-cell--tool">
+                    <span
+                      className="pill"
+                      style={{ background: toolBgColor(event.tool) }}
+                    >
+                      <span className="pill__dot" style={{ background: toolColor(event.tool) }} />
+                      <span style={{ color: toolColor(event.tool) }}>
+                        {toolLabel(event.tool)}
+                      </span>
                     </span>
                   </span>
-                ))}
-              </span>
-              <span className="activity-cell activity-cell--findings">
-                {event.findingCount}
-              </span>
-              <span
-                className="activity-cell activity-cell--action"
-                style={{ color: actionColor(event.action, true) }}
-              >
-                {actionLabel(event.action)}
-              </span>
-            </button>
-          ))
+                  <span className="activity-cell activity-cell--cat">
+                    {event.categories.map((cat) => (
+                      <span
+                        key={cat}
+                        className="pill"
+                        style={{ background: categoryBgColor(cat) }}
+                      >
+                        <span className="pill__dot" style={{ background: categoryColor(cat, true) }} />
+                        <span style={{ color: categoryColor(cat, true) }}>
+                          {categoryLabel(cat)}
+                        </span>
+                      </span>
+                    ))}
+                  </span>
+                  <span className="activity-cell activity-cell--findings">
+                    {event.findingCount}
+                  </span>
+                  <span
+                    className="activity-cell activity-cell--action"
+                    style={{ color: actionColor(event.action, true) }}
+                  >
+                    {actionLabel(event.action)}
+                  </span>
+                </button>
+
+                {isSelected && (
+                  <div className="activity-row-detail">
+                    <RecoveryDetail event={event} providerGuidance={providerGuidance} />
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
-
-      {selectedEvent && <RecoveryDetail event={selectedEvent} providerGuidance={providerGuidance} />}
     </div>
   );
 }

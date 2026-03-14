@@ -397,14 +397,12 @@ body {
 
 /* === Activity Log === */
 .activity-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.85fr);
+  display: flex;
+  flex-direction: column;
   gap: 20px;
-  align-items: start;
 }
 
 .activity-filters {
-  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -470,7 +468,6 @@ body {
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-lg);
   overflow: hidden;
-  min-width: 0;
 }
 
 .activity-thead {
@@ -508,16 +505,26 @@ body {
   transition: background var(--transition-fast);
 }
 
-.activity-row:last-child {
-  border-bottom: none;
-}
-
 .activity-row:hover {
   background: var(--color-bg-hover);
 }
 
 .activity-row--selected {
   background: rgba(245, 158, 11, 0.08);
+}
+
+.activity-entry:last-child > .activity-row {
+  border-bottom: none;
+}
+
+.activity-row-detail {
+  padding: 0 16px 16px;
+  background: rgba(255, 255, 255, 0.01);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.activity-entry:last-child > .activity-row-detail {
+  border-bottom: none;
 }
 
 .activity-cell--date {
@@ -570,8 +577,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  position: sticky;
-  top: 24px;
 }
 
 .recovery-detail__header {
@@ -694,16 +699,6 @@ body {
 
 .recovery-detail__action-link:hover {
   text-decoration: underline;
-}
-
-@media (max-width: 1120px) {
-  .activity-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .recovery-detail {
-    position: static;
-  }
 }
 
 /* === Shared Pill Badge === */
