@@ -658,6 +658,21 @@ body {
   color: var(--color-text-muted);
 }
 
+.recovery-detail__actions {
+  margin-top: 12px;
+}
+
+.recovery-detail__action-link {
+  color: var(--color-warning);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.recovery-detail__action-link:hover {
+  text-decoration: underline;
+}
+
 /* === Shared Pill Badge === */
 .pill {
   display: inline-flex;
@@ -1299,6 +1314,47 @@ body {
   color: var(--color-text-muted);
   margin: 0;
   line-height: 1.5;
+}
+
+.report-card__mode {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.report-card__mode-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.report-card__mode-note,
+.report-card__summary-text {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.report-card__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.report-card__action-link {
+  color: var(--color-warning);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.report-card__action-link:hover {
+  text-decoration: underline;
 }
 
 .report-card__sources {

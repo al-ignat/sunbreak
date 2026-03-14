@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, fireEvent } from '@testing-library/preact';
+import { afterEach, describe, it, expect } from 'vitest';
+import { render, fireEvent, cleanup } from '@testing-library/preact';
 import { ActivityLog } from '../../../../src/ui/dashboard/ActivityLog';
 import type { FlaggedEvent, ProviderGuidanceSettings } from '../../../../src/storage/types';
 
@@ -27,6 +27,11 @@ function makeEvent(overrides: Partial<FlaggedEvent> = {}): FlaggedEvent {
 }
 
 describe('ActivityLog', () => {
+  afterEach(() => {
+    cleanup();
+    window.location.hash = '';
+  });
+
   it('shows empty state when no events', () => {
     const { container } = render(<ActivityLog events={[]} providerGuidance={providerGuidance} />);
     expect(container.textContent).toContain('No flagged events yet');
@@ -63,6 +68,23 @@ describe('ActivityLog', () => {
     // After filtering, should show 1 event
     expect(container.textContent).toContain('1 event');
     expect(container.textContent).toContain('Claude');
+  });
+
+  it('reads an initial tool filter from the dashboard hash', () => {
+    window.location.hash = '#activity?tool=claude';
+
+    const events = [
+      makeEvent({ id: 'e1', tool: 'chatgpt' }),
+      makeEvent({ id: 'e2', tool: 'claude' }),
+    ];
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
+
+    expect(container.textContent).toContain('1 event');
+    expect(container.textContent).toContain('Claude');
+    const rows = container.querySelectorAll('.activity-row');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.textContent).toContain('Claude');
+
   });
 
   it('renders category pill badges with formatted labels', () => {

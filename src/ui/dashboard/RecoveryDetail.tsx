@@ -171,6 +171,11 @@ export function RecoveryDetail({ event, providerGuidance }: RecoveryDetailProps)
           <p className="recovery-detail__source-note">
             Verified against official provider sources on {resolvedGuidance.lastVerified}.
           </p>
+          <div className="recovery-detail__actions">
+            <a className="recovery-detail__action-link" href="#reports">
+              Open provider guidance in Reports
+            </a>
+          </div>
         </div>
       )}
     </section>

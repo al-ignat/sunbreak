@@ -231,6 +231,8 @@ describe('dashboard storage wrapper', () => {
           categories: ['email'],
           findingCount: 1,
           action: 'sent-anyway',
+          promptText: 'secret@example.com',
+          fileName: 'secret.pdf',
         },
       ];
 
@@ -243,6 +245,8 @@ describe('dashboard storage wrapper', () => {
         needsAttention: true,
         guidanceVersion: 1,
       }));
+      expect(events[0]).not.toHaveProperty('promptText');
+      expect(events[0]).not.toHaveProperty('fileName');
     });
   });
 

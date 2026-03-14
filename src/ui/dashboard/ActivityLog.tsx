@@ -16,9 +16,19 @@ export interface ActivityLogProps {
 
 type DatePreset = '7d' | '30d' | 'all';
 
+function resolveInitialToolFilter(): string {
+  const [, query = ''] = window.location.hash.slice(1).split('?');
+  const params = new URLSearchParams(query);
+  const tool = params.get('tool');
+
+  return tool === 'chatgpt' || tool === 'claude' || tool === 'gemini'
+    ? tool
+    : 'all';
+}
+
 export function ActivityLog({ events, providerGuidance }: ActivityLogProps): JSX.Element {
   const [datePreset, setDatePreset] = useState<DatePreset>('all');
-  const [toolFilter, setToolFilter] = useState<string>('all');
+  const [toolFilter, setToolFilter] = useState<string>(resolveInitialToolFilter);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(events[0]?.id ?? null);
 
   const filteredEvents = useMemo(() => {

@@ -197,7 +197,10 @@ export default function App(): JSX.Element {
             </>
           )}
           {activeTab === 'reports' && (
-            <ReportCards providerGuidance={extensionSettings.providerGuidance} />
+            <ReportCards
+              providerGuidance={extensionSettings.providerGuidance}
+              events={events}
+            />
           )}
         </div>
       </main>
@@ -206,7 +209,7 @@ export default function App(): JSX.Element {
 }
 
 function resolveTabFromHash(): TabId {
-  const hash = window.location.hash.slice(1);
+  const hash = window.location.hash.slice(1).split('?')[0] ?? '';
   const valid: TabId[] = ['overview', 'activity', 'settings', 'keywords', 'reports'];
   return valid.includes(hash as TabId) ? (hash as TabId) : 'overview';
 }

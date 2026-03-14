@@ -1,12 +1,27 @@
 import type { JSX } from 'preact';
 import { PROVIDER_GUIDANCE } from '../../provider/guidance';
-import type { ProviderGuidanceSettings } from '../../storage/types';
+import type { FlaggedEvent, ProviderGuidanceSettings } from '../../storage/types';
 
 export interface ReportCardsProps {
   readonly providerGuidance: ProviderGuidanceSettings;
+  readonly events: ReadonlyArray<FlaggedEvent>;
 }
 
-export function ReportCards({ providerGuidance }: ReportCardsProps): JSX.Element {
+function summarizeEvents(
+  events: ReadonlyArray<FlaggedEvent>,
+  tool: FlaggedEvent['tool'],
+): {
+  readonly total: number;
+  readonly attention: number;
+} {
+  const relevant = events.filter((event) => event.tool === tool);
+  return {
+    total: relevant.length,
+    attention: relevant.filter((event) => event.needsAttention).length,
+  };
+}
+
+export function ReportCards({ providerGuidance, events }: ReportCardsProps): JSX.Element {
   return (
     <div className="reports-layout">
       <p className="reports-desc">
@@ -18,10 +33,12 @@ export function ReportCards({ providerGuidance }: ReportCardsProps): JSX.Element
           <ReportCard
             key={guidance.tool}
             name={guidance.displayName}
+            tool={guidance.tool}
             accent={guidance.accent}
             sections={guidance.overview}
             configuredMode={providerGuidance[guidance.tool]}
             modeNote={guidance.modeNotes[providerGuidance[guidance.tool]] ?? null}
+            summary={summarizeEvents(events, guidance.tool)}
             lastVerified={guidance.lastVerified}
             sources={guidance.sources}
           />
@@ -33,6 +50,7 @@ export function ReportCards({ providerGuidance }: ReportCardsProps): JSX.Element
 
 interface ReportCardProps {
   readonly name: string;
+  readonly tool: 'chatgpt' | 'claude' | 'gemini';
   readonly accent: string;
   readonly sections: ReadonlyArray<{
     readonly title: string;
@@ -40,6 +58,10 @@ interface ReportCardProps {
   }>;
   readonly configuredMode: string;
   readonly modeNote: string | null;
+  readonly summary: {
+    readonly total: number;
+    readonly attention: number;
+  };
   readonly lastVerified: string;
   readonly sources: ReadonlyArray<{
     readonly label: string;
@@ -49,10 +71,12 @@ interface ReportCardProps {
 
 function ReportCard({
   name,
+  tool,
   accent,
   sections,
   configuredMode,
   modeNote,
+  summary,
   lastVerified,
   sources,
 }: ReportCardProps): JSX.Element {
@@ -73,6 +97,16 @@ function ReportCard({
         <div className="report-card__mode">
           <span className="report-card__mode-label">Configured guidance mode: {configuredMode}</span>
           {modeNote && <p className="report-card__mode-note">{modeNote}</p>}
+        </div>
+        <div className="report-card__summary">
+          <p className="report-card__summary-text">
+            {summary.total === 0
+              ? `No recent ${name} flagged events recorded in this browser.`
+              : `${summary.total} recent ${name} flagged event${summary.total === 1 ? '' : 's'} recorded${summary.attention > 0 ? `, ${summary.attention} needing follow-up.` : '.'}`}
+          </p>
+          <a className="report-card__action-link" href={`#activity?tool=${tool}`}>
+            Review activity log
+          </a>
         </div>
         <div className="report-card__sources">
           <p className="report-card__verified">Verified against official sources on {lastVerified}</p>
