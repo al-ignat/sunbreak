@@ -2271,38 +2271,288 @@ Epic 6 is complete only when:
 
 **Purpose:** add useful tuning without turning Sunbreak into a settings product.
 
-### Deliverables
+Epic 7 should be executed as a restraint epic, not as a “more settings” epic.
+The goal is to reduce friction for advanced users while preserving Sunbreak’s opinionated default behavior and keeping the settings model understandable in one pass.
 
-- allowlist support
-- limited sensitivity controls
-- simplified settings language around behavior and tradeoffs
-- settings model remains coherent with masking and context-aware detection
+### Execution principles
+
+- every new control must remove a real friction source, not just expose internal mechanics
+- prefer a few high-leverage settings over per-detector fine-tuning
+- keep defaults strong; configurability should adjust edges, not become mandatory setup
+- make tradeoffs explicit in product language:
+  - fewer warnings
+  - more lenient matching
+  - higher chance of misses
+- keep allowlists narrow and auditable; never let them become silent global blind spots
+- avoid settings that require users to understand regex, scoring internals, or classifier pipelines
+- preserve coherence with:
+  - masking
+  - context-aware scoring
+  - company-specific patterns
+  - onboarding/trust language
+
+### Workstream 1 — Settings scope audit and configuration model boundaries
+
+**Objective:** decide what belongs in Epic 7 and what must remain intentionally non-configurable.
+
+**Likely modules**
+
+- [src/storage/types.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/types.ts)
+- [src/storage/dashboard.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/dashboard.ts)
+- [src/ui/dashboard/SettingsPanel.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/SettingsPanel.tsx)
+
+**Tasks**
+
+1. Define the allowed configuration surface:
+   - allowlist support
+   - limited sensitivity controls
+   - clearer behavior language
+2. Explicitly reject settings that would overcomplicate the model:
+   - per-pattern confidence sliders
+   - per-provider behavior forks
+   - overlapping masking toggles that duplicate existing controls
+3. Decide whether allowlists apply to:
+   - exact keywords only
+   - company patterns
+   - detector categories
+   - specific domains or identifiers
+4. Decide whether sensitivity is global, category-based, or limited to a few curated presets.
+5. Define the stable storage contract before UI work begins.
+
+**Exit criteria**
+
+- the Epic 7 settings surface is intentionally small
+- the team has a clear “won’t ship” list for over-configurable ideas
+
+### Workstream 2 — Allowlist storage model and matching contract
+
+**Objective:** add a constrained allowlist system that can reduce predictable false positives without creating invisible broad exemptions.
+
+**Likely modules**
+
+- [src/storage/types.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/types.ts)
+- [src/storage/dashboard.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/dashboard.ts)
+- classifier or scanner integration points
+
+**Tasks**
+
+1. Define allowlist entry types:
+   - exact string
+   - normalized string
+   - domain or pattern subset if justified
+2. Decide where allowlist matching happens:
+   - pre-classification normalization
+   - post-match suppression
+   - category-aware exclusion
+3. Ensure allowlists are auditable:
+   - visible in dashboard
+   - editable
+   - removable
+4. Prevent allowlists from silently disabling large detector classes.
+5. Decide how allowlists interact with:
+   - keywords
+   - company patterns
+   - smart masking tokens
+
+**Exit criteria**
+
+- allowlist entries are explicit, reviewable, and limited in blast radius
+- matching semantics are deterministic and testable
+
+### Workstream 3 — Limited sensitivity controls and safe presets
+
+**Objective:** introduce a small set of friction-reduction controls without exposing raw classifier complexity.
+
+**Likely modules**
+
+- settings storage and UI
+- [src/content/scanner.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/content/scanner.ts)
+- [src/classifier/engine.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/classifier/engine.ts)
+- context-scoring integration if thresholds are affected
+
+**Tasks**
+
+1. Decide the minimal shape:
+   - strict / balanced / lenient
+   - a couple of curated toggles
+   - category-specific only where necessary
+2. Map each preset to actual behavior:
+   - warning thresholds
+   - context-score cutoffs
+   - ambiguous-match suppression behavior
+3. Ensure sensitivity language stays user-facing and non-technical.
+4. Decide whether company patterns ignore sensitivity or honor it in limited ways.
+5. Prevent combinations that contradict product guarantees.
+
+**Exit criteria**
+
+- sensitivity controls reduce friction without making the model opaque
+- preset behavior can be explained in one sentence each
+
+### Workstream 4 — Scanner/classifier/settings integration
+
+**Objective:** wire the new configurability controls into live detection behavior without fragmenting the architecture.
+
+**Likely modules**
+
+- [src/content/scanner.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/content/scanner.ts)
+- [src/content/orchestrator.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/content/orchestrator.ts)
+- [src/classifier/engine.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/classifier/engine.ts)
+- settings storage readers
+
+**Tasks**
+
+1. Extend the runtime settings/config contract so scanners can read allowlist and sensitivity state without duplicating logic.
+2. Apply allowlist suppression at one consistent point in the pipeline.
+3. Apply sensitivity presets at one consistent point in the pipeline.
+4. Ensure live storage changes update active tabs correctly.
+5. Verify that detection overlays, findings state, and widget counts remain stable when settings change.
+
+**Exit criteria**
+
+- configurability is integrated through the existing scanner/classifier seam
+- settings changes propagate live and predictably
+
+### Workstream 5 — Settings UX simplification and tradeoff language
+
+**Objective:** make the settings experience clearer even as configurability increases.
+
+**Likely modules**
+
+- [src/ui/dashboard/SettingsPanel.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/SettingsPanel.tsx)
+- dashboard CSS and supporting components
+
+**Tasks**
+
+1. Reorganize settings around user goals rather than internal concepts.
+2. Explain each configurable choice in terms of behavior and tradeoff:
+   - fewer warnings
+   - stricter protection
+   - easier review
+3. Avoid dense or repetitive settings copy.
+4. Decide whether advanced controls belong in:
+   - the main settings panel
+   - an advanced section
+   - a separate configurable surface
+5. Keep the current masking and intervention controls understandable alongside the new options.
+
+**Exit criteria**
+
+- settings remain readable without documentation
+- new controls do not bury the important defaults
+
+### Workstream 6 — Guardrails for interaction with company patterns and recovery/trust UX
+
+**Objective:** ensure configurability does not undermine earlier epics or create inconsistent promises.
+
+**Likely modules**
+
+- custom-pattern integration
+- masking/recovery settings surfaces
+- onboarding/trust copy that may need to reference configurability carefully
+
+**Tasks**
+
+1. Decide how allowlists affect company patterns:
+   - exact-match bypass only
+   - category-level behavior
+   - no allowlist support for certain pattern severities
+2. Decide how sensitivity affects:
+   - context-aware scoring
+   - company-pattern severity
+   - file-upload warnings
+3. Ensure current trust messaging does not overpromise “always catches” behavior once users can tune sensitivity.
+4. Make sure onboarding or trust copy references defaults, not heavily customized states.
+5. Add product guardrails so advanced settings do not contradict the companion/trust story.
+
+**Exit criteria**
+
+- configurability does not erode core trust claims
+- company patterns and allowlists interact in bounded, explainable ways
+
+### Workstream 7 — Validation, regression matrix, and default-value review
+
+**Objective:** prove that Epic 7 reduces friction for advanced users without weakening the default product experience.
+
+**Automated coverage**
+
+- storage normalization and migration tests for new settings
+- allowlist matching tests
+- sensitivity preset tests
+- scanner/classifier integration tests
+- live-settings propagation tests
+- settings UI interaction tests
+
+**Manual validation**
+
+1. Add an allowlist entry and verify that:
+   - intended matches are suppressed
+   - unrelated findings still appear
+2. Change sensitivity presets and verify:
+   - warning volume changes in expected ways
+   - high-confidence detections still behave conservatively
+3. Combine:
+   - custom keywords
+   - company patterns
+   - allowlist entries
+   and confirm the behavior remains understandable
+4. Verify settings copy with a fresh user:
+   - can they describe what each setting changes
+   - can they explain the tradeoff
+
+**Success signals**
+
+- advanced users can reduce predictable friction
+- defaults still provide most of the value without setup
+- the settings model remains teachable in one pass
 
 ### Likely files/modules
 
-- [src/storage/types.ts](/private/tmp/sunbreak-roadmap-review/src/storage/types.ts)
-- [src/storage/dashboard.ts](/private/tmp/sunbreak-roadmap-review/src/storage/dashboard.ts)
-- [src/ui/dashboard/SettingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/dashboard/SettingsPanel.tsx)
-- classifier and scanner integration points
+- [src/storage/types.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/types.ts)
+- [src/storage/dashboard.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/dashboard.ts)
+- [src/ui/dashboard/SettingsPanel.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/SettingsPanel.tsx)
+- [src/content/scanner.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/content/scanner.ts)
+- [src/content/orchestrator.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/content/orchestrator.ts)
+- [src/classifier/engine.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/classifier/engine.ts)
+- company-pattern integration modules and related tests
 
 ### Risks
 
 - settings multiply faster than product value
 - sensitivity controls become hard to explain
 - allowlists interact badly with custom patterns
+- configurability undermines trust messaging or leads users to over-relax protection
+- live settings propagation creates scanner/widget inconsistency
 
 ### Must prove
 
 - users can reduce friction when needed
 - settings remain understandable
 - defaults still carry most of the product value
+- allowlists are narrow and auditable rather than silent escape hatches
+- sensitivity changes are meaningful but bounded
 
-### Recommended commit sequence
+### Recommended implementation order
 
-1. `feat(settings): add allowlist storage and matching`
-2. `feat(settings): add limited sensitivity controls`
-3. `refactor(settings): simplify copy and behavior explanations`
-4. `test(settings): cover settings interactions with scanner/classifier`
+1. settings scope audit and configuration model boundaries
+2. allowlist storage model and matching contract
+3. limited sensitivity controls and safe presets
+4. scanner/classifier/settings integration
+5. settings UX simplification and tradeoff language
+6. guardrails for interaction with company patterns and trust UX
+7. validation, regression matrix, and default-value review
+
+### Epic 7 completion gate
+
+Epic 7 is complete only when:
+
+- the configuration surface is still small and coherent
+- allowlists exist with bounded, reviewable semantics
+- sensitivity controls are limited and understandable
+- live detection behavior updates correctly when settings change
+- settings copy explains tradeoffs clearly
+- company patterns and other detectors still behave predictably under customization
+- automated and manual validation show that configurability reduces friction without weakening the product default
 
 ---
 
