@@ -1,4 +1,9 @@
-import type { SiteAdapter, SiteName, FileCallback } from '../types';
+import type {
+  SiteAdapter,
+  SiteName,
+  FileCallback,
+  AttachmentRemovedCallback,
+} from '../types';
 import { compileCustomPatterns } from '../classifier/custom-patterns';
 import type { CompiledCustomPattern } from '../classifier/custom-patterns';
 import type { Finding } from '../classifier/types';
@@ -72,6 +77,7 @@ export function createOrchestrator(
 ): {
   submitConfig: SubmitInterceptConfig;
   onFileDetected: FileCallback;
+  onAttachmentRemoved: AttachmentRemovedCallback;
   findingsState: FindingsState;
   scannerConfig: ScannerConfig;
   widgetController: ReturnType<typeof createWidgetController>;
@@ -252,6 +258,26 @@ export function createOrchestrator(
 
     const attachmentCount = adapter.getPendingAttachmentCount?.() ?? 0;
     if (attachmentCount <= 0) {
+      if (adapter.name !== 'chatgpt') {
+        const pendingCount = pendingFileWarningNames.size;
+        pendingFileWarningNames = new Set<string>();
+
+        logFlaggedEvent({
+          id: generateEventId(),
+          timestamp: new Date().toISOString(),
+          tool: adapterName,
+          categories: ['file-upload'],
+          findingCount: pendingCount,
+          action: 'file-warning',
+          source: 'file-upload',
+          maskingAvailable: false,
+          maskingUsed: false,
+          needsAttention: true,
+          guidanceVersion: 1,
+        });
+        return true;
+      }
+
       recordLocalDiagnostic('orchestrator', 'file-send-check-cleared', {
         adapter: adapterName,
         pendingCount: pendingFileWarningNames.size,
@@ -306,9 +332,31 @@ export function createOrchestrator(
     widgetController.showFileWarning(pendingFileWarningNames.size);
   }
 
+  function onAttachmentRemoved(adapterName: SiteName): void {
+    if (pendingFileWarningNames.size === 0) return;
+
+    const next = Array.from(pendingFileWarningNames);
+    next.pop();
+    pendingFileWarningNames = new Set(next);
+
+    recordLocalDiagnostic('orchestrator', 'attachment-removed', {
+      adapter: adapterName,
+      remainingCount: pendingFileWarningNames.size,
+    });
+  }
+
   ctx.onInvalidated(() => {
     pendingFileWarningNames = new Set<string>();
   });
 
-  return { submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor };
+  return {
+    submitConfig,
+    onFileDetected,
+    onAttachmentRemoved,
+    findingsState,
+    scannerConfig,
+    widgetController,
+    maskingMap,
+    clipboardInterceptor,
+  };
 }

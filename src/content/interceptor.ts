@@ -1,4 +1,4 @@
-import type { SiteAdapter, FileCallback } from '../types';
+import type { SiteAdapter, FileCallback, AttachmentRemovedCallback } from '../types';
 
 export interface InterceptorContext {
   /** Whether the context is still valid */
@@ -271,8 +271,35 @@ export function attachFileDetector(
   adapter: SiteAdapter,
   ctx: InterceptorContext,
   onFile: FileCallback,
+  onAttachmentRemoved?: AttachmentRemovedCallback,
 ): () => void {
   const cleanups: Array<() => void> = [];
+  const composerRoot =
+    adapter.getDropZone() ??
+    input.closest('form') ??
+    input.parentElement ??
+    document.body;
+
+  function isAttachmentRemovalControl(element: Element | null): boolean {
+    if (!(element instanceof HTMLElement)) return false;
+    const control = element.closest('button,[role="button"]');
+    if (!(control instanceof HTMLElement)) return false;
+    if (!composerRoot.contains(control)) return false;
+
+    const text = [
+      control.getAttribute('aria-label') ?? '',
+      control.getAttribute('title') ?? '',
+      control.textContent ?? '',
+    ]
+      .join(' ')
+      .trim()
+      .toLowerCase();
+
+    if (text.length === 0) return false;
+    if (!/(remove|delete|discard|clear|close|cancel)/.test(text)) return false;
+
+    return !/(send|stop|voice|audio|microphone|\battach\b|\bupload\b)/.test(text);
+  }
 
   // --- Vector 1: <input type="file"> change events ---
   const handleFileInputChange = (e: Event): void => {
@@ -280,7 +307,10 @@ export function attachFileDetector(
     const fileInput = e.target as HTMLInputElement;
     if (fileInput.type !== 'file') return;
     const files = fileInput.files;
-    if (!files) return;
+    if (!files || files.length === 0) {
+      onAttachmentRemoved?.(adapter.name);
+      return;
+    }
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (file) {
@@ -326,9 +356,18 @@ export function attachFileDetector(
   };
   ctx.addEventListener(input, 'paste', handlePaste, true);
 
+  const handleAttachmentRemovalClick = (e: Event): void => {
+    if (ctx.isInvalid) return;
+    const target = e.target as Element | null;
+    if (!isAttachmentRemovalControl(target)) return;
+    onAttachmentRemoved?.(adapter.name);
+  };
+  ctx.addEventListener(composerRoot, 'click', handleAttachmentRemovalClick, true);
+
   return (): void => {
     document.removeEventListener('change', handleFileInputChange, true);
     input.removeEventListener('paste', handlePaste as EventListener, true);
+    composerRoot.removeEventListener('click', handleAttachmentRemovalClick as EventListener, true);
     for (const cleanup of cleanups) {
       cleanup();
     }

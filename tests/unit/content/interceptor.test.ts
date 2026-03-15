@@ -456,6 +456,30 @@ describe('attachFileDetector', () => {
     expect(onFile).toHaveBeenCalledWith('screenshot.png', 'chatgpt');
   });
 
+  it('detects explicit attachment removal clicks inside the composer', () => {
+    const onFile = vi.fn();
+    const onAttachmentRemoved = vi.fn();
+    const composer = document.createElement('form');
+    composer.appendChild(input);
+    document.body.appendChild(composer);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.setAttribute('aria-label', 'Remove attachment');
+    composer.appendChild(removeBtn);
+
+    const adapter = createMockAdapter({
+      findInput: () => input,
+      getDropZone: () => composer,
+    });
+    const ctx = createMockContext();
+
+    attachFileDetector(input, adapter, ctx, onFile, onAttachmentRemoved);
+
+    removeBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(onAttachmentRemoved).toHaveBeenCalledWith('chatgpt');
+  });
+
   it('does not fire for non-file inputs', () => {
     const onFile = vi.fn();
     const adapter = createMockAdapter();

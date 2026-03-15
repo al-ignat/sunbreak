@@ -109,7 +109,7 @@ describe('createOrchestrator', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor', () => {
+  it('returns submitConfig, onFileDetected, onAttachmentRemoved, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor', () => {
     const adapter = createMockAdapter();
     const ctx = createMockContext();
     const result = createOrchestrator(adapter, ctx);
@@ -118,6 +118,7 @@ describe('createOrchestrator', () => {
     expect(typeof result.submitConfig.shouldBlock).toBe('function');
     expect(typeof result.submitConfig.onBlocked).toBe('function');
     expect(typeof result.onFileDetected).toBe('function');
+    expect(typeof result.onAttachmentRemoved).toBe('function');
     expect(result.findingsState).toBeDefined();
     expect(result.scannerConfig).toBeDefined();
     expect(result.widgetController).toBeDefined();
@@ -570,6 +571,120 @@ describe('createOrchestrator', () => {
       expect(submitConfig.shouldBlock()).toBe(false);
       expect(logFlaggedEvent).not.toHaveBeenCalled();
       expect(logCleanPrompt).toHaveBeenCalledWith('chatgpt');
+    });
+
+    it('logs a file recovery event for Gemini when pending uploads are still present at send', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter({
+        name: 'gemini',
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'gemini');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: 'gemini',
+          source: 'file-upload',
+          action: 'file-warning',
+          findingCount: 1,
+        }),
+      );
+    });
+
+    it('does not log a Gemini file event when the attachment was explicitly removed before send', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter({
+        name: 'gemini',
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, onAttachmentRemoved, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'gemini');
+      onAttachmentRemoved('gemini');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('gemini');
+    });
+
+    it('logs a file recovery event for Claude when pending uploads are still present at send', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter({
+        name: 'claude',
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'claude');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: 'claude',
+          source: 'file-upload',
+          action: 'file-warning',
+          findingCount: 1,
+        }),
+      );
+    });
+
+    it('does not log a Claude file event when the attachment was explicitly removed before send', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter({
+        name: 'claude',
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, onAttachmentRemoved, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'claude');
+      onAttachmentRemoved('claude');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('claude');
     });
   });
 

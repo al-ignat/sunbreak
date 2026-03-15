@@ -56,3 +56,6 @@ export type PromptCallback = (text: string, adapterName: SiteName) => void;
 
 /** Callback invoked when a file upload is detected */
 export type FileCallback = (filename: string, adapterName: SiteName) => void;
+
+/** Callback invoked when an attached file is explicitly removed before send */
+export type AttachmentRemovedCallback = (adapterName: SiteName) => void;

@@ -1,4 +1,4 @@
-import type { SiteAdapter, FileCallback } from '../types';
+import type { SiteAdapter, FileCallback, AttachmentRemovedCallback } from '../types';
 import { selectAdapter } from './sites';
 import {
   attachSubmissionInterceptor,
@@ -121,6 +121,7 @@ export function startObserving(
   ctx: ObserverContext,
   submitConfig: SubmitInterceptConfig,
   onFileDetected: FileCallback,
+  onAttachmentRemoved: AttachmentRemovedCallback,
   scannerDeps?: {
     config: ScannerConfig;
     state: FindingsState;
@@ -208,6 +209,7 @@ export function startObserving(
       adapter,
       interceptorCtx,
       onFileDetected,
+      onAttachmentRemoved,
     );
 
     // Mount corner widget
