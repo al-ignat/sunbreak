@@ -60,6 +60,16 @@ function createMockAdapter(overrides: Partial<SiteAdapter> = {}): SiteAdapter {
   };
 }
 
+function createComposerWithAttachment(filename: string): HTMLElement {
+  const form = document.createElement('form');
+  const input = document.createElement('div');
+  const chip = document.createElement('span');
+  chip.textContent = filename;
+  form.append(input, chip);
+  document.body.appendChild(form);
+  return input;
+}
+
 function createMockContext(): {
   isInvalid: boolean;
   onInvalidated: (cb: () => void) => void;
@@ -584,8 +594,10 @@ describe('createOrchestrator', () => {
         showFileWarning,
         setEnabled: vi.fn(),
       });
+      const input = createComposerWithAttachment('secret.pdf');
       const adapter = createMockAdapter({
         name: 'gemini',
+        findInput: () => input,
         getPendingAttachmentCount: () => 0,
       });
       const ctx = createMockContext();
@@ -641,8 +653,10 @@ describe('createOrchestrator', () => {
         showFileWarning,
         setEnabled: vi.fn(),
       });
+      const input = createComposerWithAttachment('secret.pdf');
       const adapter = createMockAdapter({
         name: 'claude',
+        findInput: () => input,
         getPendingAttachmentCount: () => 0,
       });
       const ctx = createMockContext();
@@ -685,6 +699,37 @@ describe('createOrchestrator', () => {
       expect(submitConfig.shouldBlock()).toBe(false);
       expect(logFlaggedEvent).not.toHaveBeenCalled();
       expect(logCleanPrompt).toHaveBeenCalledWith('claude');
+    });
+
+    it('does not log a non-ChatGPT file event when no live attachment evidence remains at send', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const input = document.createElement('div');
+      const form = document.createElement('form');
+      form.appendChild(input);
+      document.body.appendChild(form);
+
+      const adapter = createMockAdapter({
+        name: 'gemini',
+        findInput: () => input,
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'gemini');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('gemini');
     });
   });
 

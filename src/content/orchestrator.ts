@@ -62,6 +62,44 @@ function getCategories(findings: ReadonlyArray<Finding>): string[] {
   )))];
 }
 
+function getComposerRoot(adapter: SiteAdapter): HTMLElement | null {
+  const input = adapter.findInput();
+  if (!input) return null;
+
+  return (
+    adapter.getDropZone?.() ??
+    input.closest('fieldset') ??
+    input.closest('form') ??
+    input.parentElement
+  );
+}
+
+function hasPendingAttachmentDomEvidence(
+  adapter: SiteAdapter,
+  pendingFileNames: ReadonlySet<string>,
+): boolean {
+  if (pendingFileNames.size === 0) return false;
+
+  const composerRoot = getComposerRoot(adapter);
+  if (!composerRoot) return false;
+
+  const descendantMetadata = Array.from(
+    composerRoot.querySelectorAll<HTMLElement>('[aria-label],[title],[data-testid]'),
+  )
+    .map((element) => (
+      `${element.getAttribute('aria-label') ?? ''} ${element.getAttribute('title') ?? ''} ${element.getAttribute('data-testid') ?? ''}`
+    ))
+    .join(' ');
+
+  const searchableText = `${composerRoot.textContent ?? ''} ${composerRoot.innerHTML} ${descendantMetadata}`
+    .trim()
+    .toLowerCase();
+
+  if (searchableText.length === 0) return false;
+
+  return Array.from(pendingFileNames).some((filename) => searchableText.includes(filename));
+}
+
 /**
  * Create the full interception orchestrator.
  *
@@ -259,6 +297,15 @@ export function createOrchestrator(
     const attachmentCount = adapter.getPendingAttachmentCount?.() ?? 0;
     if (attachmentCount <= 0) {
       if (adapter.name !== 'chatgpt') {
+        if (!hasPendingAttachmentDomEvidence(adapter, pendingFileWarningNames)) {
+          recordLocalDiagnostic('orchestrator', 'file-send-cleared-without-dom-evidence', {
+            adapter: adapterName,
+            pendingCount: pendingFileWarningNames.size,
+          });
+          pendingFileWarningNames = new Set<string>();
+          return false;
+        }
+
         const pendingCount = pendingFileWarningNames.size;
         pendingFileWarningNames = new Set<string>();
 
