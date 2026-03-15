@@ -34,6 +34,12 @@ export interface SiteAdapter {
   getDropZone(): HTMLElement | null;
 
   /**
+   * Find the local composer subtree that should be inspected for pending attachment evidence.
+   * Falls back to the general composer root when omitted.
+   */
+  readonly getAttachmentEvidenceRoot?: () => HTMLElement | null;
+
+  /**
    * Count attachments that are still present in the composer right now.
    * Used to decide whether an uploaded file was actually still attached at send time.
    */

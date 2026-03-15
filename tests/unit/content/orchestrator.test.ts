@@ -765,6 +765,42 @@ describe('createOrchestrator', () => {
       expect(logFlaggedEvent).not.toHaveBeenCalled();
       expect(logCleanPrompt).toHaveBeenCalledWith('gemini');
     });
+
+    it('does not log when the same filename only exists in older chat history outside the Gemini evidence root', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const form = document.createElement('form');
+      const history = document.createElement('div');
+      history.textContent = 'secret.pdf';
+      const localComposer = document.createElement('div');
+      const input = document.createElement('div');
+      localComposer.appendChild(input);
+      form.append(history, localComposer);
+      document.body.appendChild(form);
+
+      const adapter = createMockAdapter({
+        name: 'gemini',
+        findInput: () => input,
+        getAttachmentEvidenceRoot: () => localComposer,
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'gemini');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('gemini');
+    });
   });
 
   describe('capability flags', () => {

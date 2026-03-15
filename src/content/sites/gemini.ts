@@ -68,6 +68,15 @@ function findGeminiComposerActionButton(): HTMLElement | null {
   return queryFallback(SEND_BUTTON_SELECTORS);
 }
 
+function findGeminiAttachmentEvidenceRoot(): HTMLElement | null {
+  const zone = queryFallback(DROP_ZONE_SELECTORS);
+  if (zone) return zone;
+
+  const input = queryFallback(INPUT_SELECTORS);
+  const richTextarea = input?.closest('rich-textarea');
+  return richTextarea?.parentElement ?? richTextarea ?? input?.parentElement ?? null;
+}
+
 function countVisibleAttachmentRemovers(root: ParentNode): number {
   return Array.from(root.querySelectorAll('button'))
     .filter((button): button is HTMLButtonElement => button instanceof HTMLButtonElement)
@@ -118,6 +127,10 @@ export const geminiAdapter: SiteAdapter = {
     // Fallback: find the closest container around the editor
     const input = this.findInput();
     return input?.closest('form') ?? input?.parentElement ?? null;
+  },
+
+  getAttachmentEvidenceRoot(): HTMLElement | null {
+    return findGeminiAttachmentEvidenceRoot();
   },
 
   getPendingAttachmentCount(): number {

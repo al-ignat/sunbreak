@@ -63,6 +63,9 @@ function getCategories(findings: ReadonlyArray<Finding>): string[] {
 }
 
 function getComposerRoot(adapter: SiteAdapter): HTMLElement | null {
+  const attachmentEvidenceRoot = adapter.getAttachmentEvidenceRoot?.();
+  if (attachmentEvidenceRoot) return attachmentEvidenceRoot;
+
   const input = adapter.findInput();
   if (!input) return null;
 

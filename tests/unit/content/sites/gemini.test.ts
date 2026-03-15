@@ -219,6 +219,41 @@ describe('geminiAdapter', () => {
     });
   });
 
+  describe('getAttachmentEvidenceRoot()', () => {
+    beforeEach(() => {
+      document.body.innerHTML = '';
+    });
+
+    it('prefers the uploader dropzone when present', () => {
+      const zone = document.createElement('div');
+      zone.className = 'xap-uploader-dropzone';
+      const form = document.createElement('form');
+      const editor = document.createElement('div');
+      editor.className = 'ql-editor';
+      editor.setAttribute('contenteditable', 'true');
+      form.append(editor, zone);
+      document.body.appendChild(form);
+
+      expect(geminiAdapter.getAttachmentEvidenceRoot?.()).toBe(zone);
+    });
+
+    it('falls back to the local rich-textarea container instead of the entire form', () => {
+      const form = document.createElement('form');
+      const history = document.createElement('div');
+      history.textContent = 'old-report.pdf';
+      const localComposer = document.createElement('div');
+      const richTextarea = document.createElement('rich-textarea');
+      const editor = document.createElement('div');
+      editor.setAttribute('contenteditable', 'true');
+      richTextarea.appendChild(editor);
+      localComposer.appendChild(richTextarea);
+      form.append(history, localComposer);
+      document.body.appendChild(form);
+
+      expect(geminiAdapter.getAttachmentEvidenceRoot?.()).toBe(localComposer);
+    });
+  });
+
   describe('getPendingAttachmentCount()', () => {
     beforeEach(() => {
       document.body.innerHTML = '';
