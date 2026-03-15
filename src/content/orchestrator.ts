@@ -74,6 +74,30 @@ function getComposerRoot(adapter: SiteAdapter): HTMLElement | null {
   );
 }
 
+function isLikelyVisibleElement(element: HTMLElement): boolean {
+  if (element.hidden) return false;
+  if (element.getAttribute('aria-hidden') === 'true') return false;
+
+  const style = window.getComputedStyle(element);
+  return style.display !== 'none' && style.visibility !== 'hidden';
+}
+
+function collectVisibleText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent ?? '';
+  }
+
+  if (!(node instanceof HTMLElement)) {
+    return Array.from(node.childNodes).map(collectVisibleText).join(' ');
+  }
+
+  if (!isLikelyVisibleElement(node)) {
+    return '';
+  }
+
+  return Array.from(node.childNodes).map(collectVisibleText).join(' ');
+}
+
 function hasPendingAttachmentDomEvidence(
   adapter: SiteAdapter,
   pendingFileNames: ReadonlySet<string>,
@@ -83,15 +107,17 @@ function hasPendingAttachmentDomEvidence(
   const composerRoot = getComposerRoot(adapter);
   if (!composerRoot) return false;
 
+  const visibleText = collectVisibleText(composerRoot);
   const descendantMetadata = Array.from(
     composerRoot.querySelectorAll<HTMLElement>('[aria-label],[title],[data-testid]'),
   )
+    .filter(isLikelyVisibleElement)
     .map((element) => (
       `${element.getAttribute('aria-label') ?? ''} ${element.getAttribute('title') ?? ''} ${element.getAttribute('data-testid') ?? ''}`
     ))
     .join(' ');
 
-  const searchableText = `${composerRoot.textContent ?? ''} ${composerRoot.innerHTML} ${descendantMetadata}`
+  const searchableText = `${visibleText} ${descendantMetadata}`
     .trim()
     .toLowerCase();
 

@@ -731,6 +731,40 @@ describe('createOrchestrator', () => {
       expect(logFlaggedEvent).not.toHaveBeenCalled();
       expect(logCleanPrompt).toHaveBeenCalledWith('gemini');
     });
+
+    it('does not log when attachment evidence only remains in hidden composer markup', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const input = document.createElement('div');
+      const hiddenChip = document.createElement('span');
+      hiddenChip.textContent = 'secret.pdf';
+      hiddenChip.style.display = 'none';
+      const form = document.createElement('form');
+      form.append(input, hiddenChip);
+      document.body.appendChild(form);
+
+      const adapter = createMockAdapter({
+        name: 'gemini',
+        findInput: () => input,
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'gemini');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('gemini');
+    });
   });
 
   describe('capability flags', () => {
