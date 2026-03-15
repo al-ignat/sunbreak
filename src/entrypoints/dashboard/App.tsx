@@ -172,7 +172,11 @@ export default function App(): JSX.Element {
             <BarChart stats7={stats7} stats30={stats30} />
           )}
           {activeTab === 'activity' && (
-            <ActivityLog events={events} />
+            <ActivityLog
+              events={events}
+              providerGuidance={extensionSettings.providerGuidance}
+              recoveryAssistanceEnabled={extensionSettings.recoveryAssistanceEnabled}
+            />
           )}
           {activeTab === 'settings' && (
             <SettingsPanel
@@ -193,7 +197,13 @@ export default function App(): JSX.Element {
               />
             </>
           )}
-          {activeTab === 'reports' && <ReportCards />}
+          {activeTab === 'reports' && (
+            <ReportCards
+              providerGuidance={extensionSettings.providerGuidance}
+              events={events}
+              recoveryAssistanceEnabled={extensionSettings.recoveryAssistanceEnabled}
+            />
+          )}
         </div>
       </main>
     </div>
@@ -201,7 +211,7 @@ export default function App(): JSX.Element {
 }
 
 function resolveTabFromHash(): TabId {
-  const hash = window.location.hash.slice(1);
+  const hash = window.location.hash.slice(1).split('?')[0] ?? '';
   const valid: TabId[] = ['overview', 'activity', 'settings', 'keywords', 'reports'];
   return valid.includes(hash as TabId) ? (hash as TabId) : 'overview';
 }

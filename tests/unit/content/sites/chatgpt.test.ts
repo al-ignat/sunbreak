@@ -267,4 +267,47 @@ describe('chatgptAdapter', () => {
       expect(chatgptAdapter.getDropZone()).toBeNull();
     });
   });
+
+  describe('getPendingAttachmentCount()', () => {
+    beforeEach(() => {
+      document.body.innerHTML = '';
+    });
+
+    it('counts visible attachment remove controls inside the active composer', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function mockRect(this: HTMLElement): DOMRect {
+        if (this.getAttribute('aria-label')?.startsWith('Remove ') === true) {
+          return { top: 0, left: 0, right: 24, bottom: 24, width: 24, height: 24, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        return { top: 0, left: 0, right: 40, bottom: 40, width: 40, height: 40, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+      });
+
+      const form = document.createElement('form');
+      const editor = document.createElement('div');
+      editor.id = 'prompt-textarea';
+      const removeA = document.createElement('button');
+      removeA.setAttribute('aria-label', 'Remove quarterly-report.pdf');
+      const removeB = document.createElement('button');
+      removeB.setAttribute('aria-label', 'Remove roadmap.docx');
+      form.append(editor, removeA, removeB);
+      document.body.appendChild(form);
+
+      expect(chatgptAdapter.getPendingAttachmentCount?.()).toBe(2);
+    });
+
+    it('returns zero when only a stale hidden file input remains after removal', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+        { top: 0, left: 0, right: 40, bottom: 40, width: 40, height: 40, x: 0, y: 0, toJSON: () => ({}) } as DOMRect,
+      );
+
+      const form = document.createElement('form');
+      const editor = document.createElement('div');
+      editor.id = 'prompt-textarea';
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      form.append(editor, fileInput);
+      document.body.appendChild(form);
+
+      expect(chatgptAdapter.getPendingAttachmentCount?.()).toBe(0);
+    });
+  });
 });

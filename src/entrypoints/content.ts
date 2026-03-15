@@ -15,10 +15,10 @@ export default defineContentScript({
     const adapter = selectAdapter(window.location.hostname);
     if (!adapter) return;
 
-    const { submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor } =
+    const { submitConfig, onFileDetected, onAttachmentRemoved, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor } =
       createOrchestrator(adapter, ctx);
 
-    startObserving(ctx, submitConfig, onFileDetected, {
+    startObserving(ctx, submitConfig, onFileDetected, onAttachmentRemoved, {
       config: scannerConfig,
       state: findingsState,
     }, widgetController, maskingMap, clipboardInterceptor);

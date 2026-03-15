@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   getWeeklyStats,
   getFlaggedEvents,
+  getFlaggedEventById,
   getDetectionSettings,
   setDetectionSettings,
   getKeywords,
@@ -51,6 +52,11 @@ function makeFlaggedEvent(
     categories: ['email'],
     findingCount: 1,
     action: 'redacted',
+    source: 'prompt',
+    maskingAvailable: true,
+    maskingUsed: true,
+    needsAttention: false,
+    guidanceVersion: 1,
     ...overrides,
   };
 }
@@ -215,6 +221,51 @@ describe('dashboard storage wrapper', () => {
       expect(events).toHaveLength(1);
       expect(events[0]?.id).toBe('claude');
     });
+
+    it('normalizes legacy events with safe recovery defaults', async () => {
+      storageData['flaggedEvents'] = [
+        {
+          id: 'legacy',
+          timestamp: '2026-03-03T12:00:00Z',
+          tool: 'chatgpt',
+          categories: ['email'],
+          findingCount: 1,
+          action: 'sent-anyway',
+          promptText: 'secret@example.com',
+          fileName: 'secret.pdf',
+        },
+      ];
+
+      const events = await getFlaggedEvents();
+      expect(events[0]).toEqual(expect.objectContaining({
+        id: 'legacy',
+        source: 'prompt',
+        maskingAvailable: false,
+        maskingUsed: false,
+        needsAttention: true,
+        guidanceVersion: 1,
+      }));
+      expect(events[0]).not.toHaveProperty('promptText');
+      expect(events[0]).not.toHaveProperty('fileName');
+    });
+  });
+
+  describe('getFlaggedEventById', () => {
+    it('returns a normalized event by id', async () => {
+      storageData['flaggedEvents'] = [
+        makeFlaggedEvent({ id: 'evt-a' }),
+        makeFlaggedEvent({ id: 'evt-b', tool: 'claude' }),
+      ];
+
+      const event = await getFlaggedEventById('evt-b');
+      expect(event?.id).toBe('evt-b');
+      expect(event?.tool).toBe('claude');
+    });
+
+    it('returns null when the event is missing', async () => {
+      const event = await getFlaggedEventById('missing');
+      expect(event).toBeNull();
+    });
   });
 
   describe('getDetectionSettings / setDetectionSettings', () => {
@@ -248,6 +299,12 @@ describe('dashboard storage wrapper', () => {
       expect(settings.enabled).toBe(true);
       expect(settings.interventionMode).toBe('warn');
       expect(settings.maskingEnabled).toBe(true);
+      expect(settings.recoveryAssistanceEnabled).toBe(false);
+      expect(settings.providerGuidance).toEqual({
+        chatgpt: 'general',
+        claude: 'general',
+        gemini: 'general',
+      });
     });
 
     it('partially updates settings', async () => {
@@ -256,6 +313,8 @@ describe('dashboard storage wrapper', () => {
       expect(settings.enabled).toBe(true);
       expect(settings.interventionMode).toBe('log-only');
       expect(settings.maskingEnabled).toBe(true);
+      expect(settings.recoveryAssistanceEnabled).toBe(false);
+      expect(settings.providerGuidance.chatgpt).toBe('general');
     });
 
     it('toggles masking setting independently', async () => {
@@ -263,6 +322,53 @@ describe('dashboard storage wrapper', () => {
       const settings = await getExtensionSettings();
       expect(settings.enabled).toBe(true);
       expect(settings.maskingEnabled).toBe(false);
+      expect(settings.recoveryAssistanceEnabled).toBe(false);
+    });
+
+    it('stores recovery assistance separately from other settings', async () => {
+      await setExtensionSettings({ recoveryAssistanceEnabled: true });
+      const settings = await getExtensionSettings();
+      expect(settings.enabled).toBe(true);
+      expect(settings.maskingEnabled).toBe(true);
+      expect(settings.recoveryAssistanceEnabled).toBe(true);
+    });
+
+    it('merges stored provider guidance with defaults', async () => {
+      storageData['settings'] = {
+        providerGuidance: {
+          chatgpt: 'business',
+        },
+      };
+
+      const settings = await getExtensionSettings();
+      expect(settings.providerGuidance).toEqual({
+        chatgpt: 'business',
+        claude: 'general',
+        gemini: 'general',
+      });
+    });
+
+    it('merges partial provider guidance updates without dropping other tools', async () => {
+      await setExtensionSettings({
+        providerGuidance: {
+          chatgpt: 'business',
+          claude: 'general',
+          gemini: 'general',
+        },
+      });
+
+      await setExtensionSettings({
+        providerGuidance: {
+          claude: 'enterprise',
+        },
+      });
+
+      const settings = await getExtensionSettings();
+      expect(settings.providerGuidance).toEqual({
+        chatgpt: 'business',
+        claude: 'enterprise',
+        gemini: 'general',
+      });
     });
   });
 

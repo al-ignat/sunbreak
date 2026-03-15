@@ -1,13 +1,56 @@
 import type { JSX } from 'preact';
+import { PROVIDER_GUIDANCE } from '../../provider/guidance';
+import type { FlaggedEvent, ProviderGuidanceSettings } from '../../storage/types';
 
-/** Brand dot colors for each tool */
-const TOOL_ACCENT: Record<string, string> = {
-  ChatGPT: '#10A37F',
-  Claude: '#D97706',
-  Gemini: '#4285F4',
-};
+export interface ReportCardsProps {
+  readonly providerGuidance: ProviderGuidanceSettings;
+  readonly events: ReadonlyArray<FlaggedEvent>;
+  readonly recoveryAssistanceEnabled: boolean;
+}
 
-export function ReportCards(): JSX.Element {
+function summarizeEvents(
+  events: ReadonlyArray<FlaggedEvent>,
+  tool: FlaggedEvent['tool'],
+): {
+  readonly total: number;
+  readonly attention: number;
+} {
+  const relevant = events.filter((event) => event.tool === tool);
+  return {
+    total: relevant.length,
+    attention: relevant.filter((event) => event.needsAttention).length,
+  };
+}
+
+export function ReportCards({
+  providerGuidance,
+  events,
+  recoveryAssistanceEnabled,
+}: ReportCardsProps): JSX.Element {
+  if (!recoveryAssistanceEnabled) {
+    return (
+      <div className="reports-layout">
+        <p className="reports-desc">
+          Provider guidance and recovery assistance are being refined before a wider release.
+        </p>
+        <div className="report-card report-card--disabled">
+          <div className="report-card__body">
+            <div className="report-card__head">
+              <span className="report-card__dot" />
+              <span className="report-card__name">Recovery assistance is off</span>
+            </div>
+            <p className="report-card__summary-text">
+              Sunbreak is keeping this guidance surface dormant for now to avoid noisy or overly prescriptive recovery advice.
+            </p>
+            <p className="report-card__summary-text">
+              The file-upload warning toast remains active in supported tools, but provider-specific recovery steps will return in a later release.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="reports-layout">
       <p className="reports-desc">
@@ -15,57 +58,20 @@ export function ReportCards(): JSX.Element {
       </p>
 
       <div className="reports-grid">
-        <ReportCard
-          name="ChatGPT"
-          sections={[
-            {
-              title: 'Data Retention',
-              content: 'Prompts retained for 30 days by default. Opt-out available in settings.',
-            },
-            {
-              title: 'Training Usage',
-              content: 'Free tier data may be used for training. Plus/Team/Enterprise excluded.',
-            },
-            {
-              title: 'Privacy Mode',
-              content: 'Temporary Chat disables history and training. API usage has separate terms.',
-            },
-          ]}
-        />
-        <ReportCard
-          name="Claude"
-          sections={[
-            {
-              title: 'Data Retention',
-              content: 'Conversations retained during session. No long-term storage by default.',
-            },
-            {
-              title: 'Training Usage',
-              content: 'Free tier may contribute to training. Pro plan excludes data from training.',
-            },
-            {
-              title: 'Privacy Mode',
-              content: 'API usage has zero-retention policy. Enterprise offers full data isolation.',
-            },
-          ]}
-        />
-        <ReportCard
-          name="Gemini"
-          sections={[
-            {
-              title: 'Data Retention',
-              content: 'Google retains conversations for up to 18 months. Workspace admins configure.',
-            },
-            {
-              title: 'Training Usage',
-              content: 'Free conversations used to improve products. Google Workspace excluded.',
-            },
-            {
-              title: 'Enterprise Features',
-              content: 'Workspace plans offer data residency controls and admin privacy settings.',
-            },
-          ]}
-        />
+        {Object.values(PROVIDER_GUIDANCE).map((guidance) => (
+          <ReportCard
+            key={guidance.tool}
+            name={guidance.displayName}
+            tool={guidance.tool}
+            accent={guidance.accent}
+            sections={guidance.overview}
+            configuredMode={providerGuidance[guidance.tool]}
+            modeNote={guidance.modeNotes[providerGuidance[guidance.tool]] ?? null}
+            summary={summarizeEvents(events, guidance.tool)}
+            lastVerified={guidance.lastVerified}
+            sources={guidance.sources}
+          />
+        ))}
       </div>
     </div>
   );
@@ -73,15 +79,36 @@ export function ReportCards(): JSX.Element {
 
 interface ReportCardProps {
   readonly name: string;
+  readonly tool: 'chatgpt' | 'claude' | 'gemini';
+  readonly accent: string;
   readonly sections: ReadonlyArray<{
     readonly title: string;
     readonly content: string;
   }>;
+  readonly configuredMode: string;
+  readonly modeNote: string | null;
+  readonly summary: {
+    readonly total: number;
+    readonly attention: number;
+  };
+  readonly lastVerified: string;
+  readonly sources: ReadonlyArray<{
+    readonly label: string;
+    readonly url: string;
+  }>;
 }
 
-function ReportCard({ name, sections }: ReportCardProps): JSX.Element {
-  const accent = TOOL_ACCENT[name] ?? 'var(--color-text-muted)';
-
+function ReportCard({
+  name,
+  tool,
+  accent,
+  sections,
+  configuredMode,
+  modeNote,
+  summary,
+  lastVerified,
+  sources,
+}: ReportCardProps): JSX.Element {
   return (
     <div className="report-card">
       <div className="report-card__accent" style={{ background: accent }} />
@@ -96,6 +123,37 @@ function ReportCard({ name, sections }: ReportCardProps): JSX.Element {
             <p className="report-card__section-text">{section.content}</p>
           </div>
         ))}
+        <div className="report-card__mode">
+          <span className="report-card__mode-label">Configured guidance mode: {configuredMode}</span>
+          {modeNote && <p className="report-card__mode-note">{modeNote}</p>}
+        </div>
+        <div className="report-card__summary">
+          <p className="report-card__summary-text">
+            {summary.total === 0
+              ? `No recent ${name} flagged events recorded in this browser.`
+              : `${summary.total} recent ${name} flagged event${summary.total === 1 ? '' : 's'} recorded${summary.attention > 0 ? `, ${summary.attention} needing follow-up.` : '.'}`}
+          </p>
+          <a className="report-card__action-link" href={`#activity?tool=${tool}`}>
+            Review activity log
+          </a>
+        </div>
+        <div className="report-card__sources">
+          <p className="report-card__verified">Verified against official sources on {lastVerified}</p>
+          <ul className="report-card__source-list">
+            {sources.map((source) => (
+              <li key={source.url}>
+                <a
+                  className="report-card__source-link"
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {source.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

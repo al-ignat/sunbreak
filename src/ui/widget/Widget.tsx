@@ -6,6 +6,7 @@ import type { SeverityLevel } from './severity';
 import FindingsPanel from './FindingsPanel';
 import SendToast from './SendToast';
 import RestoreToast from './RestoreToast';
+import FileWarningToast from './FileWarningToast';
 import TextOverlay from './TextOverlay';
 import type { TextOverlayHandle } from './TextOverlay';
 
@@ -18,6 +19,12 @@ export interface ToastDisplayState {
 
 /** Restore toast display state for clipboard token restoration */
 export interface RestoreToastDisplayState {
+  count: number;
+  visible: boolean;
+  generation: number;
+}
+
+export interface FileWarningDisplayState {
   count: number;
   visible: boolean;
   generation: number;
@@ -49,6 +56,8 @@ export interface WidgetProps {
   restoreToastState?: RestoreToastDisplayState | null;
   onRestoreAccept?: () => void;
   onRestoreDecline?: () => void;
+  fileWarningState?: FileWarningDisplayState | null;
+  onFileWarningDismiss?: () => void;
   maskedCount?: number;
   maskedEntries?: ReadonlyArray<MaskedEntry>;
   maskedExpiresAt?: number | null;
@@ -92,6 +101,8 @@ export default function Widget({
   restoreToastState,
   onRestoreAccept,
   onRestoreDecline,
+  fileWarningState,
+  onFileWarningDismiss,
   maskedCount = 0,
   maskedEntries,
   maskedExpiresAt,
@@ -124,6 +135,7 @@ export default function Widget({
 
   const showToast = toastState?.visible === true && onToastReview && onToastSendAnyway && onToastTimeout;
   const showRestoreToast = restoreToastState?.visible === true && onRestoreAccept && onRestoreDecline;
+  const showFileWarning = fileWarningState?.visible === true && onFileWarningDismiss;
 
   const hasSeverityBadge = snapshot.activeCount > 0;
   const hasMaskedBadge = maskedCount > 0;
@@ -188,6 +200,13 @@ export default function Widget({
           count={restoreToastState.count}
           onAccept={onRestoreAccept}
           onDecline={onRestoreDecline}
+        />
+      )}
+      {showFileWarning && (
+        <FileWarningToast
+          key={fileWarningState.generation}
+          count={fileWarningState.count}
+          onDismiss={onFileWarningDismiss}
         />
       )}
       {supportsOverlay && (

@@ -33,6 +33,18 @@ export interface SiteAdapter {
   /** Find the file drop zone element, if any */
   getDropZone(): HTMLElement | null;
 
+  /**
+   * Find the local composer subtree that should be inspected for pending attachment evidence.
+   * Falls back to the general composer root when omitted.
+   */
+  readonly getAttachmentEvidenceRoot?: () => HTMLElement | null;
+
+  /**
+   * Count attachments that are still present in the composer right now.
+   * Used to decide whether an uploaded file was actually still attached at send time.
+   */
+  readonly getPendingAttachmentCount?: () => number;
+
   /** Whether this site supports inline text overlay underlines (default: true) */
   readonly supportsOverlay?: boolean;
 
@@ -50,3 +62,6 @@ export type PromptCallback = (text: string, adapterName: SiteName) => void;
 
 /** Callback invoked when a file upload is detected */
 export type FileCallback = (filename: string, adapterName: SiteName) => void;
+
+/** Callback invoked when an attached file is explicitly removed before send */
+export type AttachmentRemovedCallback = (adapterName: SiteName) => void;

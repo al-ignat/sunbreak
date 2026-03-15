@@ -1,4 +1,9 @@
-import type { SiteAdapter, SiteName, FileCallback } from '../types';
+import type {
+  SiteAdapter,
+  SiteName,
+  FileCallback,
+  AttachmentRemovedCallback,
+} from '../types';
 import { compileCustomPatterns } from '../classifier/custom-patterns';
 import type { CompiledCustomPattern } from '../classifier/custom-patterns';
 import type { Finding } from '../classifier/types';
@@ -29,6 +34,7 @@ import { createMaskingMap } from './masking-map';
 import type { MaskingMap } from './masking-map';
 import { createClipboardInterceptor } from './clipboard-interceptor';
 import type { ClipboardInterceptor } from './clipboard-interceptor';
+import { recordLocalDiagnostic } from '../utils/local-diagnostics';
 
 /**
  * Context for the orchestrator.
@@ -56,6 +62,73 @@ function getCategories(findings: ReadonlyArray<Finding>): string[] {
   )))];
 }
 
+function getComposerRoot(adapter: SiteAdapter): HTMLElement | null {
+  const attachmentEvidenceRoot = adapter.getAttachmentEvidenceRoot?.();
+  if (attachmentEvidenceRoot) return attachmentEvidenceRoot;
+
+  const input = adapter.findInput();
+  if (!input) return null;
+
+  return (
+    adapter.getDropZone?.() ??
+    input.closest('fieldset') ??
+    input.closest('form') ??
+    input.parentElement
+  );
+}
+
+function isLikelyVisibleElement(element: HTMLElement): boolean {
+  if (element.hidden) return false;
+  if (element.getAttribute('aria-hidden') === 'true') return false;
+
+  const style = window.getComputedStyle(element);
+  return style.display !== 'none' && style.visibility !== 'hidden';
+}
+
+function collectVisibleText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent ?? '';
+  }
+
+  if (!(node instanceof HTMLElement)) {
+    return Array.from(node.childNodes).map(collectVisibleText).join(' ');
+  }
+
+  if (!isLikelyVisibleElement(node)) {
+    return '';
+  }
+
+  return Array.from(node.childNodes).map(collectVisibleText).join(' ');
+}
+
+function hasPendingAttachmentDomEvidence(
+  adapter: SiteAdapter,
+  pendingFileNames: ReadonlySet<string>,
+): boolean {
+  if (pendingFileNames.size === 0) return false;
+
+  const composerRoot = getComposerRoot(adapter);
+  if (!composerRoot) return false;
+
+  const visibleText = collectVisibleText(composerRoot);
+  const descendantMetadata = Array.from(
+    composerRoot.querySelectorAll<HTMLElement>('[aria-label],[title],[data-testid]'),
+  )
+    .filter(isLikelyVisibleElement)
+    .map((element) => (
+      `${element.getAttribute('aria-label') ?? ''} ${element.getAttribute('title') ?? ''} ${element.getAttribute('data-testid') ?? ''}`
+    ))
+    .join(' ');
+
+  const searchableText = `${visibleText} ${descendantMetadata}`
+    .trim()
+    .toLowerCase();
+
+  if (searchableText.length === 0) return false;
+
+  return Array.from(pendingFileNames).some((filename) => searchableText.includes(filename));
+}
+
 /**
  * Create the full interception orchestrator.
  *
@@ -71,6 +144,7 @@ export function createOrchestrator(
 ): {
   submitConfig: SubmitInterceptConfig;
   onFileDetected: FileCallback;
+  onAttachmentRemoved: AttachmentRemovedCallback;
   findingsState: FindingsState;
   scannerConfig: ScannerConfig;
   widgetController: ReturnType<typeof createWidgetController>;
@@ -86,6 +160,7 @@ export function createOrchestrator(
   let cachedExtensionSettings: ExtensionSettings = {
     ...DEFAULT_EXTENSION_SETTINGS,
   };
+  let pendingFileWarningNames = new Set<string>();
 
   // FindingsState for the continuous scanner
   const findingsState = createFindingsState();
@@ -184,11 +259,15 @@ export function createOrchestrator(
     const snap = findingsState.getSnapshot();
 
     if (snap.activeCount === 0) {
-      logCleanPrompt(adapter.name);
+      const hasVerifiedPendingAttachments = maybeLogPendingAttachmentSend(adapter.name);
+      if (!hasVerifiedPendingAttachments) {
+        logCleanPrompt(adapter.name);
+      }
       return false;
     }
 
     if (cachedExtensionSettings.interventionMode === 'log-only') {
+      maybeLogPendingAttachmentSend(adapter.name);
       const active = snap.tracked.filter((t) => t.status === 'active');
       const logOnlyEvent: FlaggedEvent = {
         id: generateEventId(),
@@ -197,6 +276,11 @@ export function createOrchestrator(
         categories: getCategories(active.map((t) => t.finding)),
         findingCount: snap.activeCount,
         action: 'sent-anyway',
+        source: 'prompt',
+        maskingAvailable: cachedExtensionSettings.maskingEnabled && adapter.capabilities?.reliableSetText !== false,
+        maskingUsed: false,
+        needsAttention: true,
+        guidanceVersion: 1,
       };
       logFlaggedEvent(logOnlyEvent);
       return false;
@@ -222,12 +306,82 @@ export function createOrchestrator(
       categories: getCategories(active.map((t) => t.finding)),
       findingCount: snap.activeCount,
       action: 'sent-anyway',
+      source: 'prompt',
+      maskingAvailable: cachedExtensionSettings.maskingEnabled && adapter.capabilities?.reliableSetText !== false,
+      maskingUsed: false,
+      needsAttention: true,
+      guidanceVersion: 1,
     };
 
     // If the user clicked "Send Anyway" explicitly, it's 'sent-anyway'
     // Timeout also results in release — same action
     void action; // both 'send-anyway' and 'timeout' result in 'sent-anyway'
+    maybeLogPendingAttachmentSend(adapter.name);
     logFlaggedEvent(event);
+  }
+
+  function maybeLogPendingAttachmentSend(adapterName: SiteName): boolean {
+    if (pendingFileWarningNames.size === 0) return false;
+    if (!cachedExtensionSettings.recoveryAssistanceEnabled) {
+      pendingFileWarningNames = new Set<string>();
+      return false;
+    }
+
+    const attachmentCount = adapter.getPendingAttachmentCount?.() ?? 0;
+    if (attachmentCount <= 0) {
+      if (adapter.name !== 'chatgpt') {
+        if (!hasPendingAttachmentDomEvidence(adapter, pendingFileWarningNames)) {
+          recordLocalDiagnostic('orchestrator', 'file-send-cleared-without-dom-evidence', {
+            adapter: adapterName,
+            pendingCount: pendingFileWarningNames.size,
+          });
+          pendingFileWarningNames = new Set<string>();
+          return false;
+        }
+
+        const pendingCount = pendingFileWarningNames.size;
+        pendingFileWarningNames = new Set<string>();
+
+        logFlaggedEvent({
+          id: generateEventId(),
+          timestamp: new Date().toISOString(),
+          tool: adapterName,
+          categories: ['file-upload'],
+          findingCount: pendingCount,
+          action: 'file-warning',
+          source: 'file-upload',
+          maskingAvailable: false,
+          maskingUsed: false,
+          needsAttention: true,
+          guidanceVersion: 1,
+        });
+        return true;
+      }
+
+      recordLocalDiagnostic('orchestrator', 'file-send-check-cleared', {
+        adapter: adapterName,
+        pendingCount: pendingFileWarningNames.size,
+      });
+      pendingFileWarningNames = new Set<string>();
+      return false;
+    }
+
+    pendingFileWarningNames = new Set<string>();
+
+    logFlaggedEvent({
+      id: generateEventId(),
+      timestamp: new Date().toISOString(),
+      tool: adapterName,
+      categories: ['file-upload'],
+      findingCount: attachmentCount,
+      action: 'file-warning',
+      source: 'file-upload',
+      maskingAvailable: false,
+      maskingUsed: false,
+      needsAttention: true,
+      guidanceVersion: 1,
+    });
+    return true;
   }
 
   const submitConfig: SubmitInterceptConfig = {
@@ -236,10 +390,53 @@ export function createOrchestrator(
   };
 
   function onFileDetected(filename: string, adapterName: SiteName): void {
-    console.log(
-      `[Sunbreak] File detected on ${adapterName}: ${filename}`,
-    );
+    recordLocalDiagnostic('orchestrator', 'file-detected', {
+      adapter: adapterName,
+      filename,
+    });
+
+    if (!cachedExtensionSettings.enabled) return;
+
+    const normalizedFileName = filename.trim().toLowerCase();
+    if (normalizedFileName.length === 0) return;
+
+    if (pendingFileWarningNames.has(normalizedFileName)) {
+      recordLocalDiagnostic('orchestrator', 'file-detected-duplicate-suppressed', {
+        adapter: adapterName,
+        filename,
+      });
+      return;
+    }
+
+    pendingFileWarningNames.add(normalizedFileName);
+    widgetController.showFileWarning(pendingFileWarningNames.size);
   }
 
-  return { submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor };
+  function onAttachmentRemoved(adapterName: SiteName): void {
+    if (pendingFileWarningNames.size === 0) return;
+
+    const next = Array.from(pendingFileWarningNames);
+    next.pop();
+    pendingFileWarningNames = new Set(next);
+
+    recordLocalDiagnostic('orchestrator', 'attachment-removed', {
+      adapter: adapterName,
+      remainingCount: pendingFileWarningNames.size,
+    });
+  }
+
+  ctx.onInvalidated(() => {
+    pendingFileWarningNames = new Set<string>();
+  });
+
+  return {
+    submitConfig,
+    onFileDetected,
+    onAttachmentRemoved,
+    findingsState,
+    scannerConfig,
+    widgetController,
+    maskingMap,
+    clipboardInterceptor,
+  };
 }

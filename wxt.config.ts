@@ -19,6 +19,7 @@ export default defineConfig({
         '16': 'icons/icon-16.png',
         '32': 'icons/icon-32.png',
       },
+      default_popup: 'popup.html',
     },
     permissions: ['storage'],
     // Must stay in sync with matches in src/entrypoints/content.ts

@@ -68,6 +68,53 @@ function findGeminiComposerActionButton(): HTMLElement | null {
   return queryFallback(SEND_BUTTON_SELECTORS);
 }
 
+function findSmallestAncestorContaining(
+  input: HTMLElement,
+  targets: ReadonlyArray<HTMLElement>,
+): HTMLElement | null {
+  let current = input.parentElement;
+
+  while (current) {
+    if (targets.every((target) => current?.contains(target))) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+
+  return null;
+}
+
+function findGeminiAttachmentEvidenceRoot(): HTMLElement | null {
+  const input = queryFallback(INPUT_SELECTORS);
+  if (!input) return null;
+
+  const zone = queryFallback(DROP_ZONE_SELECTORS);
+  const sendButton = findGeminiComposerActionButton();
+  const sharedControls = [zone, sendButton].filter((target): target is HTMLElement => target instanceof HTMLElement);
+  if (sharedControls.length > 0) {
+    const sharedAncestor = findSmallestAncestorContaining(input, sharedControls);
+    if (sharedAncestor) return sharedAncestor;
+  }
+
+  const richTextarea = input.closest('rich-textarea');
+  return richTextarea ?? input.parentElement ?? null;
+}
+
+function countVisibleAttachmentRemovers(root: ParentNode): number {
+  return Array.from(root.querySelectorAll('button'))
+    .filter((button): button is HTMLButtonElement => button instanceof HTMLButtonElement)
+    .filter(isVisibleButton)
+    .filter((button) => {
+      const label = `${button.getAttribute('aria-label') ?? ''} ${button.getAttribute('title') ?? ''}`.trim();
+      if (label.length === 0) return false;
+      if (!/remove/i.test(label)) return false;
+      return !(
+        /send|voice|audio|microphone/i.test(label)
+      );
+    })
+    .length;
+}
+
 export const geminiAdapter: SiteAdapter = {
   name: 'gemini',
   widgetAnchor: { gapX: 8 },
@@ -103,5 +150,15 @@ export const geminiAdapter: SiteAdapter = {
     // Fallback: find the closest container around the editor
     const input = this.findInput();
     return input?.closest('form') ?? input?.parentElement ?? null;
+  },
+
+  getAttachmentEvidenceRoot(): HTMLElement | null {
+    return findGeminiAttachmentEvidenceRoot();
+  },
+
+  getPendingAttachmentCount(): number {
+    const root = this.getAttachmentEvidenceRoot?.() ?? this.findInput()?.closest('form') ?? this.findInput()?.parentElement;
+    if (!root) return 0;
+    return countVisibleAttachmentRemovers(root);
   },
 };

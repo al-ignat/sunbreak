@@ -11,6 +11,7 @@ vi.mock('../../../src/ui/widget/widget-controller', () => ({
     destroy: vi.fn(),
     showToast: vi.fn().mockResolvedValue('timeout'),
     showRestoreToast: vi.fn().mockResolvedValue(false),
+    showFileWarning: vi.fn(),
     setEnabled: vi.fn(),
   })),
 }));
@@ -57,6 +58,16 @@ function createMockAdapter(overrides: Partial<SiteAdapter> = {}): SiteAdapter {
     getDropZone: () => null,
     ...overrides,
   };
+}
+
+function createComposerWithAttachment(filename: string): HTMLElement {
+  const form = document.createElement('form');
+  const input = document.createElement('div');
+  const chip = document.createElement('span');
+  chip.textContent = filename;
+  form.append(input, chip);
+  document.body.appendChild(form);
+  return input;
 }
 
 function createMockContext(): {
@@ -108,7 +119,7 @@ describe('createOrchestrator', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns submitConfig, onFileDetected, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor', () => {
+  it('returns submitConfig, onFileDetected, onAttachmentRemoved, findingsState, scannerConfig, widgetController, maskingMap, clipboardInterceptor', () => {
     const adapter = createMockAdapter();
     const ctx = createMockContext();
     const result = createOrchestrator(adapter, ctx);
@@ -117,6 +128,7 @@ describe('createOrchestrator', () => {
     expect(typeof result.submitConfig.shouldBlock).toBe('function');
     expect(typeof result.submitConfig.onBlocked).toBe('function');
     expect(typeof result.onFileDetected).toBe('function');
+    expect(typeof result.onAttachmentRemoved).toBe('function');
     expect(result.findingsState).toBeDefined();
     expect(result.scannerConfig).toBeDefined();
     expect(result.widgetController).toBeDefined();
@@ -194,6 +206,9 @@ describe('createOrchestrator', () => {
           tool: 'chatgpt',
           action: 'sent-anyway',
           categories: expect.arrayContaining(['email']),
+          source: 'prompt',
+          guidanceVersion: 1,
+          needsAttention: true,
         }),
       );
     });
@@ -227,6 +242,7 @@ describe('createOrchestrator', () => {
       expect(logFlaggedEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           categories: expect.arrayContaining(['custom-pattern:hr']),
+          source: 'prompt',
         }),
       );
     });
@@ -257,6 +273,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: mockShowToast,
         showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -278,6 +295,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: mockShowToast,
         showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -294,6 +312,9 @@ describe('createOrchestrator', () => {
           action: 'sent-anyway',
           categories: expect.arrayContaining(['email']),
           findingCount: 1,
+          source: 'prompt',
+          guidanceVersion: 1,
+          needsAttention: true,
         }),
       );
     });
@@ -306,6 +327,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: mockShowToast,
         showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -339,6 +361,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: vi.fn().mockResolvedValue('timeout'),
         showRestoreToast: mockShowRestoreToast,
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -391,6 +414,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: vi.fn().mockResolvedValue('timeout'),
         showRestoreToast: mockShowRestoreToast,
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -426,6 +450,7 @@ describe('createOrchestrator', () => {
         destroy: vi.fn(),
         showToast: vi.fn().mockResolvedValue('timeout'),
         showRestoreToast: mockShowRestoreToast,
+        showFileWarning: vi.fn(),
         setEnabled: vi.fn(),
       });
 
@@ -451,17 +476,369 @@ describe('createOrchestrator', () => {
   });
 
   describe('file detection', () => {
-    it('logs file detection to console', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    it('shows a file warning on upload without logging immediately', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
       const adapter = createMockAdapter();
       const ctx = createMockContext();
       const { onFileDetected } = createOrchestrator(adapter, ctx);
 
       onFileDetected('secret.pdf', 'chatgpt');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('File detected'),
+      expect(showFileWarning).toHaveBeenCalledWith(1);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+    });
+
+    it('suppresses duplicate detections for the same file before send', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { onFileDetected } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'chatgpt');
+      onFileDetected('SECRET.pdf', 'chatgpt');
+      onFileDetected(' secret.pdf ', 'chatgpt');
+
+      expect(showFileWarning).toHaveBeenCalledTimes(1);
+      expect(showFileWarning).toHaveBeenCalledWith(1);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+    });
+
+    it('does not log file recovery events while recovery assistance is disabled', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter({
+        getPendingAttachmentCount: () => 2,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'chatgpt');
+      onFileDetected('roadmap.docx', 'chatgpt');
+
+      expect(showFileWarning).toHaveBeenNthCalledWith(1, 1);
+      expect(showFileWarning).toHaveBeenNthCalledWith(2, 2);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('chatgpt');
+    });
+
+    it('logs a file recovery event when recovery assistance is explicitly enabled', async () => {
+      vi.mocked(getExtensionSettings).mockResolvedValue({
+        ...DEFAULT_EXTENSION_SETTINGS,
+        recoveryAssistanceEnabled: true,
+      });
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter({
+        getPendingAttachmentCount: () => 2,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
+
+      onFileDetected('secret.pdf', 'chatgpt');
+      onFileDetected('roadmap.docx', 'chatgpt');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: 'chatgpt',
+          source: 'file-upload',
+          action: 'file-warning',
+          findingCount: 2,
+          categories: ['file-upload'],
+        }),
       );
+    });
+
+    it('does not log a file recovery event when the attachment was removed before send', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter({
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'chatgpt');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('chatgpt');
+    });
+
+    it('logs a file recovery event for Gemini when recovery assistance is enabled', async () => {
+      vi.mocked(getExtensionSettings).mockResolvedValue({
+        ...DEFAULT_EXTENSION_SETTINGS,
+        recoveryAssistanceEnabled: true,
+      });
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const input = createComposerWithAttachment('secret.pdf');
+      const adapter = createMockAdapter({
+        name: 'gemini',
+        findInput: () => input,
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
+
+      onFileDetected('secret.pdf', 'gemini');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: 'gemini',
+          source: 'file-upload',
+          action: 'file-warning',
+          findingCount: 1,
+        }),
+      );
+    });
+
+    it('does not log a Gemini file event when the attachment was explicitly removed before send', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter({
+        name: 'gemini',
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, onAttachmentRemoved, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'gemini');
+      onAttachmentRemoved('gemini');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('gemini');
+    });
+
+    it('logs a file recovery event for Claude when recovery assistance is enabled', async () => {
+      vi.mocked(getExtensionSettings).mockResolvedValue({
+        ...DEFAULT_EXTENSION_SETTINGS,
+        recoveryAssistanceEnabled: true,
+      });
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const input = createComposerWithAttachment('secret.pdf');
+      const adapter = createMockAdapter({
+        name: 'claude',
+        findInput: () => input,
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
+
+      onFileDetected('secret.pdf', 'claude');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tool: 'claude',
+          source: 'file-upload',
+          action: 'file-warning',
+          findingCount: 1,
+        }),
+      );
+    });
+
+    it('does not log a Claude file event when the attachment was explicitly removed before send', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter({
+        name: 'claude',
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, onAttachmentRemoved, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'claude');
+      onAttachmentRemoved('claude');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('claude');
+    });
+
+    it('does not log a non-ChatGPT file event when no live attachment evidence remains at send', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const input = document.createElement('div');
+      const form = document.createElement('form');
+      form.appendChild(input);
+      document.body.appendChild(form);
+
+      const adapter = createMockAdapter({
+        name: 'gemini',
+        findInput: () => input,
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'gemini');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('gemini');
+    });
+
+    it('does not log when attachment evidence only remains in hidden composer markup', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const input = document.createElement('div');
+      const hiddenChip = document.createElement('span');
+      hiddenChip.textContent = 'secret.pdf';
+      hiddenChip.style.display = 'none';
+      const form = document.createElement('form');
+      form.append(input, hiddenChip);
+      document.body.appendChild(form);
+
+      const adapter = createMockAdapter({
+        name: 'gemini',
+        findInput: () => input,
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'gemini');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('gemini');
+    });
+
+    it('does not log when the same filename only exists in older chat history outside the Gemini evidence root', () => {
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const form = document.createElement('form');
+      const history = document.createElement('div');
+      history.textContent = 'secret.pdf';
+      const localComposer = document.createElement('div');
+      const input = document.createElement('div');
+      localComposer.appendChild(input);
+      form.append(history, localComposer);
+      document.body.appendChild(form);
+
+      const adapter = createMockAdapter({
+        name: 'gemini',
+        findInput: () => input,
+        getAttachmentEvidenceRoot: () => localComposer,
+        getPendingAttachmentCount: () => 0,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+
+      onFileDetected('secret.pdf', 'gemini');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('gemini');
     });
   });
 

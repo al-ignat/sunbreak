@@ -129,6 +129,47 @@ export function SettingsPanel({
           onToggle={handleDetectionToggle}
         />
       </div>
+
+      <div className="settings-card">
+        <div className="settings-card__header">
+          <span className="settings-row__title">Recovery Assistance</span>
+          <span className="settings-row__desc">
+            Detailed recovery guidance and provider-specific assistance are still in development.
+          </span>
+        </div>
+
+        <div className="settings-card settings-card--disabled">
+          <div className="settings-row">
+            <div className="settings-row__info">
+              <span className="settings-row__title">
+                Recovery Assistance {extensionSettings.recoveryAssistanceEnabled ? 'On' : 'Off'}
+              </span>
+              <span className="settings-row__desc">
+                Recovery detail, provider-specific guidance, and follow-up workflows will return in a later release.
+              </span>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={false}
+              aria-label="Recovery assistance is currently unavailable"
+              className="toggle-switch"
+              disabled
+            >
+              <span className="toggle-switch__thumb" />
+            </button>
+          </div>
+          <div className="settings-divider" />
+          <div className="settings-row settings-row--stacked">
+            <div className="settings-row__info">
+              <span className="settings-row__title">Coming next</span>
+              <span className="settings-row__desc">
+                Sunbreak will bring back concise recovery guidance once the interaction model is less noisy and easier to trust.
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
