@@ -68,13 +68,36 @@ function findGeminiComposerActionButton(): HTMLElement | null {
   return queryFallback(SEND_BUTTON_SELECTORS);
 }
 
-function findGeminiAttachmentEvidenceRoot(): HTMLElement | null {
-  const zone = queryFallback(DROP_ZONE_SELECTORS);
-  if (zone) return zone;
+function findSmallestAncestorContaining(
+  input: HTMLElement,
+  targets: ReadonlyArray<HTMLElement>,
+): HTMLElement | null {
+  let current = input.parentElement;
 
+  while (current) {
+    if (targets.every((target) => current?.contains(target))) {
+      return current;
+    }
+    current = current.parentElement;
+  }
+
+  return null;
+}
+
+function findGeminiAttachmentEvidenceRoot(): HTMLElement | null {
   const input = queryFallback(INPUT_SELECTORS);
-  const richTextarea = input?.closest('rich-textarea');
-  return richTextarea?.parentElement ?? richTextarea ?? input?.parentElement ?? null;
+  if (!input) return null;
+
+  const zone = queryFallback(DROP_ZONE_SELECTORS);
+  const sendButton = findGeminiComposerActionButton();
+  const sharedControls = [zone, sendButton].filter((target): target is HTMLElement => target instanceof HTMLElement);
+  if (sharedControls.length > 0) {
+    const sharedAncestor = findSmallestAncestorContaining(input, sharedControls);
+    if (sharedAncestor) return sharedAncestor;
+  }
+
+  const richTextarea = input.closest('rich-textarea');
+  return richTextarea ?? input.parentElement ?? null;
 }
 
 function countVisibleAttachmentRemovers(root: ParentNode): number {
@@ -134,7 +157,7 @@ export const geminiAdapter: SiteAdapter = {
   },
 
   getPendingAttachmentCount(): number {
-    const root = this.findInput()?.closest('form') ?? this.findInput()?.parentElement;
+    const root = this.getAttachmentEvidenceRoot?.() ?? this.findInput()?.closest('form') ?? this.findInput()?.parentElement;
     if (!root) return 0;
     return countVisibleAttachmentRemovers(root);
   },

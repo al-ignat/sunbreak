@@ -224,7 +224,7 @@ describe('geminiAdapter', () => {
       document.body.innerHTML = '';
     });
 
-    it('prefers the uploader dropzone when present', () => {
+    it('uses the smallest composer ancestor that still contains the uploader dropzone', () => {
       const zone = document.createElement('div');
       zone.className = 'xap-uploader-dropzone';
       const form = document.createElement('form');
@@ -234,10 +234,10 @@ describe('geminiAdapter', () => {
       form.append(editor, zone);
       document.body.appendChild(form);
 
-      expect(geminiAdapter.getAttachmentEvidenceRoot?.()).toBe(zone);
+      expect(geminiAdapter.getAttachmentEvidenceRoot?.()).toBe(form);
     });
 
-    it('falls back to the local rich-textarea container instead of the entire form', () => {
+    it('falls back to the rich-textarea subtree when no composer controls are available', () => {
       const form = document.createElement('form');
       const history = document.createElement('div');
       history.textContent = 'old-report.pdf';
@@ -250,7 +250,33 @@ describe('geminiAdapter', () => {
       form.append(history, localComposer);
       document.body.appendChild(form);
 
-      expect(geminiAdapter.getAttachmentEvidenceRoot?.()).toBe(localComposer);
+      expect(geminiAdapter.getAttachmentEvidenceRoot?.()).toBe(richTextarea);
+    });
+
+    it('uses the smallest ancestor shared by the editor and composer controls', () => {
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function mockRect(this: HTMLElement): DOMRect {
+        if (this.classList.contains('send-button')) {
+          return { top: 0, left: 200, right: 240, bottom: 40, width: 40, height: 40, x: 200, y: 0, toJSON: () => ({}) } as DOMRect;
+        }
+        return { top: 0, left: 20, right: 60, bottom: 40, width: 40, height: 40, x: 20, y: 0, toJSON: () => ({}) } as DOMRect;
+      });
+
+      const form = document.createElement('form');
+      const history = document.createElement('div');
+      history.textContent = 'old-report.pdf';
+      const composerShell = document.createElement('div');
+      const editorWrapper = document.createElement('div');
+      const editor = document.createElement('div');
+      editor.className = 'ql-editor';
+      editor.setAttribute('contenteditable', 'true');
+      editorWrapper.appendChild(editor);
+      const sendButton = document.createElement('button');
+      sendButton.className = 'send-button';
+      composerShell.append(editorWrapper, sendButton);
+      form.append(history, composerShell);
+      document.body.appendChild(form);
+
+      expect(geminiAdapter.getAttachmentEvidenceRoot?.()).toBe(composerShell);
     });
   });
 
