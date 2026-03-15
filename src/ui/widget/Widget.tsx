@@ -139,7 +139,6 @@ export default function Widget({
 
   const hasSeverityBadge = snapshot.activeCount > 0;
   const hasMaskedBadge = maskedCount > 0;
-  const hasBothBadges = hasSeverityBadge && hasMaskedBadge;
 
   return (
     <div class="sb-widget-container">
@@ -159,9 +158,6 @@ export default function Widget({
         <span class="sb-widget__badges" role="status" aria-live="polite">
           {hasSeverityBadge && (
             <span class="sb-widget__severity-badge">{snapshot.activeCount}</span>
-          )}
-          {hasBothBadges && (
-            <span class="sb-widget__divider" aria-hidden="true" />
           )}
           {hasMaskedBadge && (
             <span

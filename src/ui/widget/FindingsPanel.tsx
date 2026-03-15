@@ -229,8 +229,8 @@ export default function FindingsPanel({
       <div class="sb-panel__footer">
         <InfoIcon size={12} />
         {maskableActiveCount > 0
-          ? 'Fix actions mask supported values locally before sending'
-          : 'Sensitive data or company identifiers detected in prompt'}
+          ? 'Fix actions mask values locally before sending'
+          : 'Sensitive data or company identifiers detected'}
       </div>
     </div>
   );

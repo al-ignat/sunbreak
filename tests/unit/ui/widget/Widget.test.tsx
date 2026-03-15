@@ -217,12 +217,6 @@ describe('Widget', () => {
       });
       expect(container.querySelector('.sb-widget__severity-badge')).toBeTruthy();
       expect(container.querySelector('.sb-widget__masked-badge')).toBeTruthy();
-      expect(container.querySelector('.sb-widget__divider')).toBeTruthy();
-    });
-
-    it('does not show divider when only masked badge (no severity badge)', () => {
-      const { container } = renderWidget({ maskedCount: 1 });
-      expect(container.querySelector('.sb-widget__divider')).toBeNull();
     });
 
     it('does not show masked badge when maskedCount is 0', () => {
