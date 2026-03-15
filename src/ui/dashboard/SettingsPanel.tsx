@@ -1,7 +1,6 @@
 import type { JSX } from 'preact';
 import { ChevronDown } from 'lucide-preact';
 import type { DetectionSettings, ExtensionSettings } from '../../storage/types';
-import type { ProviderGuidanceMode } from '../../storage/types';
 import type { FindingType } from '../../classifier/types';
 import { setDetectionSettings, setExtensionSettings } from '../../storage/dashboard';
 import { DetectionToggles } from './DetectionToggles';
@@ -17,18 +16,6 @@ export function SettingsPanel({
   extensionSettings,
   onDataChange,
 }: SettingsPanelProps): JSX.Element {
-  const guidanceOptions: ReadonlyArray<{
-    readonly value: ProviderGuidanceMode;
-    readonly label: string;
-  }> = [
-    { value: 'general', label: 'General / unknown' },
-    { value: 'consumer', label: 'Consumer account' },
-    { value: 'business', label: 'Business / team' },
-    { value: 'enterprise', label: 'Enterprise' },
-    { value: 'api', label: 'API usage' },
-    { value: 'workspace', label: 'Workspace / school' },
-  ];
-
   async function handleDetectionToggle(type: FindingType, enabled: boolean): Promise<void> {
     const updated = { ...detectionSettings, [type]: enabled };
     await setDetectionSettings(updated);
@@ -50,17 +37,6 @@ export function SettingsPanel({
 
   async function handleMaskingToggle(): Promise<void> {
     await setExtensionSettings({ maskingEnabled: !extensionSettings.maskingEnabled });
-    await onDataChange();
-  }
-
-  async function handleProviderGuidanceChange(tool: 'chatgpt' | 'claude' | 'gemini', value: string): Promise<void> {
-    const mode = (guidanceOptions.find((option) => option.value === value)?.value ?? 'general') as ProviderGuidanceMode;
-    await setExtensionSettings({
-      providerGuidance: {
-        ...extensionSettings.providerGuidance,
-        [tool]: mode,
-      },
-    });
     await onDataChange();
   }
 
@@ -156,40 +132,43 @@ export function SettingsPanel({
 
       <div className="settings-card">
         <div className="settings-card__header">
-          <span className="settings-row__title">Provider Guidance Mode</span>
+          <span className="settings-row__title">Recovery Assistance</span>
           <span className="settings-row__desc">
-            Tell Sunbreak which account context to assume when showing provider-specific recovery guidance.
+            Detailed recovery guidance and provider-specific assistance are still in development.
           </span>
         </div>
 
-        {(['chatgpt', 'claude', 'gemini'] as const).map((tool) => (
-          <div key={tool}>
-            <div className="settings-row">
-              <div className="settings-row__info">
-                <span className="settings-row__title">{tool === 'chatgpt' ? 'ChatGPT' : tool === 'claude' ? 'Claude' : 'Gemini'}</span>
-                <span className="settings-row__desc">
-                  Guidance stays generic unless you choose a more specific mode here.
-                </span>
-              </div>
-              <div className="settings-dropdown-wrap">
-                <select
-                  value={extensionSettings.providerGuidance[tool]}
-                  onChange={(e: Event): Promise<void> => handleProviderGuidanceChange(tool, (e.target as HTMLSelectElement).value)}
-                  aria-label={`${tool} guidance mode`}
-                  className="settings-dropdown"
-                >
-                  {guidanceOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="settings-dropdown__icon" />
-              </div>
+        <div className="settings-card settings-card--disabled">
+          <div className="settings-row">
+            <div className="settings-row__info">
+              <span className="settings-row__title">
+                Recovery Assistance {extensionSettings.recoveryAssistanceEnabled ? 'On' : 'Off'}
+              </span>
+              <span className="settings-row__desc">
+                Recovery detail, provider-specific guidance, and follow-up workflows will return in a later release.
+              </span>
             </div>
-            {tool !== 'gemini' && <div className="settings-divider" />}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={false}
+              aria-label="Recovery assistance is currently unavailable"
+              className="toggle-switch"
+              disabled
+            >
+              <span className="toggle-switch__thumb" />
+            </button>
           </div>
-        ))}
+          <div className="settings-divider" />
+          <div className="settings-row settings-row--stacked">
+            <div className="settings-row__info">
+              <span className="settings-row__title">Coming next</span>
+              <span className="settings-row__desc">
+                Sunbreak will bring back concise recovery guidance once the interaction model is less noisy and easier to trust.
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

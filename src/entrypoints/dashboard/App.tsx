@@ -175,6 +175,7 @@ export default function App(): JSX.Element {
             <ActivityLog
               events={events}
               providerGuidance={extensionSettings.providerGuidance}
+              recoveryAssistanceEnabled={extensionSettings.recoveryAssistanceEnabled}
             />
           )}
           {activeTab === 'settings' && (
@@ -200,6 +201,7 @@ export default function App(): JSX.Element {
             <ReportCards
               providerGuidance={extensionSettings.providerGuidance}
               events={events}
+              recoveryAssistanceEnabled={extensionSettings.recoveryAssistanceEnabled}
             />
           )}
         </div>

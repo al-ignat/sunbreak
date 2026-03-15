@@ -521,7 +521,7 @@ describe('createOrchestrator', () => {
       expect(logFlaggedEvent).not.toHaveBeenCalled();
     });
 
-    it('logs a file recovery event only when the prompt is sent with an attached file', () => {
+    it('does not log file recovery events while recovery assistance is disabled', () => {
       const showFileWarning = vi.fn();
       vi.mocked(createWidgetController).mockReturnValue({
         mount: vi.fn(),
@@ -547,7 +547,36 @@ describe('createOrchestrator', () => {
 
       expect(submitConfig.shouldBlock()).toBe(false);
 
-      expect(logFlaggedEvent).toHaveBeenCalledTimes(1);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+      expect(logCleanPrompt).toHaveBeenCalledWith('chatgpt');
+    });
+
+    it('logs a file recovery event when recovery assistance is explicitly enabled', async () => {
+      vi.mocked(getExtensionSettings).mockResolvedValue({
+        ...DEFAULT_EXTENSION_SETTINGS,
+        recoveryAssistanceEnabled: true,
+      });
+      const showFileWarning = vi.fn();
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: vi.fn().mockResolvedValue('timeout'),
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning,
+        setEnabled: vi.fn(),
+      });
+      const adapter = createMockAdapter({
+        getPendingAttachmentCount: () => 2,
+      });
+      const ctx = createMockContext();
+      const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
+
+      onFileDetected('secret.pdf', 'chatgpt');
+      onFileDetected('roadmap.docx', 'chatgpt');
+
+      expect(submitConfig.shouldBlock()).toBe(false);
       expect(logFlaggedEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           tool: 'chatgpt',
@@ -583,7 +612,11 @@ describe('createOrchestrator', () => {
       expect(logCleanPrompt).toHaveBeenCalledWith('chatgpt');
     });
 
-    it('logs a file recovery event for Gemini when pending uploads are still present at send', () => {
+    it('logs a file recovery event for Gemini when recovery assistance is enabled', async () => {
+      vi.mocked(getExtensionSettings).mockResolvedValue({
+        ...DEFAULT_EXTENSION_SETTINGS,
+        recoveryAssistanceEnabled: true,
+      });
       const showFileWarning = vi.fn();
       vi.mocked(createWidgetController).mockReturnValue({
         mount: vi.fn(),
@@ -602,6 +635,7 @@ describe('createOrchestrator', () => {
       });
       const ctx = createMockContext();
       const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
 
       onFileDetected('secret.pdf', 'gemini');
 
@@ -642,7 +676,11 @@ describe('createOrchestrator', () => {
       expect(logCleanPrompt).toHaveBeenCalledWith('gemini');
     });
 
-    it('logs a file recovery event for Claude when pending uploads are still present at send', () => {
+    it('logs a file recovery event for Claude when recovery assistance is enabled', async () => {
+      vi.mocked(getExtensionSettings).mockResolvedValue({
+        ...DEFAULT_EXTENSION_SETTINGS,
+        recoveryAssistanceEnabled: true,
+      });
       const showFileWarning = vi.fn();
       vi.mocked(createWidgetController).mockReturnValue({
         mount: vi.fn(),
@@ -661,6 +699,7 @@ describe('createOrchestrator', () => {
       });
       const ctx = createMockContext();
       const { onFileDetected, submitConfig } = createOrchestrator(adapter, ctx);
+      await flushSettingsInit();
 
       onFileDetected('secret.pdf', 'claude');
 

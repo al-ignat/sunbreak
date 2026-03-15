@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/preact';
+import { render, screen } from '@testing-library/preact';
 import { SettingsPanel } from '../../../../src/ui/dashboard/SettingsPanel';
 import {
   DEFAULT_DETECTION_SETTINGS,
@@ -11,8 +11,6 @@ vi.mock('../../../../src/storage/dashboard', () => ({
   setExtensionSettings: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { setExtensionSettings } from '../../../../src/storage/dashboard';
-
 describe('SettingsPanel', () => {
   const onDataChange = vi.fn().mockResolvedValue(undefined);
 
@@ -20,7 +18,7 @@ describe('SettingsPanel', () => {
     vi.clearAllMocks();
   });
 
-  it('updates a single provider guidance mode without dropping others', async () => {
+  it('shows recovery assistance as disabled and in development', async () => {
     render(
       <SettingsPanel
         detectionSettings={DEFAULT_DETECTION_SETTINGS}
@@ -29,17 +27,9 @@ describe('SettingsPanel', () => {
       />,
     );
 
-    const select = screen.getByLabelText('claude guidance mode') as HTMLSelectElement;
-    fireEvent.change(select, { target: { value: 'enterprise' } });
-
-    await vi.waitFor(() => {
-      expect(setExtensionSettings).toHaveBeenCalledWith({
-        providerGuidance: {
-          chatgpt: 'general',
-          claude: 'enterprise',
-          gemini: 'general',
-        },
-      });
-    });
+    expect(screen.getByText('Recovery Assistance Off')).toBeTruthy();
+    expect(screen.getByText(/still in development/i)).toBeTruthy();
+    expect(screen.queryByLabelText('claude guidance mode')).toBeNull();
+    expect(screen.getByLabelText('Recovery assistance is currently unavailable')).toBeTruthy();
   });
 });

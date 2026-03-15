@@ -12,6 +12,7 @@ import {
 export interface ActivityLogProps {
   readonly events: ReadonlyArray<FlaggedEvent>;
   readonly providerGuidance: ProviderGuidanceSettings;
+  readonly recoveryAssistanceEnabled: boolean;
 }
 
 type DatePreset = '7d' | '30d' | 'all';
@@ -26,7 +27,11 @@ function resolveInitialToolFilter(): string {
     : 'all';
 }
 
-export function ActivityLog({ events, providerGuidance }: ActivityLogProps): JSX.Element {
+export function ActivityLog({
+  events,
+  providerGuidance,
+  recoveryAssistanceEnabled,
+}: ActivityLogProps): JSX.Element {
   const [datePreset, setDatePreset] = useState<DatePreset>('all');
   const [toolFilter, setToolFilter] = useState<string>(resolveInitialToolFilter);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(events[0]?.id ?? null);
@@ -50,9 +55,10 @@ export function ActivityLog({ events, providerGuidance }: ActivityLogProps): JSX
   }, [events, datePreset, toolFilter]);
 
   const selectedEvent = useMemo(() => {
+    if (!recoveryAssistanceEnabled) return null;
     const current = filteredEvents.find((event) => event.id === selectedEventId);
     return current ?? filteredEvents[0] ?? null;
-  }, [filteredEvents, selectedEventId]);
+  }, [filteredEvents, recoveryAssistanceEnabled, selectedEventId]);
 
   if (events.length === 0) {
     return (
@@ -113,7 +119,9 @@ export function ActivityLog({ events, providerGuidance }: ActivityLogProps): JSX
         <div>
           <p className="activity-table-meta__title">Recent flagged events</p>
           <p className="activity-table-meta__hint">
-            Select a row to open recovery detail and next-step guidance.
+            {recoveryAssistanceEnabled
+              ? 'Select a row to open recovery detail and next-step guidance.'
+              : 'Recovery assistance is currently in development. Activity remains available as a lightweight history only.'}
           </p>
         </div>
       </div>
@@ -140,11 +148,14 @@ export function ActivityLog({ events, providerGuidance }: ActivityLogProps): JSX
               <div key={event.id} className="activity-entry">
                 <button
                   type="button"
-                  className={`activity-row ${isSelected ? 'activity-row--selected' : ''}`}
-                  onClick={(): void => setSelectedEventId(event.id)}
-                  aria-label={`Open recovery detail for ${toolLabel(event.tool)} on ${formatDateTime(event.timestamp)}`}
-                  aria-expanded={isSelected}
-                  aria-pressed={isSelected}
+                  className={`activity-row ${isSelected ? 'activity-row--selected' : ''} ${!recoveryAssistanceEnabled ? 'activity-row--static' : ''}`}
+                  onClick={recoveryAssistanceEnabled ? (): void => setSelectedEventId(event.id) : undefined}
+                  aria-label={recoveryAssistanceEnabled
+                    ? `Open recovery detail for ${toolLabel(event.tool)} on ${formatDateTime(event.timestamp)}`
+                    : `${toolLabel(event.tool)} event on ${formatDateTime(event.timestamp)}`}
+                  aria-expanded={recoveryAssistanceEnabled ? isSelected : undefined}
+                  aria-pressed={recoveryAssistanceEnabled ? isSelected : undefined}
+                  disabled={!recoveryAssistanceEnabled}
                 >
                   <span className="activity-cell activity-cell--date">
                     {formatDateTime(event.timestamp)}
@@ -185,7 +196,7 @@ export function ActivityLog({ events, providerGuidance }: ActivityLogProps): JSX
                   </span>
                 </button>
 
-                {isSelected && (
+                {recoveryAssistanceEnabled && isSelected && (
                   <div className="activity-row-detail">
                     <RecoveryDetail event={event} providerGuidance={providerGuidance} />
                   </div>

@@ -31,7 +31,7 @@ describe('ReportCards', () => {
   });
 
   it('renders all supported provider cards from the guidance model', () => {
-    render(<ReportCards providerGuidance={providerGuidance} events={events} />);
+    render(<ReportCards providerGuidance={providerGuidance} events={events} recoveryAssistanceEnabled />);
 
     expect(screen.getByText('ChatGPT')).toBeTruthy();
     expect(screen.getByText('Claude')).toBeTruthy();
@@ -39,7 +39,7 @@ describe('ReportCards', () => {
   });
 
   it('shows verification date and official source links', () => {
-    render(<ReportCards providerGuidance={providerGuidance} events={events} />);
+    render(<ReportCards providerGuidance={providerGuidance} events={events} recoveryAssistanceEnabled />);
 
     expect(screen.getAllByText(/Verified against official sources on 2026-03-14/).length).toBeGreaterThan(0);
     expect(screen.getAllByText('How to Delete and Archive Chats in ChatGPT').length).toBeGreaterThan(0);
@@ -48,7 +48,7 @@ describe('ReportCards', () => {
   });
 
   it('shows configured guidance modes and mode-specific notes', () => {
-    render(<ReportCards providerGuidance={providerGuidance} events={events} />);
+    render(<ReportCards providerGuidance={providerGuidance} events={events} recoveryAssistanceEnabled />);
 
     expect(screen.getAllByText('Configured guidance mode: business').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Configured guidance mode: workspace').length).toBeGreaterThan(0);
@@ -58,10 +58,18 @@ describe('ReportCards', () => {
   });
 
   it('links provider guidance back to recent activity context', () => {
-    render(<ReportCards providerGuidance={providerGuidance} events={events} />);
+    render(<ReportCards providerGuidance={providerGuidance} events={events} recoveryAssistanceEnabled />);
 
     expect(screen.getAllByText('1 recent Claude flagged event recorded, 1 needing follow-up.').length).toBeGreaterThan(0);
     expect(screen.getAllByText('No recent ChatGPT flagged events recorded in this browser.').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Review activity log').length).toBe(3);
+  });
+
+  it('shows a coming-soon state when recovery assistance is disabled', () => {
+    render(<ReportCards providerGuidance={providerGuidance} events={events} recoveryAssistanceEnabled={false} />);
+
+    expect(screen.getByText('Recovery assistance is off')).toBeTruthy();
+    expect(screen.getByText(/file-upload warning toast remains active/i)).toBeTruthy();
+    expect(screen.queryByText('ChatGPT')).toBeNull();
   });
 });

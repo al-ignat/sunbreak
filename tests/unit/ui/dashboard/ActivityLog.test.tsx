@@ -33,7 +33,7 @@ describe('ActivityLog', () => {
   });
 
   it('shows empty state when no events', () => {
-    const { container } = render(<ActivityLog events={[]} providerGuidance={providerGuidance} />);
+    const { container } = render(<ActivityLog events={[]} providerGuidance={providerGuidance} recoveryAssistanceEnabled={false} />);
     expect(container.textContent).toContain('No flagged events yet');
   });
 
@@ -42,7 +42,7 @@ describe('ActivityLog', () => {
       makeEvent({ id: 'e1', tool: 'chatgpt', categories: ['email'], action: 'redacted' }),
       makeEvent({ id: 'e2', tool: 'claude', categories: ['api-key'], action: 'sent-anyway' }),
     ];
-    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} recoveryAssistanceEnabled={false} />);
     expect(container.textContent).toContain('ChatGPT');
     expect(container.textContent).toContain('Claude');
     expect(container.textContent).toContain('Redacted');
@@ -51,7 +51,7 @@ describe('ActivityLog', () => {
 
   it('shows event count', () => {
     const events = [makeEvent({ id: 'e1' }), makeEvent({ id: 'e2' })];
-    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} recoveryAssistanceEnabled={false} />);
     expect(container.textContent).toContain('2 events');
   });
 
@@ -60,7 +60,7 @@ describe('ActivityLog', () => {
       makeEvent({ id: 'e1', tool: 'chatgpt' }),
       makeEvent({ id: 'e2', tool: 'claude' }),
     ];
-    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} recoveryAssistanceEnabled={false} />);
 
     const select = container.querySelector('select') as HTMLSelectElement;
     fireEvent.change(select, { target: { value: 'claude' } });
@@ -77,7 +77,7 @@ describe('ActivityLog', () => {
       makeEvent({ id: 'e1', tool: 'chatgpt' }),
       makeEvent({ id: 'e2', tool: 'claude' }),
     ];
-    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} recoveryAssistanceEnabled={false} />);
 
     expect(container.textContent).toContain('1 event');
     expect(container.textContent).toContain('Claude');
@@ -91,12 +91,22 @@ describe('ActivityLog', () => {
     const events = [
       makeEvent({ id: 'e1', categories: ['email', 'api_key'] }),
     ];
-    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} recoveryAssistanceEnabled={false} />);
     expect(container.textContent).toContain('Email');
     expect(container.textContent).toContain('API Key');
   });
 
-  it('shows recovery detail for the selected event', () => {
+  it('shows a lightweight history hint when recovery assistance is disabled', () => {
+    const events = [
+      makeEvent({ id: 'e1', action: 'redacted' }),
+    ];
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} recoveryAssistanceEnabled={false} />);
+
+    expect(container.textContent).toContain('Recovery assistance is currently in development');
+    expect(container.textContent).not.toContain('Recovery detail');
+  });
+
+  it('shows recovery detail for the selected event when recovery assistance is enabled', () => {
     const events = [
       makeEvent({
         id: 'e1',
@@ -112,7 +122,7 @@ describe('ActivityLog', () => {
         categories: ['api-key'],
       }),
     ];
-    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} recoveryAssistanceEnabled />);
 
     expect(container.textContent).toContain('Recovery detail');
     expect(container.textContent).toContain('Sensitive content was masked before the prompt was sent');
@@ -125,7 +135,7 @@ describe('ActivityLog', () => {
     expect(container.textContent).toContain('Claude recovery path');
   });
 
-  it('shows file-upload limitation guidance for file events', () => {
+  it('shows file-upload limitation guidance for file events when enabled', () => {
     const events = [
       makeEvent({
         id: 'file-1',
@@ -135,12 +145,12 @@ describe('ActivityLog', () => {
         maskingUsed: false,
       }),
     ];
-    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} recoveryAssistanceEnabled />);
     expect(container.textContent).toContain('A file was sent and should be reviewed manually');
     expect(container.textContent).toContain('Sunbreak can detect the upload event, but it cannot inspect file contents');
   });
 
-  it('formats custom pattern categories in recovery detail', () => {
+  it('formats custom pattern categories in recovery detail when enabled', () => {
     const events = [
       makeEvent({
         id: 'cp-1',
@@ -148,7 +158,7 @@ describe('ActivityLog', () => {
         needsAttention: true,
       }),
     ];
-    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} />);
+    const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} recoveryAssistanceEnabled />);
     expect(container.textContent).toContain('Company Pattern: Hr');
     expect(container.textContent).toContain('company-specific identifiers');
   });

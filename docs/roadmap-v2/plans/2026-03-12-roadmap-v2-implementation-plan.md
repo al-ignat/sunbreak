@@ -1917,6 +1917,19 @@ Epic 5 should be considered complete only when all of the following are true:
   - guidance-mode settings updates
   - report/activity integration behavior
 
+**Post-validation product adjustment**
+
+- live validation showed that the recovery-assistance surface is still too noisy and cognitively heavy for general release
+- Epic 5 is therefore now **implemented but gated off by default** behind a dedicated `recoveryAssistanceEnabled` setting
+- the dashboard surfaces for:
+  - recovery detail
+  - provider-guidance reports
+  - provider-guidance settings
+  are intentionally dormant in the current product build
+- the only Epic 5 user-facing behavior kept active by default is the file upload warning toast, because it is immediate, local, and low-noise
+- file-upload recovery events are no longer logged while the gate is off
+- this keeps the implementation available for future refinement without overloading current users
+
 **Important product decisions captured in code**
 
 - recovery storage remains metadata-only:

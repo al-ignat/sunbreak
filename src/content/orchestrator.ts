@@ -322,6 +322,10 @@ export function createOrchestrator(
 
   function maybeLogPendingAttachmentSend(adapterName: SiteName): boolean {
     if (pendingFileWarningNames.size === 0) return false;
+    if (!cachedExtensionSettings.recoveryAssistanceEnabled) {
+      pendingFileWarningNames = new Set<string>();
+      return false;
+    }
 
     const attachmentCount = adapter.getPendingAttachmentCount?.() ?? 0;
     if (attachmentCount <= 0) {

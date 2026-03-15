@@ -513,6 +513,14 @@ body {
   background: rgba(245, 158, 11, 0.08);
 }
 
+.activity-row--static {
+  cursor: default;
+}
+
+.activity-row--static:disabled {
+  opacity: 1;
+}
+
 .activity-entry:last-child > .activity-row {
   border-bottom: none;
 }
@@ -737,6 +745,11 @@ body {
   gap: 20px;
 }
 
+.settings-card--disabled {
+  background: rgba(255, 255, 255, 0.015);
+  border-style: dashed;
+}
+
 .settings-card__header {
   display: flex;
   flex-direction: column;
@@ -748,6 +761,10 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+}
+
+.settings-row--stacked {
+  align-items: flex-start;
 }
 
 .settings-row__info {
@@ -814,6 +831,11 @@ body {
   display: flex;
   align-items: center;
   transition: background var(--transition-fast);
+}
+
+.toggle-switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .toggle-switch--on {
@@ -1291,6 +1313,10 @@ body {
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border-subtle);
   overflow: hidden;
+}
+
+.report-card--disabled {
+  max-width: 720px;
 }
 
 .report-card__accent {

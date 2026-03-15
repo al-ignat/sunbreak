@@ -299,6 +299,7 @@ describe('dashboard storage wrapper', () => {
       expect(settings.enabled).toBe(true);
       expect(settings.interventionMode).toBe('warn');
       expect(settings.maskingEnabled).toBe(true);
+      expect(settings.recoveryAssistanceEnabled).toBe(false);
       expect(settings.providerGuidance).toEqual({
         chatgpt: 'general',
         claude: 'general',
@@ -312,6 +313,7 @@ describe('dashboard storage wrapper', () => {
       expect(settings.enabled).toBe(true);
       expect(settings.interventionMode).toBe('log-only');
       expect(settings.maskingEnabled).toBe(true);
+      expect(settings.recoveryAssistanceEnabled).toBe(false);
       expect(settings.providerGuidance.chatgpt).toBe('general');
     });
 
@@ -320,6 +322,15 @@ describe('dashboard storage wrapper', () => {
       const settings = await getExtensionSettings();
       expect(settings.enabled).toBe(true);
       expect(settings.maskingEnabled).toBe(false);
+      expect(settings.recoveryAssistanceEnabled).toBe(false);
+    });
+
+    it('stores recovery assistance separately from other settings', async () => {
+      await setExtensionSettings({ recoveryAssistanceEnabled: true });
+      const settings = await getExtensionSettings();
+      expect(settings.enabled).toBe(true);
+      expect(settings.maskingEnabled).toBe(true);
+      expect(settings.recoveryAssistanceEnabled).toBe(true);
     });
 
     it('merges stored provider guidance with defaults', async () => {

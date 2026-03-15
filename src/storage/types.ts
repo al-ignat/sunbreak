@@ -136,6 +136,7 @@ export interface ExtensionSettings {
   readonly enabled: boolean;
   readonly interventionMode: 'warn' | 'log-only';
   readonly maskingEnabled: boolean;
+  readonly recoveryAssistanceEnabled: boolean;
   readonly providerGuidance: ProviderGuidanceSettings;
 }
 
@@ -179,6 +180,7 @@ export const DEFAULT_EXTENSION_SETTINGS: ExtensionSettings = {
   enabled: true,
   interventionMode: 'warn',
   maskingEnabled: true,
+  recoveryAssistanceEnabled: false,
   providerGuidance: {
     chatgpt: 'general',
     claude: 'general',

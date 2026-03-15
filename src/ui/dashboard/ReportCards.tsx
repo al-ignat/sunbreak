@@ -5,6 +5,7 @@ import type { FlaggedEvent, ProviderGuidanceSettings } from '../../storage/types
 export interface ReportCardsProps {
   readonly providerGuidance: ProviderGuidanceSettings;
   readonly events: ReadonlyArray<FlaggedEvent>;
+  readonly recoveryAssistanceEnabled: boolean;
 }
 
 function summarizeEvents(
@@ -21,7 +22,35 @@ function summarizeEvents(
   };
 }
 
-export function ReportCards({ providerGuidance, events }: ReportCardsProps): JSX.Element {
+export function ReportCards({
+  providerGuidance,
+  events,
+  recoveryAssistanceEnabled,
+}: ReportCardsProps): JSX.Element {
+  if (!recoveryAssistanceEnabled) {
+    return (
+      <div className="reports-layout">
+        <p className="reports-desc">
+          Provider guidance and recovery assistance are being refined before a wider release.
+        </p>
+        <div className="report-card report-card--disabled">
+          <div className="report-card__body">
+            <div className="report-card__head">
+              <span className="report-card__dot" />
+              <span className="report-card__name">Recovery assistance is off</span>
+            </div>
+            <p className="report-card__summary-text">
+              Sunbreak is keeping this guidance surface dormant for now to avoid noisy or overly prescriptive recovery advice.
+            </p>
+            <p className="report-card__summary-text">
+              The file-upload warning toast remains active in supported tools, but provider-specific recovery steps will return in a later release.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="reports-layout">
       <p className="reports-desc">
