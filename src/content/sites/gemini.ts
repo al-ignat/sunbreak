@@ -68,6 +68,21 @@ function findGeminiComposerActionButton(): HTMLElement | null {
   return queryFallback(SEND_BUTTON_SELECTORS);
 }
 
+function countVisibleAttachmentRemovers(root: ParentNode): number {
+  return Array.from(root.querySelectorAll('button'))
+    .filter((button): button is HTMLButtonElement => button instanceof HTMLButtonElement)
+    .filter(isVisibleButton)
+    .filter((button) => {
+      const label = `${button.getAttribute('aria-label') ?? ''} ${button.getAttribute('title') ?? ''}`.trim();
+      if (label.length === 0) return false;
+      if (!/remove/i.test(label)) return false;
+      return !(
+        /send|voice|audio|microphone/i.test(label)
+      );
+    })
+    .length;
+}
+
 export const geminiAdapter: SiteAdapter = {
   name: 'gemini',
   widgetAnchor: { gapX: 8 },
@@ -108,9 +123,6 @@ export const geminiAdapter: SiteAdapter = {
   getPendingAttachmentCount(): number {
     const root = this.findInput()?.closest('form') ?? this.findInput()?.parentElement;
     if (!root) return 0;
-
-    return Array.from(root.querySelectorAll('input[type="file"]'))
-      .filter((input): input is HTMLInputElement => input instanceof HTMLInputElement)
-      .reduce((count, input) => count + (input.files?.length ?? 0), 0);
+    return countVisibleAttachmentRemovers(root);
   },
 };
