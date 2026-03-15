@@ -101,6 +101,21 @@ function findComposerActionButton(): HTMLElement | null {
   );
 }
 
+function countVisibleAttachmentRemovers(root: ParentNode): number {
+  return Array.from(root.querySelectorAll('button'))
+    .filter((button): button is HTMLButtonElement => button instanceof HTMLButtonElement)
+    .filter(isVisibleButton)
+    .filter((button) => {
+      const label = `${button.getAttribute('aria-label') ?? ''} ${button.getAttribute('title') ?? ''}`.trim();
+      if (label.length === 0) return false;
+      if (!/remove/i.test(label)) return false;
+      return !(
+        /send|stop|voice|audio/i.test(label)
+      );
+    })
+    .length;
+}
+
 export const chatgptAdapter: SiteAdapter = {
   name: 'chatgpt',
   widgetAnchor: { gapX: 8 },
@@ -141,9 +156,6 @@ export const chatgptAdapter: SiteAdapter = {
   getPendingAttachmentCount(): number {
     const root = this.findInput()?.closest('form');
     if (!root) return 0;
-
-    return Array.from(root.querySelectorAll('input[type="file"]'))
-      .filter((input): input is HTMLInputElement => input instanceof HTMLInputElement)
-      .reduce((count, input) => count + (input.files?.length ?? 0), 0);
+    return countVisibleAttachmentRemovers(root);
   },
 };
