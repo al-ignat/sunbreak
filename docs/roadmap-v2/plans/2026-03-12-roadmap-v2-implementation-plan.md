@@ -1973,41 +1973,297 @@ Epic 5 should be considered complete only when all of the following are true:
 
 **Purpose:** improve activation and make the product self-explanatory.
 
-### Deliverables
+Epic 6 should be executed as an activation-and-trust epic, not as a generic marketing pass.
+The goal is to make Sunbreak understandable in the first minute without turning the popup into a brochure or the dashboard into a setup wizard.
 
-- first-run onboarding flow
-- quick setup
-- try-it sandbox
-- popup simplified around trust/status/next action
-- dashboard framing updated to support the companion story
+### Execution principles
+
+- optimize for first clarity, not feature exposure
+- keep the first-run experience short enough to complete in one sitting
+- show local, concrete examples before asking users to trust abstract claims
+- treat the popup as a status and next-action surface, not a mini dashboard
+- avoid introducing any onboarding step that blocks core protection from starting
+- make the trust story explicit:
+  - Sunbreak runs locally
+  - Sunbreak can warn, mask, and log metadata
+  - Sunbreak cannot inspect uploaded file contents
+- keep onboarding state simple and recoverable so the user can dismiss, revisit, or reset it safely
+
+### Workstream 1 — Onboarding state model and lifecycle
+
+**Objective:** add the minimum state needed to know whether a user is new, partially onboarded, or has completed trust setup.
+
+**Likely modules**
+
+- [src/storage/types.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/types.ts)
+- [src/storage/dashboard.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/dashboard.ts)
+- popup and dashboard entrypoints that need to branch on first-run state
+
+**Tasks**
+
+1. Define a compact onboarding state model:
+   - not-started
+   - in-progress
+   - completed
+   - dismissed or skipped if needed
+2. Decide whether state is pure boolean or stage-based; prefer stage-based if sandbox and quick setup are distinct moments.
+3. Add storage helpers for:
+   - read current onboarding state
+   - mark step complete
+   - reset onboarding for future testing
+4. Ensure default state is backward-compatible for existing users.
+5. Decide whether onboarding auto-completes when the user has already:
+   - experienced a real detection event
+   - opened dashboard/settings before
+
+**Exit criteria**
+
+- onboarding state is durable, resettable, and backward-compatible
+- existing users do not get trapped in a first-run flow unexpectedly
+
+### Workstream 2 — First-run welcome flow and quick setup
+
+**Objective:** create a short, useful onboarding flow that explains what Sunbreak does and gets the user to a confident default setup.
+
+**Likely modules**
+
+- [src/entrypoints/popup/App.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/entrypoints/popup/App.tsx)
+- new popup onboarding components under `src/ui/popup/`
+- dashboard settings surface if setup needs one explicit confirmation step
+
+**Tasks**
+
+1. Define the welcome flow shape:
+   - one screen
+   - two-step carousel
+   - welcome + trust + next action
+2. Keep the setup scope tight:
+   - confirm extension is active
+   - explain warn vs mask in plain language
+   - direct the user to try a safe example
+3. Add concise trust copy around:
+   - local-only processing
+   - no prompt-body persistence
+   - uploaded-file limitation
+4. Avoid forcing configuration during first run unless it clearly improves trust.
+5. Add a skip/dismiss path that still leaves protection enabled.
+
+**Exit criteria**
+
+- first-run users can understand the product in under a minute
+- setup does not require visiting the dashboard to become useful
+
+### Workstream 3 — Try-it sandbox and guided first value
+
+**Objective:** let users experience a safe detection/masking workflow before relying on Sunbreak in a real conversation.
+
+**Likely modules**
+
+- popup onboarding components
+- possible lightweight sandbox route or panel in popup/dashboard
+- classifier integration reused locally with static example text
+
+**Tasks**
+
+1. Decide where the sandbox lives:
+   - popup inline panel
+   - dashboard card
+   - dedicated onboarding step
+2. Use prebuilt sample prompts that demonstrate:
+   - email or phone detection
+   - token masking
+   - file-upload limitation messaging
+3. Keep the sandbox strictly local and synthetic; never mix with real provider tabs.
+4. Show what Sunbreak would do:
+   - warn
+   - fix with smart masking
+   - restore on copy
+5. Make the sandbox optional and fast; it should build trust, not become homework.
+
+**Exit criteria**
+
+- users can see first value without sending a real risky prompt
+- sandbox behavior mirrors the real product closely enough to build trust
+
+### Workstream 4 — Popup simplification around status and next action
+
+**Objective:** refactor the popup from a compact dashboard into a clearer control surface centered on current protection state and the next useful action.
+
+**Likely modules**
+
+- [src/entrypoints/popup/App.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/entrypoints/popup/App.tsx)
+- [src/entrypoints/popup/popup.css](/Users/ignataleinikov/02_Projects/sunbreak/src/entrypoints/popup/popup.css)
+- [src/ui/popup/ComplianceGauge.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/popup/ComplianceGauge.tsx)
+
+**Tasks**
+
+1. Reframe popup sections around:
+   - current protection status
+   - what Sunbreak does
+   - next action
+2. Decide what to remove or demote:
+   - over-dense recent activity rows
+   - metrics that mean little for a new user
+   - any charting that feels too compliance-heavy
+3. Add clearer action paths:
+   - open dashboard
+   - open settings
+   - try a safe example
+4. Ensure the popup still works for experienced users after onboarding is complete.
+5. Keep visual density low enough that the popup reads in one glance.
+
+**Exit criteria**
+
+- popup feels like a trustworthy companion, not a noisy miniature dashboard
+- new users can tell whether Sunbreak is active and what to do next
+
+### Workstream 5 — Dashboard framing and companion positioning
+
+**Objective:** align dashboard framing so it reinforces the companion story established by onboarding and popup.
+
+**Likely modules**
+
+- [src/entrypoints/dashboard/App.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/entrypoints/dashboard/App.tsx)
+- [src/ui/dashboard/BarChart.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/BarChart.tsx)
+- [src/ui/dashboard/SettingsPanel.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/SettingsPanel.tsx)
+- dashboard CSS and copy
+
+**Tasks**
+
+1. Revisit overview copy and section titles so they explain the product more clearly.
+2. Add onboarding-aware empty states:
+   - no events yet
+   - no keywords yet
+   - no company patterns yet
+3. Decide whether the dashboard should surface:
+   - quick-start checklist
+   - trust notes
+   - links back to sandbox or onboarding reset
+4. Reduce enterprise/compliance framing if it confuses the companion story for new users.
+5. Make sure the dashboard still serves experienced users without feeling infantilizing.
+
+**Exit criteria**
+
+- empty states help users understand what Sunbreak is waiting for
+- dashboard framing matches the popup and onboarding narrative
+
+### Workstream 6 — Trust copy and product language system
+
+**Objective:** establish a consistent trust language set so popup, onboarding, dashboard, and toasts all describe Sunbreak in the same way.
+
+**Likely modules**
+
+- popup and dashboard copy surfaces
+- toasts and warning strings
+- any helper modules for static copy if needed
+
+**Tasks**
+
+1. Standardize how Sunbreak describes:
+   - local processing
+   - masking
+   - logging
+   - uploaded-file limitations
+2. Remove copy that sounds:
+   - moralizing
+   - vague
+   - compliance-brochure-like
+3. Decide where trust notes belong:
+   - onboarding only
+   - popup footer
+   - dashboard empty state
+4. Make sure the same concept is not described three different ways across surfaces.
+5. Review whether any current wording overstates certainty or capability.
+
+**Exit criteria**
+
+- the product uses one coherent trust vocabulary
+- new users are less likely to infer capabilities Sunbreak does not actually have
+
+### Workstream 7 — Validation and activation measurement
+
+**Objective:** prove that the new onboarding and trust UX improve comprehension without adding friction.
+
+**Automated coverage**
+
+- onboarding state storage tests
+- popup first-run and returning-user rendering tests
+- sandbox interaction tests
+- dashboard empty-state and first-run view tests
+- regression tests for settings/dashboard/popup navigation from onboarding
+
+**Manual validation**
+
+1. Install the extension in a clean browser profile and verify:
+   - first-run state appears once
+   - setup can be skipped
+   - setup can be completed without confusion
+2. Use the try-it flow and confirm:
+   - value is visible before any real prompt is sent
+   - sample masking/detection behavior is understandable
+3. Open the popup after onboarding and verify:
+   - status is obvious
+   - the next action is obvious
+   - the popup is readable in under 10 seconds
+4. Open the dashboard with no real events and verify:
+   - empty states teach instead of dead-ending
+   - trust copy is consistent with popup/onboarding
+
+**Success signals**
+
+- first-run users can explain what Sunbreak does after one pass
+- users can see value before a real risky prompt
+- popup and dashboard feel lighter, clearer, and less compliance-heavy
 
 ### Likely files/modules
 
-- [src/entrypoints/popup/App.tsx](/private/tmp/sunbreak-roadmap-review/src/entrypoints/popup/App.tsx)
-- [src/entrypoints/dashboard/App.tsx](/private/tmp/sunbreak-roadmap-review/src/entrypoints/dashboard/App.tsx)
-- [src/ui/popup/ComplianceGauge.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/popup/ComplianceGauge.tsx)
-- new onboarding/sandbox components
-- storage for onboarding completion state
+- [src/entrypoints/popup/App.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/entrypoints/popup/App.tsx)
+- [src/entrypoints/popup/popup.css](/Users/ignataleinikov/02_Projects/sunbreak/src/entrypoints/popup/popup.css)
+- [src/ui/popup/ComplianceGauge.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/popup/ComplianceGauge.tsx)
+- [src/entrypoints/dashboard/App.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/entrypoints/dashboard/App.tsx)
+- [src/ui/dashboard/BarChart.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/BarChart.tsx)
+- [src/ui/dashboard/SettingsPanel.tsx](/Users/ignataleinikov/02_Projects/sunbreak/src/ui/dashboard/SettingsPanel.tsx)
+- [src/storage/types.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/types.ts)
+- [src/storage/dashboard.ts](/Users/ignataleinikov/02_Projects/sunbreak/src/storage/dashboard.ts)
+- new onboarding/sandbox components under `src/ui/popup/` or `src/ui/dashboard/`
 
 ### Risks
 
 - onboarding adds ceremony without delivering value
 - popup becomes marketing copy instead of a useful control surface
 - sandbox becomes a detour rather than a fast trust-builder
+- trust copy overpromises capabilities or makes uploaded-file limitations more confusing
+- experienced users feel slowed down by a flow that should mainly help new users
 
 ### Must prove
 
 - new users understand the product quickly
 - first value is visible before first real detection event
-- popup feels lighter and more aligned with the product thesis
+- popup feels lighter and more aligned with the companion thesis
+- dashboard empty states help rather than overwhelm
+- trust copy is concrete, consistent, and capability-bounded
 
-### Recommended commit sequence
+### Recommended implementation order
 
-1. `feat(onboarding): add first-run state and welcome flow`
-2. `feat(sandbox): add try-it detection playground`
-3. `refactor(popup): simplify popup around status and next action`
-4. `refactor(dashboard): align support surfaces with companion positioning`
-5. `test(onboarding): cover activation and first-run flows`
+1. onboarding state model and lifecycle
+2. first-run welcome flow and quick setup
+3. try-it sandbox and guided first value
+4. popup simplification around status and next action
+5. dashboard framing and companion positioning
+6. trust copy and product language pass
+7. validation and activation measurement
+
+### Epic 6 completion gate
+
+Epic 6 is complete only when:
+
+- first-run and returning-user states are both handled intentionally
+- onboarding can be completed or skipped without breaking protection
+- a safe try-it path exists and demonstrates real product value
+- the popup is materially simpler and clearer than the current stats-heavy version
+- dashboard empty states and framing reinforce the same trust story
+- automated coverage protects onboarding state and popup/dashboard branching
+- manual clean-profile verification confirms that Sunbreak is understandable before first real use
 
 ---
 
