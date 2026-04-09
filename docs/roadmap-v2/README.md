@@ -2,15 +2,15 @@
 
 **Status:** active working roadmap  
 **Date:** 2026-03-12  
-**Supersedes:** [docs/v1-roadmap.md](/private/tmp/sunbreak-roadmap-review/docs/v1-roadmap.md) as the primary planning document  
-**Companion review:** [docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md](/private/tmp/sunbreak-roadmap-review/docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md)
+**Supersedes:** [docs/roadmap.md](../roadmap.md) as the primary planning document  
+**Companion review:** [docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md](docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md)
 
 ## Package Map
 
 - **This file:** the active roadmap
-- **Assessment:** [docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md](/private/tmp/sunbreak-roadmap-review/docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md)
-- **Current-state gap analysis:** [docs/roadmap-v2/research/2026-03-12-roadmap-v2-gap-analysis-and-execution-plan.md](/private/tmp/sunbreak-roadmap-review/docs/roadmap-v2/research/2026-03-12-roadmap-v2-gap-analysis-and-execution-plan.md)
-- **Execution plan:** [docs/roadmap-v2/plans/2026-03-12-roadmap-v2-implementation-plan.md](/private/tmp/sunbreak-roadmap-review/docs/roadmap-v2/plans/2026-03-12-roadmap-v2-implementation-plan.md)
+- **Assessment:** [docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md](docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md)
+- **Current-state gap analysis:** [docs/roadmap-v2/research/2026-03-12-roadmap-v2-gap-analysis-and-execution-plan.md](docs/roadmap-v2/research/2026-03-12-roadmap-v2-gap-analysis-and-execution-plan.md)
+- **Execution plan:** [docs/roadmap-v2/plans/2026-03-12-roadmap-v2-implementation-plan.md](docs/roadmap-v2/plans/2026-03-12-roadmap-v2-implementation-plan.md)
 
 ---
 

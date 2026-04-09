@@ -1,8 +1,8 @@
 # Sunbreak Roadmap v2 — Implementation Plan
 
 **Date:** 2026-03-12  
-**Primary roadmap:** [docs/roadmap-v2/README.md](/private/tmp/sunbreak-roadmap-review/docs/roadmap-v2/README.md)  
-**Gap analysis:** [docs/roadmap-v2/research/2026-03-12-roadmap-v2-gap-analysis-and-execution-plan.md](/private/tmp/sunbreak-roadmap-review/docs/roadmap-v2/research/2026-03-12-roadmap-v2-gap-analysis-and-execution-plan.md)
+**Primary roadmap:** [docs/roadmap-v2/README.md](docs/roadmap-v2/README.md)  
+**Gap analysis:** [docs/roadmap-v2/research/2026-03-12-roadmap-v2-gap-analysis-and-execution-plan.md](docs/roadmap-v2/research/2026-03-12-roadmap-v2-gap-analysis-and-execution-plan.md)
 
 ---
 
@@ -41,15 +41,15 @@ The order below is the recommended execution order, not just a thematic grouping
 
 ### Likely files/modules
 
-- [src/ui/widget/widget-controller.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/widget-controller.ts)
-- [src/ui/widget/position.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/position.ts)
-- [src/ui/widget/TextOverlay.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/TextOverlay.tsx)
-- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
-- [src/content/observer.ts](/private/tmp/sunbreak-roadmap-review/src/content/observer.ts)
-- [src/content/orchestrator.ts](/private/tmp/sunbreak-roadmap-review/src/content/orchestrator.ts)
-- [src/content/sites/chatgpt.ts](/private/tmp/sunbreak-roadmap-review/src/content/sites/chatgpt.ts)
-- [src/content/sites/claude.ts](/private/tmp/sunbreak-roadmap-review/src/content/sites/claude.ts)
-- [src/content/sites/gemini.ts](/private/tmp/sunbreak-roadmap-review/src/content/sites/gemini.ts)
+- [src/ui/widget/widget-controller.ts](src/ui/widget/widget-controller.ts)
+- [src/ui/widget/position.ts](src/ui/widget/position.ts)
+- [src/ui/widget/TextOverlay.tsx](src/ui/widget/TextOverlay.tsx)
+- [src/ui/widget/HoverCard.tsx](src/ui/widget/HoverCard.tsx)
+- [src/content/observer.ts](src/content/observer.ts)
+- [src/content/orchestrator.ts](src/content/orchestrator.ts)
+- [src/content/sites/chatgpt.ts](src/content/sites/chatgpt.ts)
+- [src/content/sites/claude.ts](src/content/sites/claude.ts)
+- [src/content/sites/gemini.ts](src/content/sites/gemini.ts)
 - related widget/content tests
 
 ### Risks
@@ -93,10 +93,10 @@ The goal is to make the current interaction layer boringly reliable before any P
 
 **Primary modules**
 
-- [src/ui/widget/widget-controller.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/widget-controller.ts)
-- [src/ui/widget/position.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/position.ts)
-- [src/content/orchestrator.ts](/private/tmp/sunbreak-roadmap-review/src/content/orchestrator.ts)
-- [src/content/observer.ts](/private/tmp/sunbreak-roadmap-review/src/content/observer.ts)
+- [src/ui/widget/widget-controller.ts](src/ui/widget/widget-controller.ts)
+- [src/ui/widget/position.ts](src/ui/widget/position.ts)
+- [src/content/orchestrator.ts](src/content/orchestrator.ts)
+- [src/content/observer.ts](src/content/observer.ts)
 - provider adapters under `src/content/sites/`
 
 **Tasks**
@@ -134,11 +134,11 @@ The goal is to make the current interaction layer boringly reliable before any P
 
 **Primary modules**
 
-- [src/ui/widget/widget-controller.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/widget-controller.ts)
-- [src/ui/widget/position.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/position.ts)
-- [src/content/sites/chatgpt.ts](/private/tmp/sunbreak-roadmap-review/src/content/sites/chatgpt.ts)
-- [src/content/sites/claude.ts](/private/tmp/sunbreak-roadmap-review/src/content/sites/claude.ts)
-- [src/content/sites/gemini.ts](/private/tmp/sunbreak-roadmap-review/src/content/sites/gemini.ts)
+- [src/ui/widget/widget-controller.ts](src/ui/widget/widget-controller.ts)
+- [src/ui/widget/position.ts](src/ui/widget/position.ts)
+- [src/content/sites/chatgpt.ts](src/content/sites/chatgpt.ts)
+- [src/content/sites/claude.ts](src/content/sites/claude.ts)
+- [src/content/sites/gemini.ts](src/content/sites/gemini.ts)
 
 **Tasks**
 
@@ -179,9 +179,9 @@ The goal is to make the current interaction layer boringly reliable before any P
 
 **Primary modules**
 
-- [src/content/orchestrator.ts](/private/tmp/sunbreak-roadmap-review/src/content/orchestrator.ts)
-- [src/ui/widget/widget-controller.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/widget-controller.ts)
-- [src/content/findings-state.ts](/private/tmp/sunbreak-roadmap-review/src/content/findings-state.ts)
+- [src/content/orchestrator.ts](src/content/orchestrator.ts)
+- [src/ui/widget/widget-controller.ts](src/ui/widget/widget-controller.ts)
+- [src/content/findings-state.ts](src/content/findings-state.ts)
 
 **Tasks**
 
@@ -216,10 +216,10 @@ The goal is to make the current interaction layer boringly reliable before any P
 
 **Primary modules**
 
-- [src/ui/widget/TextOverlay.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/TextOverlay.tsx)
-- [src/ui/widget/text-overlay-utils.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/text-overlay-utils.ts)
-- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
-- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
+- [src/ui/widget/TextOverlay.tsx](src/ui/widget/TextOverlay.tsx)
+- [src/ui/widget/text-overlay-utils.ts](src/ui/widget/text-overlay-utils.ts)
+- [src/ui/widget/HoverCard.tsx](src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/FindingsPanel.tsx](src/ui/widget/FindingsPanel.tsx)
 
 **Tasks**
 
@@ -252,9 +252,9 @@ The goal is to make the current interaction layer boringly reliable before any P
 
 **Primary modules**
 
-- [src/ui/widget/widget-controller.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/widget-controller.ts)
-- [src/content/orchestrator.ts](/private/tmp/sunbreak-roadmap-review/src/content/orchestrator.ts)
-- [src/content/observer.ts](/private/tmp/sunbreak-roadmap-review/src/content/observer.ts)
+- [src/ui/widget/widget-controller.ts](src/ui/widget/widget-controller.ts)
+- [src/content/orchestrator.ts](src/content/orchestrator.ts)
+- [src/content/observer.ts](src/content/observer.ts)
 
 **Tasks**
 
@@ -278,16 +278,16 @@ The goal is to make the current interaction layer boringly reliable before any P
 
 **Primary automated tests**
 
-- [tests/unit/ui/widget/widget-controller.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/widget-controller.test.ts)
-- [tests/unit/ui/widget/position.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/position.test.ts)
-- [tests/unit/ui/widget/TextOverlay.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/TextOverlay.test.tsx)
-- [tests/unit/ui/widget/HoverCard.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/HoverCard.test.tsx)
-- [tests/unit/ui/widget/FindingsPanel.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/FindingsPanel.test.tsx)
-- [tests/unit/content/orchestrator.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/orchestrator.test.ts)
-- [tests/unit/content/observer.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/observer.test.ts)
-- [tests/unit/content/sites/chatgpt.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/sites/chatgpt.test.ts)
-- [tests/unit/content/sites/claude.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/sites/claude.test.ts)
-- [tests/unit/content/sites/gemini.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/sites/gemini.test.ts)
+- [tests/unit/ui/widget/widget-controller.test.ts](tests/unit/ui/widget/widget-controller.test.ts)
+- [tests/unit/ui/widget/position.test.ts](tests/unit/ui/widget/position.test.ts)
+- [tests/unit/ui/widget/TextOverlay.test.tsx](tests/unit/ui/widget/TextOverlay.test.tsx)
+- [tests/unit/ui/widget/HoverCard.test.tsx](tests/unit/ui/widget/HoverCard.test.tsx)
+- [tests/unit/ui/widget/FindingsPanel.test.tsx](tests/unit/ui/widget/FindingsPanel.test.tsx)
+- [tests/unit/content/orchestrator.test.ts](tests/unit/content/orchestrator.test.ts)
+- [tests/unit/content/observer.test.ts](tests/unit/content/observer.test.ts)
+- [tests/unit/content/sites/chatgpt.test.ts](tests/unit/content/sites/chatgpt.test.ts)
+- [tests/unit/content/sites/claude.test.ts](tests/unit/content/sites/claude.test.ts)
+- [tests/unit/content/sites/gemini.test.ts](tests/unit/content/sites/gemini.test.ts)
 
 **Test additions required**
 
@@ -417,13 +417,13 @@ Phase 1 should be considered complete only when all of the following are true:
 
 ### Likely files/modules
 
-- [src/classifier/engine.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/engine.ts)
-- [src/classifier/types.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/types.ts)
+- [src/classifier/engine.ts](src/classifier/engine.ts)
+- [src/classifier/types.ts](src/classifier/types.ts)
 - likely new modules under `src/classifier/`
-- [src/content/scanner.ts](/private/tmp/sunbreak-roadmap-review/src/content/scanner.ts)
-- [src/content/findings-state.ts](/private/tmp/sunbreak-roadmap-review/src/content/findings-state.ts)
-- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
-- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
+- [src/content/scanner.ts](src/content/scanner.ts)
+- [src/content/findings-state.ts](src/content/findings-state.ts)
+- [src/ui/widget/HoverCard.tsx](src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/FindingsPanel.tsx](src/ui/widget/FindingsPanel.tsx)
 - classifier and widget tests
 
 ### Risks
@@ -471,9 +471,9 @@ The goal is to preserve the current regex engine as the fast span-extraction lay
 
 **Primary modules**
 
-- [src/classifier/types.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/types.ts)
-- [src/classifier/engine.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/engine.ts)
-- [src/content/findings-state.ts](/private/tmp/sunbreak-roadmap-review/src/content/findings-state.ts)
+- [src/classifier/types.ts](src/classifier/types.ts)
+- [src/classifier/engine.ts](src/classifier/engine.ts)
+- [src/content/findings-state.ts](src/content/findings-state.ts)
 
 **Tasks**
 
@@ -507,7 +507,7 @@ The goal is to preserve the current regex engine as the fast span-extraction lay
 
 **Primary modules**
 
-- [src/classifier/engine.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/engine.ts)
+- [src/classifier/engine.ts](src/classifier/engine.ts)
 - likely new modules under `src/classifier/` such as:
   - `context-scorer.ts`
   - `context-signals.ts`
@@ -559,7 +559,7 @@ The goal is to preserve the current regex engine as the fast span-extraction lay
 **Primary modules**
 
 - new classifier modules under `src/classifier/`
-- [src/classifier/engine.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/engine.ts)
+- [src/classifier/engine.ts](src/classifier/engine.ts)
 
 **Category rollout order**
 
@@ -604,10 +604,10 @@ It should target high-value, high-explainability contextual wins.
 
 **Primary modules**
 
-- [src/classifier/types.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/types.ts)
+- [src/classifier/types.ts](src/classifier/types.ts)
 - likely new explanation helper modules under `src/classifier/`
-- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
-- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
+- [src/ui/widget/HoverCard.tsx](src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/FindingsPanel.tsx](src/ui/widget/FindingsPanel.tsx)
 
 **Tasks**
 
@@ -634,9 +634,9 @@ It should target high-value, high-explainability contextual wins.
 
 **Primary modules**
 
-- [src/content/scanner.ts](/private/tmp/sunbreak-roadmap-review/src/content/scanner.ts)
-- [src/content/findings-state.ts](/private/tmp/sunbreak-roadmap-review/src/content/findings-state.ts)
-- [src/content/orchestrator.ts](/private/tmp/sunbreak-roadmap-review/src/content/orchestrator.ts)
+- [src/content/scanner.ts](src/content/scanner.ts)
+- [src/content/findings-state.ts](src/content/findings-state.ts)
+- [src/content/orchestrator.ts](src/content/orchestrator.ts)
 
 **Tasks**
 
@@ -660,8 +660,8 @@ It should target high-value, high-explainability contextual wins.
 
 **Primary modules**
 
-- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
-- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
+- [src/ui/widget/HoverCard.tsx](src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/FindingsPanel.tsx](src/ui/widget/FindingsPanel.tsx)
 
 **Tasks**
 
@@ -687,11 +687,11 @@ It should target high-value, high-explainability contextual wins.
 
 **Primary automated tests**
 
-- [tests/unit/classifier/engine.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/classifier/engine.test.ts)
-- [tests/unit/content/scanner.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/scanner.test.ts)
-- [tests/unit/content/findings-state.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/findings-state.test.ts)
-- [tests/unit/ui/widget/HoverCard.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/HoverCard.test.tsx)
-- [tests/unit/ui/widget/FindingsPanel.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/FindingsPanel.test.tsx)
+- [tests/unit/classifier/engine.test.ts](tests/unit/classifier/engine.test.ts)
+- [tests/unit/content/scanner.test.ts](tests/unit/content/scanner.test.ts)
+- [tests/unit/content/findings-state.test.ts](tests/unit/content/findings-state.test.ts)
+- [tests/unit/ui/widget/HoverCard.test.tsx](tests/unit/ui/widget/HoverCard.test.tsx)
+- [tests/unit/ui/widget/FindingsPanel.test.tsx](tests/unit/ui/widget/FindingsPanel.test.tsx)
 - likely new context-scoring test modules under `tests/unit/classifier/`
 
 **Test additions required**
@@ -823,13 +823,13 @@ Epic 2 should be considered complete only when all of the following are true:
 
 ### Likely files/modules
 
-- [src/classifier/smart-tokens.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/smart-tokens.ts)
-- [src/content/interceptor.ts](/private/tmp/sunbreak-roadmap-review/src/content/interceptor.ts)
-- [src/content/masking-map.ts](/private/tmp/sunbreak-roadmap-review/src/content/masking-map.ts)
-- [src/content/clipboard-interceptor.ts](/private/tmp/sunbreak-roadmap-review/src/content/clipboard-interceptor.ts)
-- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
-- [src/ui/widget/RestoreToast.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/RestoreToast.tsx)
-- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
+- [src/classifier/smart-tokens.ts](src/classifier/smart-tokens.ts)
+- [src/content/interceptor.ts](src/content/interceptor.ts)
+- [src/content/masking-map.ts](src/content/masking-map.ts)
+- [src/content/clipboard-interceptor.ts](src/content/clipboard-interceptor.ts)
+- [src/ui/widget/FindingsPanel.tsx](src/ui/widget/FindingsPanel.tsx)
+- [src/ui/widget/RestoreToast.tsx](src/ui/widget/RestoreToast.tsx)
+- [src/ui/widget/HoverCard.tsx](src/ui/widget/HoverCard.tsx)
 - masking and widget tests
 
 ### Risks
@@ -878,8 +878,8 @@ The goal is to make masking feel like a trustworthy assistive action:
 
 **Primary modules**
 
-- [src/classifier/smart-tokens.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/smart-tokens.ts)
-- [src/classifier/types.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/types.ts)
+- [src/classifier/smart-tokens.ts](src/classifier/smart-tokens.ts)
+- [src/classifier/types.ts](src/classifier/types.ts)
 - masking classifier tests
 
 **Tasks**
@@ -917,9 +917,9 @@ It is the most descriptive token that still preserves trust.
 
 **Primary modules**
 
-- [src/content/interceptor.ts](/private/tmp/sunbreak-roadmap-review/src/content/interceptor.ts)
-- [src/content/findings-state.ts](/private/tmp/sunbreak-roadmap-review/src/content/findings-state.ts)
-- [src/classifier/smart-tokens.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/smart-tokens.ts)
+- [src/content/interceptor.ts](src/content/interceptor.ts)
+- [src/content/findings-state.ts](src/content/findings-state.ts)
+- [src/classifier/smart-tokens.ts](src/classifier/smart-tokens.ts)
 
 **Tasks**
 
@@ -948,9 +948,9 @@ The rewrite path should remain a pure text transform plus in-memory map update.
 
 **Primary modules**
 
-- [src/classifier/smart-tokens.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/smart-tokens.ts)
-- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
-- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
+- [src/classifier/smart-tokens.ts](src/classifier/smart-tokens.ts)
+- [src/ui/widget/HoverCard.tsx](src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/FindingsPanel.tsx](src/ui/widget/FindingsPanel.tsx)
 
 **Tasks**
 
@@ -975,9 +975,9 @@ The rewrite path should remain a pure text transform plus in-memory map update.
 
 **Primary modules**
 
-- [src/content/clipboard-interceptor.ts](/private/tmp/sunbreak-roadmap-review/src/content/clipboard-interceptor.ts)
-- [src/content/masking-map.ts](/private/tmp/sunbreak-roadmap-review/src/content/masking-map.ts)
-- [src/ui/widget/RestoreToast.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/RestoreToast.tsx)
+- [src/content/clipboard-interceptor.ts](src/content/clipboard-interceptor.ts)
+- [src/content/masking-map.ts](src/content/masking-map.ts)
+- [src/ui/widget/RestoreToast.tsx](src/ui/widget/RestoreToast.tsx)
 
 **Tasks**
 
@@ -1004,9 +1004,9 @@ The rewrite path should remain a pure text transform plus in-memory map update.
 
 **Primary modules**
 
-- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
-- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
-- [src/ui/widget/Widget.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/Widget.tsx)
+- [src/ui/widget/FindingsPanel.tsx](src/ui/widget/FindingsPanel.tsx)
+- [src/ui/widget/HoverCard.tsx](src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/Widget.tsx](src/ui/widget/Widget.tsx)
 
 **Tasks**
 
@@ -1030,9 +1030,9 @@ The rewrite path should remain a pure text transform plus in-memory map update.
 
 **Primary modules**
 
-- [src/content/masking-map.ts](/private/tmp/sunbreak-roadmap-review/src/content/masking-map.ts)
-- [src/content/orchestrator.ts](/private/tmp/sunbreak-roadmap-review/src/content/orchestrator.ts)
-- [src/content/clipboard-interceptor.ts](/private/tmp/sunbreak-roadmap-review/src/content/clipboard-interceptor.ts)
+- [src/content/masking-map.ts](src/content/masking-map.ts)
+- [src/content/orchestrator.ts](src/content/orchestrator.ts)
+- [src/content/clipboard-interceptor.ts](src/content/clipboard-interceptor.ts)
 
 **Tasks**
 
@@ -1064,11 +1064,11 @@ The rewrite path should remain a pure text transform plus in-memory map update.
 **Primary automated tests**
 
 - masking classifier tests
-- [tests/unit/content/interceptor.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/interceptor.test.ts)
-- [tests/unit/content/masking-map.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/masking-map.test.ts)
-- [tests/unit/content/clipboard-interceptor.test.ts](/private/tmp/sunbreak-roadmap-review/tests/unit/content/clipboard-interceptor.test.ts)
-- [tests/unit/ui/widget/RestoreToast.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/RestoreToast.test.tsx)
-- [tests/unit/ui/widget/FindingsPanel.test.tsx](/private/tmp/sunbreak-roadmap-review/tests/unit/ui/widget/FindingsPanel.test.tsx)
+- [tests/unit/content/interceptor.test.ts](tests/unit/content/interceptor.test.ts)
+- [tests/unit/content/masking-map.test.ts](tests/unit/content/masking-map.test.ts)
+- [tests/unit/content/clipboard-interceptor.test.ts](tests/unit/content/clipboard-interceptor.test.ts)
+- [tests/unit/ui/widget/RestoreToast.test.tsx](tests/unit/ui/widget/RestoreToast.test.tsx)
+- [tests/unit/ui/widget/FindingsPanel.test.tsx](tests/unit/ui/widget/FindingsPanel.test.tsx)
 
 **Test additions required**
 
@@ -1210,11 +1210,11 @@ Created `tests/unit/classifier/prompt-usability.test.ts` with 17 tests covering 
 
 ### Likely files/modules
 
-- [src/storage/types.ts](/private/tmp/sunbreak-roadmap-review/src/storage/types.ts)
-- [src/storage/dashboard.ts](/private/tmp/sunbreak-roadmap-review/src/storage/dashboard.ts)
+- [src/storage/types.ts](src/storage/types.ts)
+- [src/storage/dashboard.ts](src/storage/dashboard.ts)
 - new classifier/config modules for custom patterns
-- [src/ui/dashboard/KeywordManager.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/dashboard/KeywordManager.tsx) or a successor component
-- [src/ui/dashboard/SettingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/dashboard/SettingsPanel.tsx)
+- [src/ui/dashboard/KeywordManager.tsx](src/ui/dashboard/KeywordManager.tsx) or a successor component
+- [src/ui/dashboard/SettingsPanel.tsx](src/ui/dashboard/SettingsPanel.tsx)
 - dashboard and classifier tests
 
 ### Risks

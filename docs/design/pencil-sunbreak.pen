@@ -7972,10 +7972,7 @@
                     },
                     "blur": 12
                   },
-                  "padding": [
-                    8,
-                    12
-                  ],
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8030,10 +8027,7 @@
                     },
                     "blur": 12
                   },
-                  "padding": [
-                    8,
-                    12
-                  ],
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8088,10 +8082,7 @@
                     },
                     "blur": 12
                   },
-                  "padding": [
-                    8,
-                    12
-                  ],
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8146,10 +8137,7 @@
                     },
                     "blur": 12
                   },
-                  "padding": [
-                    8,
-                    12
-                  ],
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8234,11 +8222,8 @@
                     },
                     "blur": 12
                   },
-                  "gap": 8,
-                  "padding": [
-                    8,
-                    12
-                  ],
+                  "gap": 6,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8301,11 +8286,8 @@
                     },
                     "blur": 12
                   },
-                  "gap": 8,
-                  "padding": [
-                    8,
-                    12
-                  ],
+                  "gap": 6,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8368,11 +8350,8 @@
                     },
                     "blur": 12
                   },
-                  "gap": 8,
-                  "padding": [
-                    8,
-                    12
-                  ],
+                  "gap": 6,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8474,10 +8453,7 @@
                     },
                     "blur": 12
                   },
-                  "padding": [
-                    8,
-                    12
-                  ],
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8532,13 +8508,8 @@
                     },
                     "blur": 12
                   },
-                  "gap": 8,
-                  "padding": [
-                    8,
-                    14,
-                    8,
-                    12
-                  ],
+                  "gap": 6,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8559,7 +8530,7 @@
                       "cornerRadius": "$--radius-pill",
                       "padding": [
                         2,
-                        7
+                        6
                       ],
                       "justifyContent": "center",
                       "alignItems": "center",
@@ -8618,13 +8589,8 @@
                     },
                     "blur": 12
                   },
-                  "gap": 8,
-                  "padding": [
-                    8,
-                    14,
-                    8,
-                    12
-                  ],
+                  "gap": 6,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8645,7 +8611,7 @@
                       "cornerRadius": "$--radius-pill",
                       "padding": [
                         2,
-                        7
+                        6
                       ],
                       "justifyContent": "center",
                       "alignItems": "center",
@@ -8704,13 +8670,8 @@
                     },
                     "blur": 12
                   },
-                  "gap": 8,
-                  "padding": [
-                    8,
-                    14,
-                    8,
-                    12
-                  ],
+                  "gap": 6,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8731,7 +8692,7 @@
                       "cornerRadius": "$--radius-pill",
                       "padding": [
                         2,
-                        7
+                        6
                       ],
                       "justifyContent": "center",
                       "alignItems": "center",
@@ -8740,6 +8701,7 @@
                           "type": "text",
                           "id": "s4V0W",
                           "name": "ebt4",
+                          "rotation": -0.2957513121329123,
                           "fill": "#FFFFFF",
                           "content": "3",
                           "fontFamily": "Outfit",
@@ -8820,11 +8782,8 @@
                     },
                     "blur": 12
                   },
-                  "gap": 8,
-                  "padding": [
-                    8,
-                    12
-                  ],
+                  "gap": 6,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8845,7 +8804,7 @@
                       "cornerRadius": "$--radius-pill",
                       "padding": [
                         2,
-                        7
+                        6
                       ],
                       "justifyContent": "center",
                       "alignItems": "center",
@@ -8905,10 +8864,7 @@
                     "blur": 12
                   },
                   "gap": 6,
-                  "padding": [
-                    8,
-                    12
-                  ],
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -8929,7 +8885,7 @@
                       "cornerRadius": "$--radius-pill",
                       "padding": [
                         2,
-                        7
+                        6
                       ],
                       "justifyContent": "center",
                       "alignItems": "center",
@@ -8947,14 +8903,6 @@
                       ]
                     },
                     {
-                      "type": "rectangle",
-                      "id": "DYm9b",
-                      "name": "emdiv2",
-                      "fill": "$--border-subtle",
-                      "width": 1,
-                      "height": 14
-                    },
-                    {
                       "type": "frame",
                       "id": "il8q4",
                       "name": "emb2b",
@@ -8962,7 +8910,7 @@
                       "cornerRadius": "$--radius-pill",
                       "padding": [
                         2,
-                        7
+                        6
                       ],
                       "justifyContent": "center",
                       "alignItems": "center",
@@ -9022,10 +8970,7 @@
                     "blur": 12
                   },
                   "gap": 6,
-                  "padding": [
-                    8,
-                    12
-                  ],
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -9046,7 +8991,7 @@
                       "cornerRadius": "$--radius-pill",
                       "padding": [
                         2,
-                        7
+                        6
                       ],
                       "justifyContent": "center",
                       "alignItems": "center",
@@ -9064,14 +9009,6 @@
                       ]
                     },
                     {
-                      "type": "rectangle",
-                      "id": "3xnjO",
-                      "name": "emdiv3",
-                      "fill": "$--border-subtle",
-                      "width": 1,
-                      "height": 14
-                    },
-                    {
                       "type": "frame",
                       "id": "9Zs1L",
                       "name": "emb3b",
@@ -9079,7 +9016,7 @@
                       "cornerRadius": "$--radius-pill",
                       "padding": [
                         2,
-                        7
+                        6
                       ],
                       "justifyContent": "center",
                       "alignItems": "center",
@@ -9375,7 +9312,7 @@
                     },
                     "blur": 12
                   },
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -9430,7 +9367,7 @@
                     },
                     "blur": 12
                   },
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -9485,7 +9422,7 @@
                     },
                     "blur": 12
                   },
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -9540,7 +9477,7 @@
                     },
                     "blur": 12
                   },
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -9626,7 +9563,7 @@
                     "blur": 12
                   },
                   "gap": 6,
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -9690,7 +9627,7 @@
                     "blur": 12
                   },
                   "gap": 6,
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -9754,7 +9691,7 @@
                     "blur": 12
                   },
                   "gap": 6,
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -9856,7 +9793,7 @@
                     },
                     "blur": 12
                   },
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -9912,7 +9849,7 @@
                     "blur": 12
                   },
                   "gap": 6,
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -9993,7 +9930,7 @@
                     "blur": 12
                   },
                   "gap": 6,
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -10074,7 +10011,7 @@
                     "blur": 12
                   },
                   "gap": 6,
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -10185,7 +10122,7 @@
                     "blur": 12
                   },
                   "gap": 6,
-                  "padding": 8,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -10265,8 +10202,8 @@
                     },
                     "blur": 12
                   },
-                  "gap": 5,
-                  "padding": 8,
+                  "gap": 6,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
@@ -10379,8 +10316,8 @@
                     },
                     "blur": 12
                   },
-                  "gap": 5,
-                  "padding": 8,
+                  "gap": 6,
+                  "padding": 6,
                   "alignItems": "center",
                   "children": [
                     {
