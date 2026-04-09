@@ -2602,8 +2602,84 @@ Before starting the next epic, verify:
 
 ## Recommended Immediate Next Step
 
-Start with **Epic 1 — Interaction Layer Hardening** only until the widget/overlay/send-anchor behavior feels boringly reliable.
+**Epics 1–5 are complete** as of 2026-03-14.
 
-Then move directly into **Epic 2 — Context-Aware Detection Engine**.
+Next: **Epic 6 — Onboarding And Trust UX.**
 
-That sequence gives the product its first real qualitative jump while standing on a stable interaction foundation.
+After Epic 6, schedule a **detector expansion sprint (Epic 2b)** based on the taxonomy research before starting Epic 7. See the Research Review section below for the detector list and rationale.
+
+---
+
+## Research Review — 2026-04-09
+
+Three deep research documents were commissioned in March 2026 and reviewed against the roadmap on 2026-04-09, after Epics 1–5 were completed. The findings are captured here for future epic planning.
+
+**Source documents:**
+
+- `docs/roadmap-v2/research/2026-03-16-sensitive-data-taxonomy-detection-roadmap.md`
+- `docs/roadmap-v2/research/2026-03-16-eu-legal-framework-gdpr-deep-dive.md`
+- `docs/roadmap-v2/research/2026-03-16-eu-ai-act-compliance-map.md`
+
+### Assessment: roadmap sequencing holds
+
+No resequencing needed. The research validates the existing epic order and identifies two expansion opportunities that should be scheduled after Epic 6.
+
+### Gap 1 — Detector expansion (proposed Epic 2b)
+
+The sensitive data taxonomy identifies ~15 high-value regex detectors not currently built. These slot into the existing classifier engine with no architectural changes. They are distinct from Epic 2's context-scoring work — they are new pattern detectors, not smarter reasoning about existing patterns.
+
+**Highest-impact additions (all regex-feasible, Phase 1 in the taxonomy):**
+
+| Detector | Method | Value |
+|----------|--------|-------|
+| Source code detection | Heuristic scoring (syntax patterns, keyword density, special-char ratio) | #1 data type sent to AI tools (18.7-30% of exposure) |
+| Database connection strings | Protocol-prefix regex (`mongodb://`, `postgres://`, `jdbc:`, etc.) | Direct secret exposure |
+| PEM private keys / certificates | Exact match on `-----BEGIN...PRIVATE KEY-----` | Near-zero false positives |
+| JWT tokens | `eyJ` base64 prefix regex | Near-zero false positives |
+| IBAN numbers | Regex + mod-97 checksum validation | High-value financial PII |
+| Environment variable blocks | Multi-line `KEY=value` pattern + sensitive variable name dictionary | Common in developer AI prompts |
+| Extended API key prefixes | Google `AIza`, Slack `xox`, GitLab `glpat-`, SendGrid `SG.`, Twilio `SK`, etc. | Expands beyond current AWS-only coverage |
+| Bitcoin/Ethereum wallet addresses | Prefix + charset regex | Financial PII |
+| Email confidentiality disclaimers | Phrase regex for standard disclaimer language | Supports trade secret argument |
+
+**Recommended timing:** lightweight sprint between Epic 6 and Epic 7, or as a parallel track during Epic 7. Estimated 2-4 weeks for ~15 detectors based on taxonomy assessment.
+
+**Later phases from the taxonomy (not for immediate scheduling):**
+
+- Phase 2 (heuristic scoring): point-based co-occurrence for financial MNPI, salary data, meeting notes. 1-3 months.
+- Phase 3 (local NER via Transformers.js): quantized BERT-NER (~110MB), F1 ~91% for personal names, loaded on-demand in Web Worker. 3-6 months.
+- Phase 4 (advanced ML classifiers): GDPR Art. 9 special categories, fine-tuned trade secret detection. 6-12 months.
+
+### Gap 2 — Structured activity logging for compliance evidence
+
+Audit logging is currently in Phase 8 Track F ("compliance metadata/reporting foundation"). The legal research makes a strong case for moving basic structured event logging earlier.
+
+**Regulatory drivers (all already in force):**
+
+- GDPR Art. 30 — Records of Processing Activities (ROPA)
+- DORA Art. 8 — ICT risk management documentation (financial sector, live since Jan 2025)
+- NIS2 Art. 21 — cybersecurity risk management measures (transposition ongoing)
+- AI Act Art. 26(6) — deployer log retention (applicable Aug 2026)
+
+A single activity log satisfying "what was detected, what action was taken, when" would generate compliance evidence across all four frameworks simultaneously. This is different from Epic 1's developer diagnostics — it is user-facing compliance evidence.
+
+**Recommended timing:** consider adding a minimal structured logging layer during Epic 7 (Controlled Configurability) since configurability and audit naturally share the settings/storage surface. Does not need to be a standalone epic.
+
+### CRA product compliance obligation
+
+The Cyber Resilience Act (Regulation 2024/2847) directly applies to Sunbreak as a distributed software product:
+
+- **Sep 2026:** vulnerability reporting obligations begin
+- **Dec 2027:** full compliance including CE marking, SBOM, technical documentation
+
+This is a process obligation on Sunbreak-the-product, not a user feature. It does not change feature prioritization but should be tracked as an operational milestone.
+
+### Confirmed alignment
+
+These roadmap decisions are validated by the research:
+
+- **Sunbreak (regex-only) falls entirely outside the AI Act.** No AI Act obligations apply unless ML is added. If ML is added later (Phase 8 Track E), it would be minimal risk tier.
+- **Confidentiality label detection (Epic 2) directly supports trade secret protection.** The "reasonable steps" doctrine under the Trade Secrets Directive (2016/943) means Sunbreak helps companies maintain legal trade secret status.
+- **Special category data detection (health, religion, ethnicity) correctly deferred.** Rated "Very Low" detectability without ML/NER — aligns with Phase 8 Track E timing.
+- **Local-only architecture is the right compliance posture.** GDPR data minimization (Art. 5(1)(c)) and data protection by design (Art. 25) are directly satisfied by never transmitting prompt content.
+- **Cross-framework compound compliance is the strongest positioning story.** A single employee paste into an AI tool can simultaneously violate GDPR, AI Act deployer obligations, NIS2, DORA, MAR, and the Trade Secrets Directive — cumulative fines exceeding 13% of global turnover. Sunbreak provides a single control point.
