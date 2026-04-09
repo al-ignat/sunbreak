@@ -120,7 +120,7 @@ export function KeywordManager({
       {/* Badges */}
       {keywords.length === 0 ? (
         <p className="keyword-empty">
-          No custom keywords. Add words or phrases you want to monitor.
+          No custom keywords yet. Add words or phrases specific to your work that Sunbreak should watch for.
         </p>
       ) : (
         <div className="keyword-badges">

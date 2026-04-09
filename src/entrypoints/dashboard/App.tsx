@@ -9,6 +9,7 @@ import { SettingsPanel } from '../../ui/dashboard/SettingsPanel';
 import { KeywordManager } from '../../ui/dashboard/KeywordManager';
 import { CustomPatternManager } from '../../ui/dashboard/CustomPatternManager';
 import { ReportCards } from '../../ui/dashboard/ReportCards';
+import { SandboxPanel } from '../../ui/dashboard/SandboxPanel';
 import type {
   AggregatedStats,
   CustomPattern,
@@ -185,6 +186,9 @@ export default function App(): JSX.Element {
               onDataChange={loadData}
             />
           )}
+          {activeTab === 'sandbox' && (
+            <SandboxPanel />
+          )}
           {activeTab === 'keywords' && (
             <>
               <KeywordManager
@@ -212,6 +216,6 @@ export default function App(): JSX.Element {
 
 function resolveTabFromHash(): TabId {
   const hash = window.location.hash.slice(1).split('?')[0] ?? '';
-  const valid: TabId[] = ['overview', 'activity', 'settings', 'keywords', 'reports'];
+  const valid: TabId[] = ['overview', 'activity', 'settings', 'sandbox', 'keywords', 'reports'];
   return valid.includes(hash as TabId) ? (hash as TabId) : 'overview';
 }

@@ -37,7 +37,7 @@ describe('BarChart', () => {
     const { container } = render(
       <BarChart stats7={emptyStats} stats30={emptyStats} />,
     );
-    expect(container.textContent).toContain('No data yet');
+    expect(container.textContent).toContain('No activity yet');
   });
 
   it('renders metric cards with correct values', () => {

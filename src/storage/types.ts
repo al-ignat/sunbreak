@@ -263,3 +263,11 @@ export interface CustomPatternBundle {
   readonly exportedAt: string;
   readonly patterns: ReadonlyArray<CustomPattern>;
 }
+
+/** Onboarding state — UI-only, separate from ExtensionSettings */
+export type OnboardingStatus = 'not-started' | 'completed' | 'skipped';
+
+export interface OnboardingState {
+  readonly status: OnboardingStatus;
+  readonly completedAt?: string;
+}

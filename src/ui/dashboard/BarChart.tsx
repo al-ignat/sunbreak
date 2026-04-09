@@ -30,7 +30,11 @@ export function BarChart({ stats7, stats30 }: BarChartProps): JSX.Element {
   if (stats.totalInteractions === 0) {
     return (
       <div className="empty-state">
-        <p>No data yet. Start using AI tools and your charts will appear here.</p>
+        <p>
+          No activity yet.{' '}
+          <a href="#sandbox" className="empty-state__cta">Try the Sandbox</a>{' '}
+          to see detection in action, or start using AI tools with Sunbreak active.
+        </p>
       </div>
     );
   }
