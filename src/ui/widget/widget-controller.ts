@@ -73,12 +73,15 @@ export interface WidgetContext {
   onInvalidated(callback: () => void): void;
 }
 
+/** Possible toast resolution actions */
+export type ToastAction = 'send-anyway' | 'timeout' | 'reviewed';
+
 /** Toast state managed by the controller */
 interface ToastState {
   visible: boolean;
   paused: boolean;
   activeCount: number;
-  resolve: (action: 'send-anyway' | 'timeout') => void;
+  resolve: (action: ToastAction) => void;
 }
 
 /** Restore toast state managed by the controller */
@@ -114,7 +117,7 @@ export function createWidgetController(
   mount(input: HTMLElement): void;
   unmount(): void;
   destroy(): void;
-  showToast(activeCount: number): Promise<'send-anyway' | 'timeout'>;
+  showToast(activeCount: number): Promise<ToastAction>;
   showRestoreToast(count: number): Promise<boolean>;
   showFileWarning(count: number): void;
   getOverlayHandle(): TextOverlayHandle | null;
@@ -566,11 +569,14 @@ export function createWidgetController(
     resolveToast('timeout');
   }
 
-  function resolveToast(action: 'send-anyway' | 'timeout'): void {
+  function resolveToast(action: ToastAction): void {
     if (!toastState) return;
     const { resolve } = toastState;
     toastState = null;
-    panelOpen = false;
+    // Keep panel open when user addressed findings via review
+    if (action !== 'reviewed') {
+      panelOpen = false;
+    }
     renderWidget();
     resolve(action);
   }
@@ -653,6 +659,13 @@ export function createWidgetController(
 
   function renderWidget(): void {
     if (!wrapper) return;
+
+    // Auto-resolve toast when all findings were addressed during review
+    if (toastState && findingsState.getSnapshot().activeCount === 0) {
+      resolveToast('reviewed');
+      return;
+    }
+
     if (!extensionEnabled) {
       render(null, wrapper);
       overlayHandle = null;
@@ -728,7 +741,7 @@ export function createWidgetController(
     setWrapperVisibility(false);
   }
 
-  function showToast(activeCount: number): Promise<'send-anyway' | 'timeout'> {
+  function showToast(activeCount: number): Promise<ToastAction> {
     return new Promise((resolve) => {
       toastState = {
         visible: true,

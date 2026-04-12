@@ -263,7 +263,7 @@ describe('calculateUnderlines', () => {
     parent.appendChild(div);
     document.body.appendChild(parent);
 
-    parent.getBoundingClientRect = () => ({
+    parent.getBoundingClientRect = (): DOMRect => ({
       top: 100,
       left: 50,
       right: 250,
@@ -272,9 +272,9 @@ describe('calculateUnderlines', () => {
       height: 80,
       x: 50,
       y: 100,
-      toJSON: () => ({}),
+      toJSON: (): Record<string, never> => ({}),
     }) as DOMRect;
-    div.getBoundingClientRect = () => ({
+    div.getBoundingClientRect = (): DOMRect => ({
       top: 60,
       left: 20,
       right: 420,
@@ -283,9 +283,9 @@ describe('calculateUnderlines', () => {
       height: 200,
       x: 20,
       y: 60,
-      toJSON: () => ({}),
+      toJSON: (): Record<string, never> => ({}),
     }) as DOMRect;
-    Range.prototype.getClientRects = () => ([
+    Range.prototype.getClientRects = (): DOMRectList => ([
       {
         top: 120,
         left: 70,
@@ -295,7 +295,7 @@ describe('calculateUnderlines', () => {
         height: 14,
         x: 70,
         y: 120,
-        toJSON: () => ({}),
+        toJSON: (): Record<string, never> => ({}),
       },
       {
         top: 190,
@@ -306,7 +306,7 @@ describe('calculateUnderlines', () => {
         height: 14,
         x: 70,
         y: 190,
-        toJSON: () => ({}),
+        toJSON: (): Record<string, never> => ({}),
       },
     ]) as unknown as DOMRectList;
 

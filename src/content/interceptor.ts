@@ -23,11 +23,12 @@ export interface InterceptorContext {
 /**
  * Configuration for the submission interceptor.
  * - shouldBlock: synchronous check — return true to preventDefault and show toast
- * - onBlocked: async — called after blocking, resolves when submission should proceed
+ * - onBlocked: async — called after blocking; resolves with true to re-trigger
+ *   submission, or false to skip (e.g. user fixed all findings during review)
  */
 export interface SubmitInterceptConfig {
   shouldBlock: () => boolean;
-  onBlocked: () => Promise<void>;
+  onBlocked: () => Promise<boolean>;
 }
 
 /**
@@ -98,8 +99,9 @@ export function attachSubmissionInterceptor(
     e.stopPropagation();
     e.stopImmediatePropagation();
 
-    void config.onBlocked().then(() => {
+    void config.onBlocked().then((resubmit) => {
       if (ctx.isInvalid) return;
+      if (!resubmit) return;
       triggerKeyboardSubmit(el);
     });
   };
@@ -135,8 +137,9 @@ export function attachSubmissionInterceptor(
     e.stopPropagation();
     e.stopImmediatePropagation();
 
-    void config.onBlocked().then(() => {
+    void config.onBlocked().then((resubmit) => {
       if (ctx.isInvalid) return;
+      if (!resubmit) return;
       triggerButtonSubmit(adapter);
     });
   };

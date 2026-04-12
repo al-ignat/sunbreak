@@ -60,7 +60,7 @@ function createConfig(
 ): SubmitInterceptConfig {
   return {
     shouldBlock: overrides.shouldBlock ?? ((): boolean => true),
-    onBlocked: overrides.onBlocked ?? ((): Promise<void> => Promise.resolve()),
+    onBlocked: overrides.onBlocked ?? ((): Promise<boolean> => Promise.resolve(true)),
   };
 }
 
@@ -221,7 +221,7 @@ describe('attachSubmissionInterceptor', () => {
     expect(onBlocked).toHaveBeenCalledTimes(1);
   });
 
-  it('re-triggers keyboard submit after onBlocked resolves', async () => {
+  it('re-triggers keyboard submit after onBlocked resolves true', async () => {
     const adapter = createMockAdapter({ getText: () => 'text' });
     const ctx = createMockContext();
 
@@ -229,7 +229,7 @@ describe('attachSubmissionInterceptor', () => {
       input,
       adapter,
       ctx,
-      createConfig({ onBlocked: () => Promise.resolve() }),
+      createConfig({ onBlocked: () => Promise.resolve(true) }),
     );
 
     const secondKeydownSpy = vi.fn();
@@ -248,6 +248,33 @@ describe('attachSubmissionInterceptor', () => {
     });
   });
 
+  it('does not re-trigger submit when onBlocked resolves false', async () => {
+    const adapter = createMockAdapter({ getText: () => 'text' });
+    const ctx = createMockContext();
+
+    attachSubmissionInterceptor(
+      input,
+      adapter,
+      ctx,
+      createConfig({ onBlocked: () => Promise.resolve(false) }),
+    );
+
+    const secondKeydownSpy = vi.fn();
+    input.addEventListener('keydown', secondKeydownSpy);
+
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+    // Give time for any re-trigger to fire
+    await new Promise((r) => setTimeout(r, 50));
+    expect(secondKeydownSpy).not.toHaveBeenCalled();
+  });
+
   it('nonce bypass lets re-triggered event pass through', async () => {
     let blockCount = 0;
     const adapter = createMockAdapter({ getText: () => 'text' });
@@ -262,7 +289,7 @@ describe('attachSubmissionInterceptor', () => {
           blockCount++;
           return true;
         },
-        onBlocked: () => Promise.resolve(),
+        onBlocked: () => Promise.resolve(true),
       }),
     );
 

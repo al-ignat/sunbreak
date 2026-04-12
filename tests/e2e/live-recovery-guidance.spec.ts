@@ -232,7 +232,7 @@ for (const site of SITES) {
       await page.close();
     });
 
-    test('FU2: file warning toast auto-dismisses', async ({ context, extensionId }) => {
+    test('FU2: file warning toast auto-dismisses', async ({ context }) => {
       const page = await context.newPage();
       await page.goto(site.url, { waitUntil: 'domcontentloaded' });
 

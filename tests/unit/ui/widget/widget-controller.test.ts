@@ -378,6 +378,27 @@ describe('widget-controller anchor behavior', () => {
     );
   });
 
+  it('auto-resolves toast as reviewed when all findings are fixed during review', async () => {
+    appendInput();
+    appendSendButton();
+    const findingsState = createFindingsState();
+    findingsState.update([makeFinding()]);
+
+    const controller = createWidgetController(findingsState, createMockAdapter(), createMockCtx(), createMaskingMap());
+    activeControllers.push(controller);
+    const input = document.getElementById('editor');
+    if (!input) throw new Error('input not found');
+
+    controller.mount(input);
+    const toastPromise = controller.showToast(1);
+
+    // Fix the finding — activeCount drops to 0
+    findingsState.fix(findingsState.getSnapshot().tracked[0].id);
+
+    // Toast should auto-resolve as 'reviewed'
+    await expect(toastPromise).resolves.toBe('reviewed');
+  });
+
   it('resolves active send and restore toasts safely when disabled', async () => {
     appendInput();
     appendSendButton();
