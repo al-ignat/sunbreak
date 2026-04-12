@@ -1,6 +1,6 @@
 import type { JSX } from 'preact';
 
-export type TabId = 'overview' | 'activity' | 'settings' | 'keywords' | 'reports';
+export type TabId = 'overview' | 'activity' | 'settings' | 'sandbox' | 'keywords' | 'reports';
 
 export interface TabNavProps {
   readonly activeTab: TabId;
@@ -11,6 +11,7 @@ const TABS: ReadonlyArray<{ id: TabId; label: string }> = [
   { id: 'overview', label: 'Overview' },
   { id: 'activity', label: 'Activity Log' },
   { id: 'settings', label: 'Settings' },
+  { id: 'sandbox', label: 'Sandbox' },
   { id: 'keywords', label: 'Keywords' },
   { id: 'reports', label: 'Report Cards' },
 ];

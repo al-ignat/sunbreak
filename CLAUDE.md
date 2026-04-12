@@ -111,12 +111,11 @@ API interception. SSO/SCIM. Multi-language PII (except Danish CPR, UK NI).
 
 ## Key References
 
+- `docs/roadmap-v2/README.md` — Active roadmap (v2)
+- `docs/roadmap-v2/plans/2026-03-12-roadmap-v2-implementation-plan.md` — Execution plan
 - `docs/founding/founding-SPEC.md` — Full 6-section product specification
-- `docs/founding/founding-PLAN.md` — Phase-based implementation checklist
-- `docs/brainstorms/2026-03-02-secure-byoai-product-brainstorm.md` — Key decisions
-- `docs/plans/2026-03-02-feat-phase1-project-scaffolding-plan.md` — Phase 1 plan
+- `docs/founding/founding-PLAN.md` — Original phase checklist (v1, completed)
 - `docs/founding/founding-01-product-deep-dive.md` — Market analysis
-- `docs/founding/founding-03-implementation-guide.md` — Session-by-session guide
 
 ## Git Workflow
 
@@ -136,4 +135,4 @@ This project uses Compound Engineering methodology:
 
 ## Current Status
 
-Phase 1 scaffolding in progress on `feat/scaffold` branch.
+V1 phases 1–5 complete. Roadmap v2 is active — next up is Epic 1 (Interaction Layer Hardening). See `docs/roadmap-v2/README.md`.

@@ -343,6 +343,51 @@ describe('createOrchestrator', () => {
       expect(findingsState.getSnapshot().activeCount).toBe(0);
       expect(findingsState.getSnapshot().tracked).toHaveLength(0);
     });
+
+    it('returns true for send-anyway and timeout (re-trigger submission)', async () => {
+      const mockShowToast = vi.fn().mockResolvedValue('send-anyway');
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: mockShowToast,
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning: vi.fn(),
+        setEnabled: vi.fn(),
+      });
+
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
+
+      findingsState.update([makeFinding()]);
+      const result = await submitConfig.onBlocked();
+
+      expect(result).toBe(true);
+    });
+
+    it('returns false and skips logging when toast resolves as reviewed', async () => {
+      const mockShowToast = vi.fn().mockResolvedValue('reviewed');
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: mockShowToast,
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning: vi.fn(),
+        setEnabled: vi.fn(),
+      });
+
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
+
+      findingsState.update([makeFinding()]);
+      const result = await submitConfig.onBlocked();
+
+      expect(result).toBe(false);
+      expect(logFlaggedEvent).not.toHaveBeenCalled();
+    });
   });
 
   describe('clipboard restore integration', () => {
@@ -377,7 +422,7 @@ describe('createOrchestrator', () => {
       clipboardInterceptor.attach();
 
       // Simulate a copy event with the token
-      const selection = { toString: () => 'Response: [John S. email]' };
+      const selection = { toString: (): string => 'Response: [John S. email]' };
       vi.spyOn(window, 'getSelection').mockReturnValue(selection as unknown as Selection);
 
       const clipboardData = {
@@ -426,7 +471,7 @@ describe('createOrchestrator', () => {
       maskingMap.set('[John S. email]', 'john@acme.com');
       clipboardInterceptor.attach();
 
-      const selection = { toString: () => 'Response: [John S. email]' };
+      const selection = { toString: (): string => 'Response: [John S. email]' };
       vi.spyOn(window, 'getSelection').mockReturnValue(selection as unknown as Selection);
 
       const clipboardData = { setData: vi.fn() };
@@ -461,7 +506,7 @@ describe('createOrchestrator', () => {
 
       clipboardInterceptor.attach();
 
-      const selection = { toString: () => 'Plain text without tokens' };
+      const selection = { toString: (): string => 'Plain text without tokens' };
       vi.spyOn(window, 'getSelection').mockReturnValue(selection as unknown as Selection);
 
       const copyEvent = new Event('copy', { bubbles: true, cancelable: true });

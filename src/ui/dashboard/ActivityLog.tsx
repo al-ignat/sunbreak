@@ -63,7 +63,7 @@ export function ActivityLog({
   if (events.length === 0) {
     return (
       <div className="empty-state">
-        <p>No flagged events yet.</p>
+        <p>No flagged events yet. Sunbreak will log findings here as you use AI tools.</p>
       </div>
     );
   }

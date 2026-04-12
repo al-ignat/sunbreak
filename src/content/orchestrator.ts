@@ -292,10 +292,19 @@ export function createOrchestrator(
   /**
    * Async handler: called after submission is blocked.
    * Shows toast, waits for resolution, then logs the event.
+   * Returns true if the interceptor should re-trigger submission,
+   * false if the user will submit manually (e.g. after fixing findings).
    */
-  async function onBlocked(): Promise<void> {
+  async function onBlocked(): Promise<boolean> {
     const snap = findingsState.getSnapshot();
     const action = await widgetController.showToast(snap.activeCount);
+
+    // User addressed all findings during review — no flagged event,
+    // no re-submission (they will click Send themselves)
+    if (action === 'reviewed') {
+      return false;
+    }
+
     findingsState.clear();
 
     const active = snap.tracked.filter((t) => t.status === 'active');
@@ -318,6 +327,7 @@ export function createOrchestrator(
     void action; // both 'send-anyway' and 'timeout' result in 'sent-anyway'
     maybeLogPendingAttachmentSend(adapter.name);
     logFlaggedEvent(event);
+    return true;
   }
 
   function maybeLogPendingAttachmentSend(adapterName: SiteName): boolean {

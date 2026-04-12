@@ -3,10 +3,10 @@
 **Date:** 2026-03-12  
 **Inputs reviewed:**  
 
-- [docs/v1-roadmap.md](/private/tmp/sunbreak-roadmap-review/docs/v1-roadmap.md)  
-- [docs/brainstorms/2026-03-04-v02-ai-safety-companion-brainstorm.md](/private/tmp/sunbreak-roadmap-review/docs/brainstorms/2026-03-04-v02-ai-safety-companion-brainstorm.md)  
-- [docs/brainstorms/2026-03-06-sensitive-data-roadmap-brainstorm.md](/private/tmp/sunbreak-roadmap-review/docs/brainstorms/2026-03-06-sensitive-data-roadmap-brainstorm.md)  
-- [docs/brainstorms/2026-03-02-secure-byoai-product-brainstorm.md](/private/tmp/sunbreak-roadmap-review/docs/brainstorms/2026-03-02-secure-byoai-product-brainstorm.md)
+- [docs/roadmap.md](../../roadmap.md)  
+- [docs/brainstorms/2026-03-04-v02-ai-safety-companion-brainstorm.md](docs/brainstorms/2026-03-04-v02-ai-safety-companion-brainstorm.md)  
+- [docs/brainstorms/2026-03-06-sensitive-data-roadmap-brainstorm.md](docs/brainstorms/2026-03-06-sensitive-data-roadmap-brainstorm.md)  
+- [docs/brainstorms/2026-03-02-secure-byoai-product-brainstorm.md](docs/brainstorms/2026-03-02-secure-byoai-product-brainstorm.md)
 
 **External pressure-test sources:** official Chrome built-in AI docs, OpenAI Help, Anthropic/Claude support, Google support, and official vendor sites for adjacent enterprise AI security products. Links are listed at the end.
 

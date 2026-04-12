@@ -17,7 +17,7 @@ export function StatsCard({ stats, periodLabel }: StatsCardProps): JSX.Element {
     return (
       <div className="stats-card">
         <p className="stats-card__empty">
-          No activity yet. Start using AI tools and your stats will appear here.
+          No activity yet. <a href="#sandbox" className="empty-state__cta">Try the Sandbox</a> to see Sunbreak in action.
         </p>
       </div>
     );

@@ -1,8 +1,8 @@
 # Sunbreak Roadmap v2 — Current-State Assessment and Execution Plan
 
 **Date:** 2026-03-12  
-**Roadmap target:** [docs/roadmap-v2/README.md](/private/tmp/sunbreak-roadmap-review/docs/roadmap-v2/README.md)  
-**Companion assessment:** [docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md](/private/tmp/sunbreak-roadmap-review/docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md)
+**Roadmap target:** [docs/roadmap-v2/README.md](docs/roadmap-v2/README.md)  
+**Companion assessment:** [docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md](docs/roadmap-v2/research/2026-03-12-roadmap-review-ai-safety-companion.md)
 
 ---
 
@@ -55,11 +55,11 @@ That changes the plan materially.
 
 ### Evidence
 
-- [src/ui/widget/widget-controller.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/widget-controller.ts)
-- [src/ui/widget/TextOverlay.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/TextOverlay.tsx)
-- [src/ui/widget/HoverCard.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/HoverCard.tsx)
-- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
-- [src/ui/widget/position.ts](/private/tmp/sunbreak-roadmap-review/src/ui/widget/position.ts)
+- [src/ui/widget/widget-controller.ts](src/ui/widget/widget-controller.ts)
+- [src/ui/widget/TextOverlay.tsx](src/ui/widget/TextOverlay.tsx)
+- [src/ui/widget/HoverCard.tsx](src/ui/widget/HoverCard.tsx)
+- [src/ui/widget/FindingsPanel.tsx](src/ui/widget/FindingsPanel.tsx)
+- [src/ui/widget/position.ts](src/ui/widget/position.ts)
 
 ### Still missing or incomplete
 
@@ -88,9 +88,9 @@ This phase is **not** a new epic. It is the tail end of current implementation.
 
 ### Evidence
 
-- [src/classifier/engine.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/engine.ts)
-- [src/classifier/keywords.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/keywords.ts)
-- [src/classifier/types.ts](/private/tmp/sunbreak-roadmap-review/src/classifier/types.ts)
+- [src/classifier/engine.ts](src/classifier/engine.ts)
+- [src/classifier/keywords.ts](src/classifier/keywords.ts)
+- [src/classifier/types.ts](src/classifier/types.ts)
 
 ### Still missing or incomplete
 
@@ -121,11 +121,11 @@ This is the largest **real product capability gap** in the roadmap.
 
 ### Evidence
 
-- [src/content/masking-map.ts](/private/tmp/sunbreak-roadmap-review/src/content/masking-map.ts)
-- [src/content/clipboard-interceptor.ts](/private/tmp/sunbreak-roadmap-review/src/content/clipboard-interceptor.ts)
-- [src/ui/widget/RestoreToast.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/RestoreToast.tsx)
-- [src/ui/widget/FindingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/widget/FindingsPanel.tsx)
-- [src/ui/dashboard/SettingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/dashboard/SettingsPanel.tsx)
+- [src/content/masking-map.ts](src/content/masking-map.ts)
+- [src/content/clipboard-interceptor.ts](src/content/clipboard-interceptor.ts)
+- [src/ui/widget/RestoreToast.tsx](src/ui/widget/RestoreToast.tsx)
+- [src/ui/widget/FindingsPanel.tsx](src/ui/widget/FindingsPanel.tsx)
+- [src/ui/dashboard/SettingsPanel.tsx](src/ui/dashboard/SettingsPanel.tsx)
 
 ### Still missing or incomplete
 
@@ -155,8 +155,8 @@ That is good news. You do not need to invent it. You need to finish and sharpen 
 
 ### Evidence
 
-- [src/ui/dashboard/KeywordManager.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/dashboard/KeywordManager.tsx)
-- [src/storage/dashboard.ts](/private/tmp/sunbreak-roadmap-review/src/storage/dashboard.ts)
+- [src/ui/dashboard/KeywordManager.tsx](src/ui/dashboard/KeywordManager.tsx)
+- [src/storage/dashboard.ts](src/storage/dashboard.ts)
 
 ### Still missing or incomplete
 
@@ -188,9 +188,9 @@ Keywords prove the direction. They are not enough to count as the roadmap featur
 
 ### Evidence
 
-- [src/storage/events.ts](/private/tmp/sunbreak-roadmap-review/src/storage/events.ts)
-- [src/ui/dashboard/ActivityLog.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/dashboard/ActivityLog.tsx)
-- [src/content/interceptor.ts](/private/tmp/sunbreak-roadmap-review/src/content/interceptor.ts)
+- [src/storage/events.ts](src/storage/events.ts)
+- [src/ui/dashboard/ActivityLog.tsx](src/ui/dashboard/ActivityLog.tsx)
+- [src/content/interceptor.ts](src/content/interceptor.ts)
 
 ### Still missing or incomplete
 
@@ -221,9 +221,9 @@ This is a good place to build because the storage and dashboard foundations alre
 
 ### Evidence
 
-- [src/entrypoints/popup/App.tsx](/private/tmp/sunbreak-roadmap-review/src/entrypoints/popup/App.tsx)
-- [src/entrypoints/dashboard/App.tsx](/private/tmp/sunbreak-roadmap-review/src/entrypoints/dashboard/App.tsx)
-- [src/ui/dashboard/ReportCards.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/dashboard/ReportCards.tsx)
+- [src/entrypoints/popup/App.tsx](src/entrypoints/popup/App.tsx)
+- [src/entrypoints/dashboard/App.tsx](src/entrypoints/dashboard/App.tsx)
+- [src/ui/dashboard/ReportCards.tsx](src/ui/dashboard/ReportCards.tsx)
 
 ### Still missing or incomplete
 
@@ -252,8 +252,8 @@ The support surfaces exist, but the **adoption story is not yet implemented**.
 
 ### Evidence
 
-- [src/ui/dashboard/SettingsPanel.tsx](/private/tmp/sunbreak-roadmap-review/src/ui/dashboard/SettingsPanel.tsx)
-- [src/storage/types.ts](/private/tmp/sunbreak-roadmap-review/src/storage/types.ts)
+- [src/ui/dashboard/SettingsPanel.tsx](src/ui/dashboard/SettingsPanel.tsx)
+- [src/storage/types.ts](src/storage/types.ts)
 
 ### Still missing or incomplete
 
@@ -280,8 +280,8 @@ Enough exists to avoid treating this as greenfield. But it should stay behind th
 
 ### Evidence
 
-- [src/entrypoints/background.ts](/private/tmp/sunbreak-roadmap-review/src/entrypoints/background.ts)
-- [src/storage/dashboard.ts](/private/tmp/sunbreak-roadmap-review/src/storage/dashboard.ts)
+- [src/entrypoints/background.ts](src/entrypoints/background.ts)
+- [src/storage/dashboard.ts](src/storage/dashboard.ts)
 
 ### Mostly missing
 
