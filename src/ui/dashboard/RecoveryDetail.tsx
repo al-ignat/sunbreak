@@ -35,7 +35,7 @@ function buildSummary(event: FlaggedEvent): string {
       : 'A file attachment event was recorded. Review whether the attachment itself was appropriate to share.';
   }
 
-  if (event.action === 'sent-anyway') {
+  if (event.action === 'sent-anyway-click' || event.action === 'sent-anyway-timeout') {
     return 'Sensitive content was detected, but the prompt was still sent.';
   }
 
@@ -53,7 +53,7 @@ function buildSummary(event: FlaggedEvent): string {
 function buildRecommendations(event: FlaggedEvent): string[] {
   const recommendations: string[] = [];
 
-  if (event.action === 'sent-anyway') {
+  if (event.action === 'sent-anyway-click' || event.action === 'sent-anyway-timeout') {
     recommendations.push('Open the conversation now and delete or edit the message if the provider still allows it.');
   }
 

@@ -16,7 +16,7 @@ function makeEvent(overrides: Partial<FlaggedEvent> = {}): FlaggedEvent {
     tool: 'chatgpt',
     categories: ['email'],
     findingCount: 1,
-    action: 'sent-anyway',
+    action: 'sent-anyway-click',
     source: 'prompt',
     maskingAvailable: true,
     maskingUsed: false,

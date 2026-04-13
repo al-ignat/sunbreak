@@ -171,8 +171,8 @@ describe('createOrchestrator', () => {
 
     it('returns false when extension is disabled', async () => {
       vi.mocked(getExtensionSettings).mockResolvedValue({
+        ...DEFAULT_EXTENSION_SETTINGS,
         enabled: false,
-        interventionMode: 'warn',
       });
 
       const adapter = createMockAdapter();
@@ -184,82 +184,6 @@ describe('createOrchestrator', () => {
 
       expect(submitConfig.shouldBlock()).toBe(false);
       expect(logCleanPrompt).not.toHaveBeenCalled();
-      expect(logFlaggedEvent).not.toHaveBeenCalled();
-    });
-
-    it('returns false in log-only mode but logs the event', async () => {
-      vi.mocked(getExtensionSettings).mockResolvedValue({
-        enabled: true,
-        interventionMode: 'log-only',
-      });
-
-      const adapter = createMockAdapter();
-      const ctx = createMockContext();
-      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
-      await flushSettingsInit();
-
-      findingsState.update([makeFinding()]);
-
-      expect(submitConfig.shouldBlock()).toBe(false);
-      expect(logFlaggedEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tool: 'chatgpt',
-          action: 'sent-anyway',
-          categories: expect.arrayContaining(['email']),
-          source: 'prompt',
-          guidanceVersion: 1,
-          needsAttention: true,
-        }),
-      );
-    });
-
-    it('logs custom pattern categories with their company bucket', async () => {
-      vi.mocked(getExtensionSettings).mockResolvedValue({
-        ...DEFAULT_EXTENSION_SETTINGS,
-        interventionMode: 'log-only',
-      });
-
-      const adapter = createMockAdapter();
-      const ctx = createMockContext();
-      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
-      await flushSettingsInit();
-
-      findingsState.update([
-        makeFinding({
-          type: 'custom-pattern',
-          value: 'EMP-1234',
-          label: 'Employee ID',
-          customPattern: {
-            id: 'employee-id',
-            severity: 'warning',
-            category: 'hr',
-            templateId: 'employee-id',
-          },
-        }),
-      ]);
-
-      expect(submitConfig.shouldBlock()).toBe(false);
-      expect(logFlaggedEvent).toHaveBeenCalledWith(
-        expect.objectContaining({
-          categories: expect.arrayContaining(['custom-pattern:hr']),
-          source: 'prompt',
-        }),
-      );
-    });
-
-    it('returns false for clean prompts in log-only mode', async () => {
-      vi.mocked(getExtensionSettings).mockResolvedValue({
-        enabled: true,
-        interventionMode: 'log-only',
-      });
-
-      const adapter = createMockAdapter();
-      const ctx = createMockContext();
-      const { submitConfig } = createOrchestrator(adapter, ctx);
-      await flushSettingsInit();
-
-      expect(submitConfig.shouldBlock()).toBe(false);
-      expect(logCleanPrompt).toHaveBeenCalled();
       expect(logFlaggedEvent).not.toHaveBeenCalled();
     });
   });
@@ -287,7 +211,7 @@ describe('createOrchestrator', () => {
       expect(mockShowToast).toHaveBeenCalledWith(1);
     });
 
-    it('logs flagged event after toast resolves', async () => {
+    it('logs sent-anyway-click when user clicks Send Anyway', async () => {
       const mockShowToast = vi.fn().mockResolvedValue('send-anyway');
       vi.mocked(createWidgetController).mockReturnValue({
         mount: vi.fn(),
@@ -309,12 +233,38 @@ describe('createOrchestrator', () => {
       expect(logFlaggedEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           tool: 'chatgpt',
-          action: 'sent-anyway',
+          action: 'sent-anyway-click',
           categories: expect.arrayContaining(['email']),
           findingCount: 1,
           source: 'prompt',
           guidanceVersion: 1,
           needsAttention: true,
+        }),
+      );
+    });
+
+    it('logs sent-anyway-timeout when toast times out', async () => {
+      const mockShowToast = vi.fn().mockResolvedValue('timeout');
+      vi.mocked(createWidgetController).mockReturnValue({
+        mount: vi.fn(),
+        unmount: vi.fn(),
+        destroy: vi.fn(),
+        showToast: mockShowToast,
+        showRestoreToast: vi.fn().mockResolvedValue(false),
+        showFileWarning: vi.fn(),
+        setEnabled: vi.fn(),
+      });
+
+      const adapter = createMockAdapter();
+      const ctx = createMockContext();
+      const { submitConfig, findingsState } = createOrchestrator(adapter, ctx);
+
+      findingsState.update([makeFinding()]);
+      await submitConfig.onBlocked();
+
+      expect(logFlaggedEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'sent-anyway-timeout',
         }),
       );
     });
@@ -447,8 +397,7 @@ describe('createOrchestrator', () => {
 
     it('skips restore toast when maskingEnabled is false', async () => {
       vi.mocked(getExtensionSettings).mockResolvedValue({
-        enabled: true,
-        interventionMode: 'warn',
+        ...DEFAULT_EXTENSION_SETTINGS,
         maskingEnabled: false,
       });
 

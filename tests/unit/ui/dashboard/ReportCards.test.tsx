@@ -16,7 +16,7 @@ const events: ReadonlyArray<FlaggedEvent> = [
     tool: 'claude',
     categories: ['api-key'],
     findingCount: 1,
-    action: 'sent-anyway',
+    action: 'sent-anyway-click',
     source: 'prompt',
     maskingAvailable: true,
     maskingUsed: false,

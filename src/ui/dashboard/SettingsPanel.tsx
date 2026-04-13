@@ -1,5 +1,4 @@
 import type { JSX } from 'preact';
-import { ChevronDown } from 'lucide-preact';
 import type { DetectionSettings, ExtensionSettings } from '../../storage/types';
 import type { FindingType } from '../../classifier/types';
 import { setDetectionSettings, setExtensionSettings } from '../../storage/dashboard';
@@ -27,14 +26,6 @@ export function SettingsPanel({
     await onDataChange();
   }
 
-  async function handleModeChange(e: Event): Promise<void> {
-    const value = (e.target as HTMLSelectElement).value;
-    const mode: ExtensionSettings['interventionMode'] =
-      value === 'log-only' ? 'log-only' : 'warn';
-    await setExtensionSettings({ interventionMode: mode });
-    await onDataChange();
-  }
-
   async function handleMaskingToggle(): Promise<void> {
     await setExtensionSettings({ maskingEnabled: !extensionSettings.maskingEnabled });
     await onDataChange();
@@ -42,7 +33,7 @@ export function SettingsPanel({
 
   return (
     <div className="settings-layout">
-      {/* Extension + Intervention Mode card */}
+      {/* Extension controls card */}
       <div className="settings-card">
         <div className="settings-row">
           <div className="settings-row__info">
@@ -65,29 +56,6 @@ export function SettingsPanel({
           >
             <span className="toggle-switch__thumb" />
           </button>
-        </div>
-
-        <div className="settings-divider" />
-
-        <div className="settings-row">
-          <div className="settings-row__info">
-            <span className="settings-row__title">Intervention Mode</span>
-            <span className="settings-row__desc">
-              How Sunbreak responds when sensitive data is detected.
-            </span>
-          </div>
-          <div className="settings-dropdown-wrap">
-            <select
-              value={extensionSettings.interventionMode}
-              onChange={handleModeChange}
-              aria-label="Intervention mode"
-              className="settings-dropdown"
-            >
-              <option value="warn">Warn before sending</option>
-              <option value="log-only">Log only (no overlay)</option>
-            </select>
-            <ChevronDown size={14} className="settings-dropdown__icon" />
-          </div>
         </div>
 
         <div className="settings-divider" />
