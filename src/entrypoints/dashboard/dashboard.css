@@ -285,12 +285,12 @@ body {
 
 .chart-bar__segment--clean {
   background: var(--color-safe);
-  border-radius: 0 0 4px 4px;
+  border-radius: 4px 4px 0 0;
 }
 
 .chart-bar__segment--flagged {
   background: var(--color-warning);
-  border-radius: 4px 4px 0 0;
+  border-radius: 0 0 4px 4px;
 }
 
 /* When only one segment, give it full radius */
