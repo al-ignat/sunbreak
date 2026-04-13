@@ -41,6 +41,7 @@ export async function getWeeklyStats(days = 7): Promise<AggregatedStats> {
   let editedCount = 0;
   let fixedCount = 0;
   let ignoredCount = 0;
+  let fileWarningCount = 0;
   const byTool: Record<string, number> = {};
   const dailyBreakdown: AggregatedStats['dailyBreakdown'][number][] = [];
 
@@ -56,6 +57,7 @@ export async function getWeeklyStats(days = 7): Promise<AggregatedStats> {
       editedCount += day.editedCount;
       fixedCount += (day.fixedCount ?? 0);
       ignoredCount += (day.ignoredCount ?? 0);
+      fileWarningCount += (day.fileWarningCount ?? 0);
 
       for (const [tool, count] of Object.entries(day.byTool ?? {})) {
         byTool[tool] = (byTool[tool] ?? 0) + count;
@@ -93,6 +95,7 @@ export async function getWeeklyStats(days = 7): Promise<AggregatedStats> {
     editedCount,
     fixedCount,
     ignoredCount,
+    fileWarningCount,
     byTool,
     dailyBreakdown,
     complianceRate,

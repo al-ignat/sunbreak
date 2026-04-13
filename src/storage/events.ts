@@ -69,6 +69,9 @@ async function doIncrementDailyStat(
   const data = await chrome.storage.local.get(storageKey);
   const allStats =
     (data[storageKey] as Record<string, DailyStats> | undefined) ?? {};
+  const isFileWarning = action === 'file-warning';
+  const isSentAnyway = action === 'sent-anyway-click' || action === 'sent-anyway-timeout';
+
   const today: DailyStats = allStats[key] ?? {
     totalInteractions: 0,
     flaggedCount: 0,
@@ -78,6 +81,7 @@ async function doIncrementDailyStat(
     editedCount: 0,
     fixedCount: 0,
     ignoredCount: 0,
+    fileWarningCount: 0,
     byTool: {},
   };
 
@@ -85,13 +89,13 @@ async function doIncrementDailyStat(
   byTool[tool] = (byTool[tool] ?? 0) + 1;
 
   const updated: DailyStats = {
-    totalInteractions: today.totalInteractions + 1,
+    totalInteractions: today.totalInteractions + (isFileWarning ? 0 : 1),
     flaggedCount:
-      today.flaggedCount + (action !== 'clean' ? 1 : 0),
+      today.flaggedCount + (action !== 'clean' && !isFileWarning ? 1 : 0),
     redactedCount:
       today.redactedCount + (action === 'redacted' ? 1 : 0),
     sentAnywayCount:
-      today.sentAnywayCount + (action === 'sent-anyway' ? 1 : 0),
+      today.sentAnywayCount + (isSentAnyway ? 1 : 0),
     cancelledCount:
       today.cancelledCount + (action === 'cancelled' ? 1 : 0),
     editedCount:
@@ -100,6 +104,8 @@ async function doIncrementDailyStat(
       today.fixedCount + (action === 'fixed' ? 1 : 0),
     ignoredCount:
       today.ignoredCount + (action === 'ignored' ? 1 : 0),
+    fileWarningCount:
+      (today.fileWarningCount ?? 0) + (isFileWarning ? 1 : 0),
     byTool,
   };
 

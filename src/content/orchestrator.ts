@@ -251,7 +251,7 @@ export function createOrchestrator(
 
   /**
    * Synchronous check: should this submission be blocked?
-   * Also handles logging for clean prompts and log-only mode.
+   * Also handles logging for clean prompts.
    */
   function shouldBlock(): boolean {
     if (!cachedExtensionSettings.enabled) return false;
@@ -263,26 +263,6 @@ export function createOrchestrator(
       if (!hasVerifiedPendingAttachments) {
         logCleanPrompt(adapter.name);
       }
-      return false;
-    }
-
-    if (cachedExtensionSettings.interventionMode === 'log-only') {
-      maybeLogPendingAttachmentSend(adapter.name);
-      const active = snap.tracked.filter((t) => t.status === 'active');
-      const logOnlyEvent: FlaggedEvent = {
-        id: generateEventId(),
-        timestamp: new Date().toISOString(),
-        tool: adapter.name,
-        categories: getCategories(active.map((t) => t.finding)),
-        findingCount: snap.activeCount,
-        action: 'sent-anyway',
-        source: 'prompt',
-        maskingAvailable: cachedExtensionSettings.maskingEnabled && adapter.capabilities?.reliableSetText !== false,
-        maskingUsed: false,
-        needsAttention: true,
-        guidanceVersion: 1,
-      };
-      logFlaggedEvent(logOnlyEvent);
       return false;
     }
 
@@ -308,13 +288,15 @@ export function createOrchestrator(
     findingsState.clear();
 
     const active = snap.tracked.filter((t) => t.status === 'active');
+    const eventAction: FlaggedEvent['action'] =
+      action === 'timeout' ? 'sent-anyway-timeout' : 'sent-anyway-click';
     const event: FlaggedEvent = {
       id: generateEventId(),
       timestamp: new Date().toISOString(),
       tool: adapter.name,
       categories: getCategories(active.map((t) => t.finding)),
       findingCount: snap.activeCount,
-      action: 'sent-anyway',
+      action: eventAction,
       source: 'prompt',
       maskingAvailable: cachedExtensionSettings.maskingEnabled && adapter.capabilities?.reliableSetText !== false,
       maskingUsed: false,
@@ -322,9 +304,6 @@ export function createOrchestrator(
       guidanceVersion: 1,
     };
 
-    // If the user clicked "Send Anyway" explicitly, it's 'sent-anyway'
-    // Timeout also results in release — same action
-    void action; // both 'send-anyway' and 'timeout' result in 'sent-anyway'
     maybeLogPendingAttachmentSend(adapter.name);
     logFlaggedEvent(event);
     return true;

@@ -19,7 +19,6 @@ import type { AggregatedStats, ExtensionSettings } from '../../../../src/storage
 
 const DEFAULT_SETTINGS: ExtensionSettings = {
   enabled: true,
-  interventionMode: 'warn',
   maskingEnabled: true,
   recoveryAssistanceEnabled: false,
   providerGuidance: { chatgpt: 'general', claude: 'general', gemini: 'general' },
@@ -35,6 +34,7 @@ function makeStats(overrides: Partial<AggregatedStats> = {}): AggregatedStats {
     editedCount: 0,
     fixedCount: 0,
     ignoredCount: 0,
+    fileWarningCount: 0,
     byTool: {},
     dailyBreakdown: [],
     complianceRate: 90,

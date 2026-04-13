@@ -21,7 +21,8 @@ const TOOL_COLORS_DARK: Record<string, string> = {
 
 const ACTION_LABELS: Record<string, string> = {
   redacted: 'Redacted',
-  'sent-anyway': 'Sent Anyway',
+  'sent-anyway-click': 'Sent Anyway',
+  'sent-anyway-timeout': 'Sent (Timeout)',
   cancelled: 'Cancelled',
   edited: 'Edited',
   fixed: 'Fixed',
@@ -31,7 +32,8 @@ const ACTION_LABELS: Record<string, string> = {
 
 const ACTION_COLORS: Record<string, string> = {
   redacted: '#2E7D32',
-  'sent-anyway': '#E65100',
+  'sent-anyway-click': '#E65100',
+  'sent-anyway-timeout': '#E65100',
   cancelled: '#888',
   edited: '#1565C0',
   fixed: '#2E7D32',
@@ -42,7 +44,8 @@ const ACTION_COLORS: Record<string, string> = {
 /** Lighter action colors for dark backgrounds (WCAG AA on #1E1D21) */
 const ACTION_COLORS_DARK: Record<string, string> = {
   redacted: '#34D399',
-  'sent-anyway': '#F59E0B',
+  'sent-anyway-click': '#F59E0B',
+  'sent-anyway-timeout': '#F59E0B',
   cancelled: '#6B6869',
   edited: '#60A5FA',
   fixed: '#34D399',

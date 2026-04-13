@@ -6,13 +6,19 @@ export type FlaggedEventSource = 'prompt' | 'file-upload';
 
 export const FLAGGED_EVENT_ACTIONS = [
   'redacted',
-  'sent-anyway',
+  'sent-anyway-click',
+  'sent-anyway-timeout',
   'cancelled',
   'edited',
   'fixed',
   'ignored',
   'file-warning',
 ] as const;
+
+/** Legacy action values that may exist in stored data */
+const LEGACY_ACTION_MAP: Record<string, FlaggedEvent['action']> = {
+  'sent-anyway': 'sent-anyway-click',
+};
 
 export const FLAGGED_EVENT_SOURCES = ['prompt', 'file-upload'] as const;
 
@@ -24,7 +30,7 @@ export interface FlaggedEvent {
   readonly tool: string;
   readonly categories: ReadonlyArray<string>;
   readonly findingCount: number;
-  readonly action: 'redacted' | 'sent-anyway' | 'cancelled' | 'edited' | 'fixed' | 'ignored' | 'file-warning';
+  readonly action: 'redacted' | 'sent-anyway-click' | 'sent-anyway-timeout' | 'cancelled' | 'edited' | 'fixed' | 'ignored' | 'file-warning';
   readonly source: FlaggedEventSource;
   readonly maskingAvailable: boolean;
   readonly maskingUsed: boolean;
@@ -37,8 +43,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isFlaggedEventAction(value: unknown): value is FlaggedEvent['action'] {
-  return typeof value === 'string' &&
-    (FLAGGED_EVENT_ACTIONS as ReadonlyArray<string>).includes(value);
+  if (typeof value !== 'string') return false;
+  if ((FLAGGED_EVENT_ACTIONS as ReadonlyArray<string>).includes(value)) return true;
+  return value in LEGACY_ACTION_MAP;
+}
+
+function resolveAction(value: string): FlaggedEvent['action'] {
+  return LEGACY_ACTION_MAP[value] ?? value as FlaggedEvent['action'];
 }
 
 function isFlaggedEventSource(value: unknown): value is FlaggedEventSource {
@@ -68,7 +79,7 @@ function normalizeFindingCount(value: unknown): number {
 }
 
 function defaultNeedsAttention(action: FlaggedEvent['action']): boolean {
-  return action === 'sent-anyway' || action === 'cancelled' || action === 'edited' || action === 'file-warning';
+  return action === 'sent-anyway-click' || action === 'sent-anyway-timeout' || action === 'cancelled' || action === 'edited' || action === 'file-warning';
 }
 
 /** Normalize stored flagged-event metadata and supply safe defaults for legacy records. */
@@ -88,19 +99,21 @@ export function normalizeFlaggedEvent(input: unknown): FlaggedEvent | null {
     return null;
   }
 
+  const resolvedAction = resolveAction(action as string);
+
   return {
     id,
     timestamp,
     tool,
     categories: normalizeCategories(input['categories']),
     findingCount: normalizeFindingCount(input['findingCount']),
-    action,
+    action: resolvedAction,
     source: isFlaggedEventSource(input['source']) ? input['source'] : 'prompt',
     maskingAvailable: typeof input['maskingAvailable'] === 'boolean' ? input['maskingAvailable'] : false,
     maskingUsed: typeof input['maskingUsed'] === 'boolean' ? input['maskingUsed'] : action === 'redacted',
     needsAttention: typeof input['needsAttention'] === 'boolean'
       ? input['needsAttention']
-      : defaultNeedsAttention(action),
+      : defaultNeedsAttention(resolvedAction),
     guidanceVersion:
       input['guidanceVersion'] === FLAGGED_EVENT_GUIDANCE_VERSION
         ? FLAGGED_EVENT_GUIDANCE_VERSION
@@ -118,6 +131,7 @@ export interface DailyStats {
   readonly editedCount: number;
   readonly fixedCount: number;
   readonly ignoredCount: number;
+  readonly fileWarningCount: number;
   readonly byTool: Record<string, number>;
 }
 
@@ -134,7 +148,6 @@ export type ProviderGuidanceSettings = Record<SiteName, ProviderGuidanceMode>;
 
 export interface ExtensionSettings {
   readonly enabled: boolean;
-  readonly interventionMode: 'warn' | 'log-only';
   readonly maskingEnabled: boolean;
   readonly recoveryAssistanceEnabled: boolean;
   readonly providerGuidance: ProviderGuidanceSettings;
@@ -178,7 +191,6 @@ export const DEFAULT_DETECTION_SETTINGS: DetectionSettings = {
 /** Default extension settings */
 export const DEFAULT_EXTENSION_SETTINGS: ExtensionSettings = {
   enabled: true,
-  interventionMode: 'warn',
   maskingEnabled: true,
   recoveryAssistanceEnabled: false,
   providerGuidance: {
@@ -204,6 +216,7 @@ export interface AggregatedStats {
   readonly editedCount: number;
   readonly fixedCount: number;
   readonly ignoredCount: number;
+  readonly fileWarningCount: number;
   readonly byTool: Record<string, number>;
   readonly dailyBreakdown: ReadonlyArray<{
     readonly date: string;

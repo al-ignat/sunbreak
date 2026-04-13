@@ -13,6 +13,7 @@ function makeStats(overrides: Partial<AggregatedStats> = {}): AggregatedStats {
     editedCount: 0,
     fixedCount: 0,
     ignoredCount: 0,
+    fileWarningCount: 0,
     byTool: { chatgpt: 12, claude: 8 },
     dailyBreakdown: [
       { date: '2026-03-01', total: 10, flagged: 2, clean: 8, byTool: {} },

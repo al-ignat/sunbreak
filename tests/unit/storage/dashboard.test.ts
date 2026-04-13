@@ -37,6 +37,9 @@ function makeDailyStats(overrides: Partial<DailyStats> = {}): DailyStats {
     sentAnywayCount: 1,
     cancelledCount: 0,
     editedCount: 0,
+    fixedCount: 0,
+    ignoredCount: 0,
+    fileWarningCount: 0,
     byTool: { chatgpt: 6, claude: 4 },
     ...overrides,
   };
@@ -297,7 +300,6 @@ describe('dashboard storage wrapper', () => {
     it('returns defaults when no settings stored', async () => {
       const settings = await getExtensionSettings();
       expect(settings.enabled).toBe(true);
-      expect(settings.interventionMode).toBe('warn');
       expect(settings.maskingEnabled).toBe(true);
       expect(settings.recoveryAssistanceEnabled).toBe(false);
       expect(settings.providerGuidance).toEqual({
@@ -308,11 +310,10 @@ describe('dashboard storage wrapper', () => {
     });
 
     it('partially updates settings', async () => {
-      await setExtensionSettings({ interventionMode: 'log-only' });
+      await setExtensionSettings({ maskingEnabled: false });
       const settings = await getExtensionSettings();
       expect(settings.enabled).toBe(true);
-      expect(settings.interventionMode).toBe('log-only');
-      expect(settings.maskingEnabled).toBe(true);
+      expect(settings.maskingEnabled).toBe(false);
       expect(settings.recoveryAssistanceEnabled).toBe(false);
       expect(settings.providerGuidance.chatgpt).toBe('general');
     });

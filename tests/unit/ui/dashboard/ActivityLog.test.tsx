@@ -40,7 +40,7 @@ describe('ActivityLog', () => {
   it('renders events in a table', () => {
     const events = [
       makeEvent({ id: 'e1', tool: 'chatgpt', categories: ['email'], action: 'redacted' }),
-      makeEvent({ id: 'e2', tool: 'claude', categories: ['api-key'], action: 'sent-anyway' }),
+      makeEvent({ id: 'e2', tool: 'claude', categories: ['api-key'], action: 'sent-anyway-click' }),
     ];
     const { container } = render(<ActivityLog events={events} providerGuidance={providerGuidance} recoveryAssistanceEnabled={false} />);
     expect(container.textContent).toContain('ChatGPT');
@@ -116,7 +116,7 @@ describe('ActivityLog', () => {
       makeEvent({
         id: 'e2',
         tool: 'claude',
-        action: 'sent-anyway',
+        action: 'sent-anyway-click',
         maskingUsed: false,
         needsAttention: true,
         categories: ['api-key'],
